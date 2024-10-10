@@ -1,0 +1,43 @@
+apiVersion: config.projectcapsule.dev/v1alpha1
+kind: ArgoAddon
+metadata:
+  name: default
+  labels:
+    hello: "there"
+spec:
+  config:
+    proxy:
+      serviceName: capsule-argocd-addon-proxy
+      serviceNamespace: capsule-argocd-addon
+      servicePort: 9001
+  translators:
+  - selector:
+      matchLabels:
+        app.kubernetes.io/type: dev
+    settings:
+      namespaceResourceWhitelist:
+      - group: "*"
+        kind: "*"      
+      clusterResourceWhitelist:
+      - group: "*"
+        kind: "*"
+    roles:
+    - name: "baseline"
+      clusterRoles:
+        - "admin"
+      owner: true
+      policies:
+      - resource: repositories
+        action: ["*"]
+
+    - name: "admin"
+      clusterRoles:
+        - "admin"
+      policies:  
+      - resource: applications
+        action: ["*"]
+
+
+
+
+

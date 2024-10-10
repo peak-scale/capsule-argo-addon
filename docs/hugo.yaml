@@ -1,0 +1,85 @@
+#baseURL: /
+languageCode: en-us
+title: Capsule ❤️ Argo
+theme: [PaperMod]
+copyright: "© [Peak Scale](https://github.com/adityatelange/hugo-PaperMod/graphs/contributors)"
+paginate: 5
+
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+pygmentsUseClasses: true
+mainsections: ["posts", "papermod"]
+minify:
+  disableXML: true
+languages:
+  en:
+    languageName: "English"
+    weight: 1
+    taxonomies:
+      category: categories
+      tag: tags
+      series: series
+    menu:
+      main:
+        - name: Search
+          url: search/
+          weight: 10
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+params:
+  env: production # to enable google analytics, opengraph, twitter-cards and schema.
+  description: "Theme PaperMod - https://github.com/adityatelange/hugo-PaperMod"
+  defaultTheme: auto
+  # disableThemeToggle: true
+  ShowShareButtons: false
+  ShowReadingTime: false
+  # disableSpecial1stPost: true
+  disableShare: True
+  displayFullLangName: true
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowRssButtonInSectionTermList: true
+  ShowAllPagesInArchive: true
+  ShowPageNums: true
+  ShowToc: true
+  # comments: false
+  images: ["images/papermod-cover.png"]
+  homeInfoParams:
+    Title: "Capsule Argo Addon"
+    Content: >
+      This is an addon for [Capsule](https://projectcapsule.dev/) that enables [ArgoCD](https://argo-cd.readthedocs.io/en/stable/) to work with [Capsule](https://projectcapsule.dev/) and therefor bring multi-tenancy to ArgoCD in an automated fashion. 
+      The addon is designed for platform engineers/administrators to translate their existing Capsule Tenants into [Argo Appprojects](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/).Read the [Introduction](/posts/introduction/) to get started with the addon and understand if it fits your needs.<br><br>
+
+      ![Logo](/images/capsule-argo.png)
+
+      <br>Feel free to show your support by giving us a star 🌟 on GitHub and sharing with your friends and social media. This addon is maintained by [Peak Scale](https://peakscale.ch/en/). 
+  socialIcons:
+    - name: github
+      title: View Source on Github
+      url: "https://github.com/peak-scale/capsule-argo-addon"
+    - name: Slack
+      title: Join Capsule on slack
+      url: "https://kubernetes.slack.com/archives/C03GETTJQRL"
+  editPost:
+    URL: "https://github.com/peak-scale/capsule-argo-addon/tree/docs/content"
+    Text: "feat(docs): suggest changes"
+    appendFilePath: true 
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+  highlight:
+    noClasses: false
+services:
+  instagram:
+    disableInlineCSS: true
+  twitter:
+    disableInlineCSS: true

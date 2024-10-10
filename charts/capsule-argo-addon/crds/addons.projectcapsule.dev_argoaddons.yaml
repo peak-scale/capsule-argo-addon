@@ -1,0 +1,232 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.3
+  name: argoaddons.addons.projectcapsule.dev
+spec:
+  group: addons.projectcapsule.dev
+  names:
+    kind: ArgoAddon
+    listKind: ArgoAddonList
+    plural: argoaddons
+    singular: argoaddon
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ArgoAddon is the Schema for the ArgoAddons API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ArgoAddonSpec defines the desired state of ArgoAddon
+            properties:
+              argo:
+                default:
+                  namespace: argocd
+                  rbacConfigMap: argocd-rbac-cm
+                description: ArgoCD configuration
+                properties:
+                  namespace:
+                    description: Namespace where the ArgoCD instance is running
+                    type: string
+                  rbacConfigMap:
+                    description: Name of the ArgoCD rbac configmap (required for the
+                      controller)
+                    type: string
+                type: object
+              proxy:
+                description: Capsule-Proxy configuration for the controller
+                properties:
+                  enabled:
+                    default: true
+                    description: |-
+                      Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+                      on the argo appproject.
+                    type: boolean
+                  serviceAccountNamespace:
+                    description: |-
+                      Default Namespace to create ServiceAccounts in for proxy access.
+                      Can be overwritten on tenant-basis
+                    type: string
+                  serviceName:
+                    default: capsule-proxy
+                    description: Name of the capsule-proxy service
+                    type: string
+                  serviceNamespace:
+                    default: capsule-system
+                    description: ' Namespace where the capsule-proxy service is running'
+                    type: string
+                  servicePort:
+                    default: 9001
+                    description: Port of the capsule-proxy service
+                    format: int32
+                    type: integer
+                type: object
+              translatorSelector:
+                description: Translator selector. Only translators matching this selector
+                  will be used for this controller, if empty all translators will
+                  be used.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+            type: object
+          status:
+            description: ArgoAddonStatus defines the observed state of ArgoAddon
+            properties:
+              loaded:
+                description: Last applied valid configuration
+                properties:
+                  argo:
+                    default:
+                      namespace: argocd
+                      rbacConfigMap: argocd-rbac-cm
+                    description: ArgoCD configuration
+                    properties:
+                      namespace:
+                        description: Namespace where the ArgoCD instance is running
+                        type: string
+                      rbacConfigMap:
+                        description: Name of the ArgoCD rbac configmap (required for
+                          the controller)
+                        type: string
+                    type: object
+                  proxy:
+                    description: Capsule-Proxy configuration for the controller
+                    properties:
+                      enabled:
+                        default: true
+                        description: |-
+                          Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+                          on the argo appproject.
+                        type: boolean
+                      serviceAccountNamespace:
+                        description: |-
+                          Default Namespace to create ServiceAccounts in for proxy access.
+                          Can be overwritten on tenant-basis
+                        type: string
+                      serviceName:
+                        default: capsule-proxy
+                        description: Name of the capsule-proxy service
+                        type: string
+                      serviceNamespace:
+                        default: capsule-system
+                        description: ' Namespace where the capsule-proxy service is
+                          running'
+                        type: string
+                      servicePort:
+                        default: 9001
+                        description: Port of the capsule-proxy service
+                        format: int32
+                        type: integer
+                    type: object
+                  translatorSelector:
+                    description: Translator selector. Only translators matching this
+                      selector will be used for this controller, if empty all translators
+                      will be used.
+                    properties:
+                      matchExpressions:
+                        description: matchExpressions is a list of label selector
+                          requirements. The requirements are ANDed.
+                        items:
+                          description: |-
+                            A label selector requirement is a selector that contains values, a key, and an operator that
+                            relates the key and values.
+                          properties:
+                            key:
+                              description: key is the label key that the selector
+                                applies to.
+                              type: string
+                            operator:
+                              description: |-
+                                operator represents a key's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists and DoesNotExist.
+                              type: string
+                            values:
+                              description: |-
+                                values is an array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty. This array is replaced during a strategic
+                                merge patch.
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - key
+                          - operator
+                          type: object
+                        type: array
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                          map is equivalent to an element of matchExpressions, whose key field is "key", the
+                          operator is "In", and the values array contains only "value". The requirements are ANDed.
+                        type: object
+                    type: object
+                    x-kubernetes-map-type: atomic
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

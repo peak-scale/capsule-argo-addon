@@ -1,0 +1,12 @@
+apiVersion: v2
+name: capsule-argo-addon
+description: ArgoCD Capsule Controller
+type: application
+version: 0.1.0
+appVersion: "1.16.0"
+dependencies:
+  - name: capsule-proxy
+    version: 0.7.1
+    repository: "oci://ghcr.io/projectcapsule/charts"
+    condition: proxy.enabled
+    alias: proxy

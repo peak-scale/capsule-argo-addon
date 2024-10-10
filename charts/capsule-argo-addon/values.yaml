@@ -1,0 +1,156 @@
+# Default values for helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Manage CRD Lifecycle
+crds:
+  # -- Install the CustomResourceDefinitions (This also manages the lifecycle of the CRDs for update operations)
+  install: true
+  # -- Only install the CRDs, no other primitives
+  exclusive: false
+  # -- Extra Labels for CRDs
+  labels: {}
+  # -- Extra Annotations for CRDs
+  annnotations: {}
+
+# Deploy a dedicated Capsule-Proxy for argocd
+proxy:
+  enabled: true
+  # -- Enable Required FeatureGates
+  options:
+    logLevel: "10"
+    extraArgs:
+    - "--feature-gates=ProxyClusterScoped=true"
+    - "--feature-gates=ProxyAllNamespaced=true"
+  # -- Get Certificate from cert-manager from Capsule-Proxy
+  certManager:
+    generateCertificates: true
+
+# Plugin Configuration
+config:
+  # -- Create Plugin Configuration
+  create: true
+  # -- Plugin Configuration Name
+  name: default
+  # -- Config Specification
+  spec: {}
+
+
+replicaCount: 1
+
+image:
+  registry: ghcr.io
+  repository: peak-scale/capsule-argocd-addon
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+  
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# -- Configure the liveness probe using Deployment probe spec
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 10080
+
+# -- Configure the readiness probe using Deployment probe spec
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 10080
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: 
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+jobs:
+  image:
+    # -- Set the image repository of the helm chart job
+    registry: docker.io
+    # -- Set the image repository of the helm chart job
+    repository: clastix/kubectl
+    # -- Set the image pull policy of the helm chart job
+    pullPolicy: IfNotPresent
+    # -- Set the image tag of the helm chart job
+    tag: ""
+  # -- Annotations to add to the certgen job.
+  annotations:
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+  # -- Set the restartPolicy
+  restartPolicy: Never
+  # -- Sets the ttl in seconds after a finished certgen job is deleted. Set to -1 to never delete.
+  ttlSecondsAfterFinished: 60
+  # -- Security context for the job pods.
+  podSecurityContext:
+    seccompProfile:
+      type: "RuntimeDefault"
+  # -- Security context for the job containers.
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsGroup: 1002
+    runAsNonRoot: true
+    runAsUser: 1002
+  # -- Job resources
+  resources: {}
+  # -- Set the node selector
+  nodeSelector: {}
+  # -- Set list of tolerations
+  tolerations: []
+  # -- Set affinity rules
+  affinity: {}
+  # -- Set Topology Spread Constraints
+  topologySpreadConstraints: []
+  # -- Set a pod priorityClassName
+  priorityClassName: ""
+
