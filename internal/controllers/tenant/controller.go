@@ -1,4 +1,4 @@
-package argo
+package tenant
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	"github.com/peak-scale/capsule-argo-addon/internal/argo"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -246,7 +247,7 @@ func (i *TenancyController) lifecycle(tenant *capsulev1beta2.Tenant, ctx context
 		}
 
 		_, err = controllerutil.CreateOrUpdate(ctx, i.Client, configmap, func() error {
-			delete(configmap.Data, utils.ArgoPolicyName(tenant))
+			delete(configmap.Data, argo.ArgoPolicyName(tenant))
 
 			return nil
 		})

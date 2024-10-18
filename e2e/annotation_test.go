@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/peak-scale/capsule-argo-addon/internal/controllers/argo"
+	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 )
 
 var _ = Describe("Tenant Labels, Annotations & Finalizers", func() {
@@ -119,8 +119,8 @@ var _ = Describe("Tenant Labels, Annotations & Finalizers", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			expectedProjectFinalizers := []string{
-				argo.TranslatorFinalizer(translator1),
-				argo.TranslatorFinalizer(translator2),
+				translator.TranslatorFinalizer(translator1),
+				translator.TranslatorFinalizer(translator2),
 			}
 
 			for _, finalizer := range expectedProjectFinalizers {

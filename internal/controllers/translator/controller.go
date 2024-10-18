@@ -6,7 +6,6 @@ import (
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
-	"github.com/peak-scale/capsule-argo-addon/internal/controllers/argo"
 	"github.com/peak-scale/capsule-argo-addon/internal/reflection"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
@@ -148,7 +147,7 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 		}
 
 		// Remove Finalizers from the approject
-		finalizers := append(cfg.ProjectMeta.Finalizers, argo.TranslatorFinalizer(translator))
+		finalizers := append(cfg.ProjectMeta.Finalizers, TranslatorFinalizer(translator))
 		for _, finalizer := range finalizers {
 			if controllerutil.ContainsFinalizer(approject, finalizer) {
 				controllerutil.RemoveFinalizer(approject, finalizer)

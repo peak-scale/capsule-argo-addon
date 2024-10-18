@@ -12,9 +12,9 @@ func ConfigContext(cluster string, translator *v1alpha1.ArgoTranslator, config v
 		"Tenant": map[string]interface{}{
 			"Name":       tenant.Name,
 			"Namespaces": tenant.Status.Namespaces,
-			"Object":     utils.ConvertStructToMap(tenant),
+			"Object":     utils.Mapify(tenant),
 		},
-		"Config":   utils.ConvertStructToMap(config),
+		"Config":   utils.Mapify(config),
 		"Endpoint": cluster,
 	}
 

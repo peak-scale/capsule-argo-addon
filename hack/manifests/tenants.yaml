@@ -8,7 +8,8 @@ metadata:
     hello: "there"
     nyan: "dann"
   annotations:
-    argocd.addons.projectcapsule.dev/read-only: "true"
+    argo.addons.projectcapsule.dev/read-only: "false"
+    argo.addons.projectcapsule.dev/decouple: "false"
 spec:
   owners:
   - name: solar-users
@@ -43,7 +44,7 @@ metadata:
     hello: "there"
     nyan: "dann"
   annotations:
-    argocd.addons.projectcapsule.dev/read-only: "true"
+    argo.addons.projectcapsule.dev/read-only: "false"
 spec:
   owners:
   - name: solar-users

@@ -35,8 +35,8 @@ import (
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
-	"github.com/peak-scale/capsule-argo-addon/internal/controllers/argo"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/config"
+	"github.com/peak-scale/capsule-argo-addon/internal/controllers/tenant"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -128,7 +128,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&argo.TenancyController{
+	if err = (&tenant.TenancyController{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("Tenant"),
 		Recorder: mgr.GetEventRecorderFor("tenant-controller"),

@@ -1,4 +1,4 @@
-package argo
+package tenant
 
 import (
 	"bytes"
@@ -11,15 +11,14 @@ import (
 
 	"dario.cat/mergo"
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	"github.com/argoproj/argo-cd/v2/util/rbac"
 	"github.com/go-logr/logr"
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
-	addonsv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	"github.com/peak-scale/capsule-argo-addon/internal/argo"
+	translatorctl "github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
@@ -41,8 +40,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		return err
 	}
 
-	// Collect Service-Account
-
+	// Initialize AppProject
 	appProject := &argocdv1alpha1.AppProject{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.TenantProjectName(tenant),
@@ -50,6 +48,24 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		},
 	}
 
+	// Fetch the current state of the AppProject
+	gerr := i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().ArgoCD.Namespace}, appProject)
+	if gerr != nil && !k8serrors.IsNotFound(gerr) {
+		return gerr
+	}
+
+	// Lifecycle Approject
+	if len(translators) == 0 {
+		// Approject is already absent
+		if k8serrors.IsNotFound(gerr) {
+			return nil
+		}
+
+		// Delete the AppProject when it's not decoupled
+		if !utils.TenantDecoupleProject(tenant) {
+			return i.Client.Delete(ctx, appProject)
+		}
+	}
 	// Fetch the current state of the AppProject
 	err = i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().ArgoCD.Namespace}, appProject)
 	if err != nil && !k8serrors.IsNotFound(err) {
@@ -99,7 +115,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 			}
 
 			// Handle Finalizers
-			finalizers := append(translatorCfg.ProjectMeta.Finalizers, TranslatorFinalizer(translator))
+			finalizers := append(translatorCfg.ProjectMeta.Finalizers, translatorctl.TranslatorFinalizer(translator))
 			for _, finalizer := range finalizers {
 				if !controllerutil.ContainsFinalizer(appProject, finalizer) {
 					controllerutil.AddFinalizer(appProject, finalizer)
@@ -107,14 +123,15 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 			}
 		}
 
-		log.V(6).Info("combined translators config", "config", translatedSpec)
+		log.V(7).Info("combined translators config", "config", translatedSpec)
 
 		//// Merge the translatedSpec into the appProject.Spec
 		if utils.TenantReadOnly(tenant) {
-			log.V(6).Info("overwriting appproject")
+			log.V(5).Info("overwriting appproject")
 			// Overwrite translatedSpec into the appProject.Spec
 			appProject.Spec = *translatedSpec
 		} else {
+			log.V(5).Info("combining appproject")
 			// Merge with current Spec
 			err = mergo.Merge(&appProject.Spec, translatedSpec, mergo.WithOverride)
 			if err != nil {
@@ -123,24 +140,44 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		}
 
 		// Register the Tenant as a Destination
-		if i.Settings.Get().Proxy.Enabled {
-			proxyDestination := argocdv1alpha1.ApplicationDestination{
-				Name:      tenant.Name,
-				Server:    cluster,
-				Namespace: "*",
-			}
+		proxyDestination := argocdv1alpha1.ApplicationDestination{
+			Name:      tenant.Name,
+			Server:    cluster,
+			Namespace: "*",
+		}
 
-			if !projectHasDestination(appProject, proxyDestination) {
+		switch {
+		// Add the proxy destination when the proxy is enabled and there are translators
+		case i.Settings.Get().Proxy.Enabled && len(translators) > 0:
+			if !argo.ProjectHasDestination(appProject, proxyDestination) {
+				log.V(5).Info("adding proxy destination")
 				appProject.Spec.Destinations = append(appProject.Spec.Destinations, proxyDestination)
+			}
+		// Remove the proxy destination
+		default:
+			if argo.ProjectHasDestination(appProject, proxyDestination) {
+				log.V(5).Info("removing proxy destination")
+				argo.RemoveProjectDestination(appProject, proxyDestination)
 			}
 		}
 
 		// Couple oder Decouple the AppProject
+
+		// Check if tenant is being deleted (Remove owner reference)
 		if utils.TenantDecoupleProject(tenant) {
+			ownerRefs := appProject.GetOwnerReferences()
+
 			// Unset blockerOwnerDeletion and controller
-			if controllerutil.HasControllerReference(appProject) {
-				log.V(5).Info("removing controller reference", "project", appProject)
-				return controllerutil.RemoveControllerReference(tenant, appProject, i.Client.Scheme())
+			for i, ownerRef := range ownerRefs {
+				// Check if the owner reference matches the tenant
+				if ownerRef.UID == tenant.UID {
+					// Unset blockOwnerDeletion and controller fields
+					ownerRefs[i].BlockOwnerDeletion = nil
+					ownerRefs[i].Controller = nil
+
+					log.V(5).Info("removing controller and blockOwnerDeletion, but keeping owner reference", "project", appProject)
+					appProject.SetOwnerReferences(ownerRefs)
+				}
 			}
 		} else {
 			log.V(5).Info("adding controller reference", "project", appProject)
@@ -159,7 +196,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		return err
 	}
 
-	log.V(5).Info("reflected argo permissions", "configmap", i.Settings.Get().ArgoCD.RBACConfigMap, "namespace", i.Settings.Get().ArgoCD.Namespace, "key", utils.ArgoPolicyName(tenant))
+	log.V(5).Info("reflected argo permissions", "configmap", i.Settings.Get().ArgoCD.RBACConfigMap, "namespace", i.Settings.Get().ArgoCD.Namespace, "key", argo.ArgoPolicyName(tenant))
 	return nil
 }
 
@@ -169,14 +206,7 @@ func (i *TenancyController) reflectArgoRBAC(
 	tenant *capsulev1beta2.Tenant,
 	translators []*v1alpha1.ArgoTranslator,
 ) (err error) {
-
-	// Generate RBAC CSV
-	rbacCSV, err := i.reflectArgoCSV(ctx, tenant, translators)
-	if err != nil {
-		return err
-	}
-
-	// Update existing configmap with new csv
+	// Initialize target configmap
 	configmap := &corev1.ConfigMap{}
 	err = i.Client.Get(ctx, client.ObjectKey{
 		Name:      i.Settings.Get().ArgoCD.RBACConfigMap,
@@ -185,10 +215,29 @@ func (i *TenancyController) reflectArgoRBAC(
 		return err
 	}
 
-	if !reflect.DeepEqual(configmap.Data[utils.ArgoPolicyName(tenant)], rbacCSV) {
+	// Empty Translators, attempt to remove the tenant from the configmap
+	if len(translators) == 0 {
+		if _, ok := configmap.Data[argo.ArgoPolicyName(tenant)]; ok {
+			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, configmap, func() error {
+				delete(configmap.Data, argo.ArgoPolicyName(tenant))
+
+				return nil
+			})
+			return err
+		}
+	}
+
+	// Generate Argo RBAC permissions
+	rbacCSV, err := i.reflectArgoCSV(ctx, tenant, translators)
+	if err != nil {
+		return err
+	}
+
+	// Apply the CSV to the configmap
+	if !reflect.DeepEqual(configmap.Data[argo.ArgoPolicyName(tenant)], rbacCSV) {
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() (conflictErr error) {
 			_, conflictErr = controllerutil.CreateOrUpdate(ctx, i.Client, configmap, func() error {
-				configmap.Data[utils.ArgoPolicyName(tenant)] = rbacCSV
+				configmap.Data[argo.ArgoPolicyName(tenant)] = rbacCSV
 
 				return nil
 			})
@@ -215,7 +264,7 @@ func (i *TenancyController) reflectArgoCSV(
 	roles := utils.GetClusterRolePermissions(tenant)
 
 	// Add Default Policies for App-Project
-	sb.WriteString(argoDefaultPolicies(tenant))
+	sb.WriteString(argo.DefaultPolicies(tenant))
 
 	// Iterate over the translators custom CSV and append them
 	for _, translator := range translators {
@@ -228,7 +277,7 @@ func (i *TenancyController) reflectArgoCSV(
 
 			// Create Argo Policy
 			for _, pol := range argopolicy.Policies {
-				sb.WriteString(argoPolicyString(roleName, tenant, pol))
+				sb.WriteString(argo.PolicyString(roleName, tenant.Name, pol))
 			}
 
 			// Assign Users/Groups
@@ -236,13 +285,12 @@ func (i *TenancyController) reflectArgoCSV(
 			for _, clusterRole := range argopolicy.ClusterRoles {
 				if val, ok := roles[clusterRole]; ok {
 					for _, subject := range val {
-						sb.WriteString(argoAssignString(subject, roleName))
+						sb.WriteString(argo.BindingString(subject, roleName))
 
 						// Assign Access to the tenant
+						sb.WriteString(argo.BindingString(subject, argo.DefaultPolicyReadOnly(tenant)))
 						if argopolicy.Owner {
-							sb.WriteString(argoAssignString(subject, argoDefaultPolicyOwner(tenant)))
-						} else {
-							sb.WriteString(argoAssignString(subject, argoDefaultPolicyReadOnly(tenant)))
+							sb.WriteString(argo.BindingString(subject, argo.DefaultPolicyOwner(tenant)))
 						}
 					}
 				}
@@ -271,96 +319,11 @@ func (i *TenancyController) reflectArgoCSV(
 
 	finalCSV := buf.String()
 
-	if err := i.isValidArgoCSV(finalCSV); err != nil {
+	if err := argo.ValidateCSV(finalCSV); err != nil {
 		return "", errors.New("invalid argo csv: " + err.Error())
 	}
 
 	return finalCSV, nil
-}
-
-// Converts the ArgoCD Project Policy Definition to a string (common argo)
-func argoPolicyString(role string, tenant *capsulev1beta2.Tenant, argopolicy addonsv1alpha1.ArgocdPolicyDefinition) string {
-	var result string
-
-	for _, action := range argopolicy.Action {
-		// Accumulate each formatted string into the result
-		result += fmt.Sprintf(
-			"p, %s,%s,%s,%s/%s,%s\n",
-			role,                // Project name
-			argopolicy.Resource, // Resource (enum)
-			action,              // Action (enum)
-			tenant.Name,         // Tenant name
-			argopolicy.Path,     // Path (enum)
-			argopolicy.Verb,     // Verb (enum)
-		)
-	}
-
-	return result
-}
-
-// Adds Default Policies (So Users can have basic interractions with the project)
-func argoDefaultPolicies(tenant *capsulev1beta2.Tenant) string {
-	var result string
-
-	// Read-Only Policy
-	result += fmt.Sprintf(
-		"p, %s,projects,get,%s,allow\np, %s,clusters,get,%s/*,allow\n",
-		argoDefaultPolicyReadOnly(tenant), // Project name
-		tenant.Name,                       // Project name
-		argoDefaultPolicyReadOnly(tenant), // Project name
-		tenant.Name,                       // Project name
-	)
-	// Owner Policy
-	result += fmt.Sprintf(
-		"p, %s,projects,get,%s,allow\n",
-		argoDefaultPolicyOwner(tenant), // Project name
-		tenant.Name,                    // Project name
-	)
-	result += fmt.Sprintf(
-		"p, %s,projects,update,%s,allow\n",
-		argoDefaultPolicyOwner(tenant), // Project name
-		tenant.Name,                    // Project name
-	)
-
-	return result
-}
-
-func argoDefaultPolicyAny(tenant *capsulev1beta2.Tenant) string {
-	return fmt.Sprintf("role:%s:owner", tenant.Name)
-}
-
-func argoDefaultPolicyOwner(tenant *capsulev1beta2.Tenant) string {
-	return fmt.Sprintf("role:%s:owner", tenant.Name)
-}
-
-func argoDefaultPolicyReadOnly(tenant *capsulev1beta2.Tenant) string {
-	return fmt.Sprintf("role:%s:read-only", tenant.Name)
-}
-
-func argoAssignString(subject v1.Subject, role string) string {
-	return fmt.Sprintf(
-		"g, %s, %s\n",
-		subject.Name,
-		role,
-	)
-}
-
-// Validates the ArgoCD RBAC CSV
-func (i *TenancyController) isValidArgoCSV(csv string) error {
-	return rbac.ValidatePolicy(csv)
-}
-
-func projectHasDestination(appProject *argocdv1alpha1.AppProject, newDestination argocdv1alpha1.ApplicationDestination) bool {
-	// Check if the destination already exists
-	exists := false
-	for _, dest := range appProject.Spec.Destinations {
-		if dest.Name == newDestination.Name && dest.Namespace == newDestination.Namespace && dest.Server == newDestination.Server {
-			exists = true
-			break
-		}
-	}
-
-	return exists
 }
 
 //func (i *TenancyController) argoPolicyTranslator(ctx context.Context, tenant *capsulev1beta2.Tenant, translators []v1alpha1.TenantTranslator) (roles []argocdv1alpha1.ProjectRole, err error) {
