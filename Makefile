@@ -54,14 +54,16 @@ generate: controller-gen
 
 apidocs: TARGET_DIR      := $(shell mktemp -d)
 apidocs: apidocs-gen generate
-	$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/content/posts/reference.md --template docs/crds.tmpl
+	$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/content/docs/reference/reference.md --template docs/crds.tmpl
 
 
 ####################
 # -- Docker
 ####################
 
+KO_PLATFORM     ?= linux/$(GOARCH)
 KOCACHE         ?= /tmp/ko-cache
+KO_REGISTRY     := ko.local
 KO_TAGS         ?= "latest"
 ifdef VERSION
 KO_TAGS         := $(KO_TAGS),$(VERSION)
@@ -81,7 +83,7 @@ LD_FLAGS        := "-X main.Version=$(VERSION) \
 ko-build-controller: ko
 	@echo Building Controller $(FULL_IMG) - $(KO_TAGS) >&2
 	@LD_FLAGS=$(LD_FLAGS) KOCACHE=$(KOCACHE) KO_DOCKER_REPO=$(FULL_IMG) \
-		$(KO) build ./cmd/ --bare --tags=$(KO_TAGS) --push=false --local
+		$(KO) build ./cmd/ --bare --tags=$(KO_TAGS) --push=false --local --platform=$(KO_PLATFORM)
 
 .PHONY: ko-build-all
 ko-build-all: ko-build-controller
@@ -125,10 +127,10 @@ helm-lint: docker
 	@docker run -v "$(SRC_ROOT):/workdir" --entrypoint /bin/sh quay.io/helmpack/chart-testing:$(CT_VERSION) -c "cd /workdir; ct lint --config .github/configs/ct.yaml  --lint-conf .github/configs/lintconf.yaml  --all --debug"
 
 helm-test: helm-controller-version kind ct ko-build-all
-	@kind create cluster --wait=60s --name ct-helm-svc-ingress-propagator
-	@kind load docker-image --name ct-helm-svc-ingress-propagator $(FULL_IMG):$(VERSION)
+	@$(KIND) create cluster --wait=60s --name ct-helm-svc-ingress-propagator
+	@$(KIND) load docker-image --name ct-helm-svc-ingress-propagator $(FULL_IMG):$(VERSION)
 	@ct install --config $(SRC_ROOT)/.github/configs/ct.yaml --all --debug
-	@kind delete cluster --name ct-helm-svc-ingress-propagator
+	@$(KIND) delete cluster --name ct-helm-svc-ingress-propagator
 
 docker:
 	@hash docker 2>/dev/null || {\
@@ -141,12 +143,15 @@ docker:
 ####################
 K3S_CLUSTER ?= "capsule-addons"
 
-e2e-build/%:
-	kind create cluster --wait=60s --name $(K3S_CLUSTER) --image=kindest/node:$*
+e2e-build/%: kind
+	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --image=kindest/node:$*
 	$(MAKE) e2e-install
 
-e2e-destroy:
-	$(KIND)  delete cluster --name $(K3S_CLUSTER)
+e2e-exec: ginkgo
+	$(GINKGO) -r -v ./e2e
+
+e2e-destroy: kind
+	$(KIND) delete cluster --name $(K3S_CLUSTER)
 
 e2e-install: e2e-install-argocd e2e-install-certmanager e2e-install-capsule e2e-install-addon
 

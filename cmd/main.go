@@ -37,6 +37,7 @@ import (
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/argo"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/config"
+	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	//+kubebuilder:scaffold:imports
@@ -134,10 +135,22 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Settings: store,
 	}).SetupWithManager(ctx, mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Addon")
+		setupLog.Error(err, "unable to create controller", "controller", "Tenant")
 		os.Exit(1)
 	}
 	setupLog.Info("tenant-controller initialized")
+
+	if err = (&translator.TranslatorController{
+		Client:   mgr.GetClient(),
+		Log:      ctrl.Log.WithName("controllers").WithName("Translator"),
+		Recorder: mgr.GetEventRecorderFor("translator-controller"),
+		Scheme:   mgr.GetScheme(),
+		Settings: store,
+	}).SetupWithManager(ctx, mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Translator")
+		os.Exit(1)
+	}
+	setupLog.Info("translator-controller initialized")
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

@@ -4,9 +4,11 @@ kind: Tenant
 metadata:
   name: solar
   labels:
-    app.kubernetes.io/type: dev
+    app.kubernetes.io/type: test
     hello: "there"
     nyan: "dann"
+  annotations:
+    argocd.addons.projectcapsule.dev/read-only: "true"
 spec:
   owners:
   - name: solar-users
@@ -24,7 +26,7 @@ kind: Tenant
 metadata:
   name: wind
   labels:
-    app.kubernetes.io/type: dev
+    app.kubernetes.io/type: prod
 spec:
   owners:
   - name: wind-users
@@ -40,6 +42,8 @@ metadata:
     app.kubernetes.io/type: dev
     hello: "there"
     nyan: "dann"
+  annotations:
+    argocd.addons.projectcapsule.dev/read-only: "true"
 spec:
   owners:
   - name: solar-users

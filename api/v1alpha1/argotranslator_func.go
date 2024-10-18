@@ -23,22 +23,57 @@ import (
 	"text/template"
 
 	"dario.cat/mergo"
-	"gopkg.in/yaml.v3"
+	"github.com/peak-scale/capsule-argo-addon/internal/utils"
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
+
+// Get Combined Configuration from structured and Template
+//func (t *ArgocdProjectProperties) GetAppProjectSpec(
+//	data interface{},
+//	funcmap template.FuncMap,
+//) (props argocdapi.AppProjectSpec, err error) {
+//	props, err = t.GetConfig(data, funcmap)
+//	if err != nil {
+//		return
+//	}
+//
+//	props = &argocdapi.AppProjectSpec{
+//
+//
+//}
 
 // Get Combined Configuration from structured and Template
 func (t *ArgocdProjectProperties) GetConfig(
 	data interface{},
 	funcmap template.FuncMap,
 ) (props ArgocdProjectStructuredProperties, err error) {
-	properties, err := t.RenderTemplate(data, funcmap)
+	props = t.Structured
+
+	// Get Templated config
+	templated, err := t.RenderTemplate(data, funcmap)
+	if err != nil {
+		return props, fmt.Errorf("error executing template: %w", err)
+	}
+
+	// Use mergo.Merge to merge prop2 into merged (prop1), with overwrite enabled
+	err = mergo.Merge(&props, templated, mergo.WithAppendSlice)
+
+	return
+}
+
+// Get Combined Configuration from structured and Template
+func (t *ArgocdProjectProperties) GetConfigs(
+	data interface{},
+	funcmap template.FuncMap,
+) (structured ArgocdProjectStructuredProperties, templated ArgocdProjectStructuredProperties, err error) {
+	structured = t.Structured
+
+	// Get Templated config
+	templated, err = t.RenderTemplate(data, funcmap)
 	if err != nil {
 		fmt.Println("Error rendering template:", err)
 		return
 	}
-
-	// Merge the structured properties with the template properties
-	props, err = MergeStructuredProperties(t.Structured, *properties)
 
 	return
 }
@@ -47,58 +82,61 @@ func (t *ArgocdProjectProperties) GetConfig(
 func (t *ArgocdProjectProperties) RenderTemplate(
 	data interface{},
 	funcmap template.FuncMap,
-) (*ArgocdProjectStructuredProperties, error) {
+) (ArgocdProjectStructuredProperties, error) {
+	var structuredProperties ArgocdProjectStructuredProperties
 	// Parse and execute the template using sprig functions
 	tmpl, err := template.New("argoTemplate").Funcs(funcmap).Parse(t.Template)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing template: %w", err)
+		return structuredProperties, fmt.Errorf("error parsing template: %w", err)
 	}
 
 	var rendered bytes.Buffer
 	err = tmpl.Execute(&rendered, data)
 	if err != nil {
-		return nil, fmt.Errorf("error executing template: %w", err)
+		return structuredProperties, fmt.Errorf("error executing template: %w", err)
 	}
 
 	yamlBytes := rendered.Bytes()
-	jsonBytes, err := yamlToJSON(yamlBytes)
+	jsonBytes, err := utils.YamlToJSON(yamlBytes)
 	if err != nil {
-		return nil, fmt.Errorf("error converting yaml to json: %w", err)
+		return structuredProperties, fmt.Errorf("error converting yaml to json: %w", err)
 	}
 
-	var structuredProperties ArgocdProjectStructuredProperties
 	err = json.Unmarshal(jsonBytes, &structuredProperties)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling json: %w", err)
+		return structuredProperties, fmt.Errorf("error unmarshaling json: %w", err)
 	}
 
-	return &structuredProperties, nil
+	return structuredProperties, nil
 }
 
-// Merge two properties
-func MergeStructuredProperties(prop1, prop2 ArgocdProjectStructuredProperties) (ArgocdProjectStructuredProperties, error) {
-	merged := prop1
-
-	// Use mergo.Merge to merge prop2 into merged (prop1), with overwrite enabled
-	if err := mergo.Merge(&merged, prop2, mergo.WithOverride); err != nil {
-		return ArgocdProjectStructuredProperties{}, err
-	}
-
-	return merged, nil
+// Assign Tenants to the ArgoTranslator
+func (in *ArgoTranslator) GetTenants() []string {
+	return in.Status.Tenants
 }
 
-func yamlToJSON(yamlBytes []byte) ([]byte, error) {
-	var yamlObj interface{}
-	err := yaml.Unmarshal(yamlBytes, &yamlObj)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling yaml: %w", err)
+// Assign Tenants to the ArgoTranslator
+func (in *ArgoTranslator) AssignTenant(tnt *capsulev1beta2.Tenant) {
+	// Check if already present
+	for _, t := range in.Status.Tenants {
+		if t == tnt.GetName() {
+			return
+		}
 	}
 
-	// Convert the YAML object to JSON
-	jsonBytes, err := json.Marshal(yamlObj)
-	if err != nil {
-		return nil, fmt.Errorf("error marshaling to json: %w", err)
+	in.Status.Tenants = append(in.Status.Tenants, tnt.GetName())
+	in.Status.Size = uint(len(in.Status.Tenants))
+}
+
+// Removes a tenant from the ArgoTranslator Status
+func (in *ArgoTranslator) UnassignTenant(tnt *capsulev1beta2.Tenant) {
+	var tnts []string
+	for _, t := range in.Status.Tenants {
+		if t != tnt.GetName() {
+			tnts = append(tnts, t)
+		}
 	}
 
-	return jsonBytes, nil
+	in.Status.Tenants = tnts
+	in.Status.Size = uint(len(in.Status.Tenants))
 }

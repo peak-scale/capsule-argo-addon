@@ -72,10 +72,10 @@ type ArgocdProjectProperties struct {
 
 type ArgocdProjectStructuredProperties struct {
 	// Project Metadata
-	ProjectMeta ArgocdProjectPropertieMeta `json:"meta,inline"`
+	ProjectMeta ArgocdProjectPropertieMeta `json:"meta,omitempty"`
 
 	// Application Project Spec (Upstream ArgoCD)
-	ProjectSpec argocdv1alpha1.AppProjectSpec `json:"spec,inline"`
+	ProjectSpec argocdv1alpha1.AppProjectSpec `json:"spec,omitempty"`
 }
 
 type ArgocdProjectStructuredPropertiesOld struct {

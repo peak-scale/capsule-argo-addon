@@ -24,6 +24,8 @@ import (
 type ArgoTranslatorStatus struct {
 	// List of tenants selected by this translator
 	Tenants []string `json:"tenants,omitempty"`
+	// Amount of tenants selected by this translator
+	Size uint `json:"size,omitempty"`
 	// Conditions represent the latest available observations of an object's state
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }

@@ -5,5 +5,5 @@ import (
 )
 
 func ArgoPolicyName(tenant *capsulev1beta2.Tenant) string {
-	return "policy." + tenant.Name + ".csv"
+	return "policy." + TenantProjectName(tenant) + ".csv"
 }

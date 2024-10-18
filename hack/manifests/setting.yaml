@@ -7,13 +7,23 @@ spec:
     matchLabels:
       app.kubernetes.io/type: dev
   settings:
+    structured:
+      spec:
+        permitOnlyProjectScopedClusters: false
+        destinations:
+          - name: "my-structure"
+            namespace: "sad-namespace"
+        clusterResourceWhitelist:
+          - group: "dao"
+            kind: "meow"
     template: |
-        meta:
+      meta:
         labels:
             hello: "baka"
         annotations:
           some-annotation: "value"
-          spec:
+      spec:
+        description: {{ $.Config.ArgoCD.Namespace | quote }}
         destinations:
           - name: "my-cluster"
             namespace: "my-namespace"
@@ -23,6 +33,13 @@ spec:
         namespaceResourceWhitelist:
           - group: "*"
             kind: "ConfigMap"
+        sourceNamespaces:
+        - {{ $.Config.ArgoCD.Namespace | quote }}
+        {{- range $_, $value := $.Tenant.Namespaces }}
+        - {{ $value | quote }}
+        {{- end }}
+
+
   roles:
   # This creates the baseline role. All users with the cluster-role "admin" will be able to access all repositories
   - name: "baseline"

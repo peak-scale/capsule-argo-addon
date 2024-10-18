@@ -34,7 +34,7 @@ type ArgoAddonSpec struct {
 
 	// Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used.
 	// +optional
-	TranslatorSelector metav1.LabelSelector `json:"translatorSelector,omitempty"`
+	TranslatorSelector *metav1.LabelSelector `json:"translatorSelector,omitempty"`
 }
 
 // Controller Configuration for ArgoCD
