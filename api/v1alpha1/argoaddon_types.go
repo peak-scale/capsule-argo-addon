@@ -30,7 +30,7 @@ type ArgoAddonSpec struct {
 
 	// ArgoCD configuration
 	// +kubebuilder:default={namespace: argocd, rbacConfigMap: argocd-rbac-cm}
-	ArgoCD ControllerArgoCDConfig `json:"argo,omitempty"`
+	Argo ControllerArgoCDConfig `json:"argo,omitempty"`
 
 	// Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used.
 	// +optional

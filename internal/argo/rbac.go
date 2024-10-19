@@ -52,32 +52,14 @@ func BindingString(subject v1.Subject, role string) string {
 }
 
 // Adds Default Policies (So Users can have basic interractions with the project)
-func DefaultPolicies(tenant *capsulev1beta2.Tenant) (result string) {
+func DefaultPolicies(tenant *capsulev1beta2.Tenant, clusterPermission bool) (result string) {
 	// Read-Only Policy
 	result += PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "clusters",
-			Action:   []string{"get"},
-			Verb:     "allow",
-			Path:     "*",
-		})
-	result += PolicyString(DefaultPolicyReadOnly(tenant),
-		tenant.Name,
-		addonsv1alpha1.ArgocdPolicyDefinition{
 			Resource: "projects",
 			Action:   []string{"get"},
 			Verb:     "allow",
-		})
-
-	// Project Editor
-	result += PolicyString(DefaultPolicyOwner(tenant),
-		tenant.Name,
-		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "clusters",
-			Action:   []string{"update"},
-			Verb:     "allow",
-			Path:     "*",
 		})
 
 	result += PolicyString(DefaultPolicyOwner(tenant),
@@ -87,6 +69,25 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant) (result string) {
 			Action:   []string{"update"},
 			Verb:     "allow",
 		})
+
+	if clusterPermission {
+		result += PolicyString(DefaultPolicyReadOnly(tenant),
+			tenant.Name,
+			addonsv1alpha1.ArgocdPolicyDefinition{
+				Resource: "clusters",
+				Action:   []string{"get"},
+				Verb:     "allow",
+				Path:     "*",
+			})
+		result += PolicyString(DefaultPolicyOwner(tenant),
+			tenant.Name,
+			addonsv1alpha1.ArgocdPolicyDefinition{
+				Resource: "clusters",
+				Action:   []string{"update"},
+				Verb:     "allow",
+				Path:     "*",
+			})
+	}
 
 	return result
 }

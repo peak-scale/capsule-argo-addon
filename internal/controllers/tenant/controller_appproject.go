@@ -29,7 +29,7 @@ import (
 // Creates or updates the ArgoCD Application Project for the tenant
 func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.Logger, tenant *capsulev1beta2.Tenant, translators []*v1alpha1.ArgoTranslator) (err error) {
 	// Collect Service-Account
-	token, err := i.reconcileArgoServiceAccount(ctx, tenant)
+	token, err := i.reconcileArgoServiceAccount(ctx, log, tenant)
 	if err != nil {
 		return err
 	}
@@ -44,12 +44,12 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 	appProject := &argocdv1alpha1.AppProject{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      utils.TenantProjectName(tenant),
-			Namespace: i.Settings.Get().ArgoCD.Namespace,
+			Namespace: i.Settings.Get().Argo.Namespace,
 		},
 	}
 
 	// Fetch the current state of the AppProject
-	gerr := i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().ArgoCD.Namespace}, appProject)
+	gerr := i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().Argo.Namespace}, appProject)
 	if gerr != nil && !k8serrors.IsNotFound(gerr) {
 		return gerr
 	}
@@ -67,7 +67,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		}
 	}
 	// Fetch the current state of the AppProject
-	err = i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().ArgoCD.Namespace}, appProject)
+	err = i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().Argo.Namespace}, appProject)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -164,24 +164,9 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		// Couple oder Decouple the AppProject
 
 		// Check if tenant is being deleted (Remove owner reference)
-		if utils.TenantDecoupleProject(tenant) {
-			ownerRefs := appProject.GetOwnerReferences()
-
-			// Unset blockerOwnerDeletion and controller
-			for i, ownerRef := range ownerRefs {
-				// Check if the owner reference matches the tenant
-				if ownerRef.UID == tenant.UID {
-					// Unset blockOwnerDeletion and controller fields
-					ownerRefs[i].BlockOwnerDeletion = nil
-					ownerRefs[i].Controller = nil
-
-					log.V(5).Info("removing controller and blockOwnerDeletion, but keeping owner reference", "project", appProject)
-					appProject.SetOwnerReferences(ownerRefs)
-				}
-			}
-		} else {
-			log.V(5).Info("adding controller reference", "project", appProject)
-			return controllerutil.SetControllerReference(tenant, appProject, i.Client.Scheme())
+		log.V(5).Info("ensuring ownerreference", appProject)
+		if err := i.DynamicOwnerReference(ctx, appProject, tenant); err != nil {
+			return err
 		}
 
 		return nil
@@ -196,7 +181,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		return err
 	}
 
-	log.V(5).Info("reflected argo permissions", "configmap", i.Settings.Get().ArgoCD.RBACConfigMap, "namespace", i.Settings.Get().ArgoCD.Namespace, "key", argo.ArgoPolicyName(tenant))
+	log.V(5).Info("reflected argo permissions", "configmap", i.Settings.Get().Argo.RBACConfigMap, "namespace", i.Settings.Get().Argo.Namespace, "key", argo.ArgoPolicyName(tenant))
 	return nil
 }
 
@@ -209,8 +194,8 @@ func (i *TenancyController) reflectArgoRBAC(
 	// Initialize target configmap
 	configmap := &corev1.ConfigMap{}
 	err = i.Client.Get(ctx, client.ObjectKey{
-		Name:      i.Settings.Get().ArgoCD.RBACConfigMap,
-		Namespace: i.Settings.Get().ArgoCD.Namespace}, configmap)
+		Name:      i.Settings.Get().Argo.RBACConfigMap,
+		Namespace: i.Settings.Get().Argo.Namespace}, configmap)
 	if err != nil {
 		return err
 	}
@@ -264,7 +249,7 @@ func (i *TenancyController) reflectArgoCSV(
 	roles := utils.GetClusterRolePermissions(tenant)
 
 	// Add Default Policies for App-Project
-	sb.WriteString(argo.DefaultPolicies(tenant))
+	sb.WriteString(argo.DefaultPolicies(tenant, i.provisionProxyService(ctx, tenant)))
 
 	// Iterate over the translators custom CSV and append them
 	for _, translator := range translators {

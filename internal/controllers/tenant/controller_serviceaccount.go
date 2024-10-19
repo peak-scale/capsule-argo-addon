@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,7 @@ import (
 // Creates Teanant Service Account with the given name and namespace
 func (i *TenancyController) reconcileArgoServiceAccount(
 	ctx context.Context,
+	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
 ) (token string, err error) {
 
@@ -37,7 +39,8 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		},
 	}
 
-	if !i.Settings.Get().Proxy.Enabled || !utils.TenantProxyRegister(tenant) {
+	// Remove ServiceAccount if not enabled
+	if i.provisionProxyService(ctx, tenant) {
 		err := i.Client.Delete(ctx, accountResource)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
@@ -53,11 +56,11 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		}
 		accountResource.ObjectMeta.Labels = utils.TranslatorTrackingLabels(tenant)
 
-		if utils.TenantDecoupleProject(tenant) && controllerutil.HasControllerReference(accountResource) {
-			return controllerutil.RemoveControllerReference(tenant, accountResource, i.Client.Scheme())
+		if err := i.DynamicOwnerReference(ctx, accountResource, tenant); err != nil {
+			return err
 		}
 
-		return controllerutil.SetControllerReference(tenant, accountResource, i.Client.Scheme())
+		return nil
 
 	})
 	if err != nil {

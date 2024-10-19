@@ -55,11 +55,25 @@ func TestDefaultPolicies(t *testing.T) {
 		},
 	}
 
-	expectedResult := "p, role:test-tenant:read-only,clusters,get,test-tenant/*,allow\n" +
-		"p, role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
-		"p, role:test-tenant:owner,clusters,update,test-tenant/*,allow\n" +
+	expectedResult := "p, role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
+		"p, role:test-tenant:owner,projects,update,test-tenant,allow\n" +
+		"p, role:test-tenant:read-only,clusters,get,test-tenant/*,allow\n" +
+		"p, role:test-tenant:owner,clusters,update,test-tenant/*,allow\n"
+
+	result := DefaultPolicies(tenant, true)
+	assert.Equal(t, expectedResult, result, "DefaultPolicies should return correct default policies")
+}
+
+func TestDefaultPoliciesNoProxy(t *testing.T) {
+	tenant := &capsulev1beta2.Tenant{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-tenant",
+		},
+	}
+
+	expectedResult := "p, role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
 		"p, role:test-tenant:owner,projects,update,test-tenant,allow\n"
 
-	result := DefaultPolicies(tenant)
+	result := DefaultPolicies(tenant, false)
 	assert.Equal(t, expectedResult, result, "DefaultPolicies should return correct default policies")
 }

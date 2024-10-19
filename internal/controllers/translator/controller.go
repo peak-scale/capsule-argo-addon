@@ -108,7 +108,7 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 		approject := &argocdapi.AppProject{}
 		err = i.Client.Get(ctx, client.ObjectKey{
 			Name:      utils.TenantProjectName(tenant),
-			Namespace: i.Settings.Get().ArgoCD.Namespace,
+			Namespace: i.Settings.Get().Argo.Namespace,
 		}, approject)
 		if err != nil {
 			return err

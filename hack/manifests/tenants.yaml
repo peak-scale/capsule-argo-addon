@@ -45,6 +45,7 @@ metadata:
     nyan: "dann"
   annotations:
     argo.addons.projectcapsule.dev/read-only: "false"
+    argo.addons.projectcapsule.dev/decouple: "true"
 spec:
   owners:
   - name: solar-users

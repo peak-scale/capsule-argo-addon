@@ -41,7 +41,8 @@ func (i *TenancyController) SetupWithManager(ctx context.Context, mgr ctrl.Manag
 		Owns(&corev1.ServiceAccount{}).
 		Owns(&corev1.Secret{}).
 		Owns(&corev1.Service{}).
-		Owns(&argocdapi.AppProject{}).
+		//Owns(&argocdapi.AppProject{}).
+		Watches(&argocdapi.AppProject{}, handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &capsulev1beta2.Tenant{})).
 		// Whenever a translator is updated, we need to reconcile all tenants
 		Watches(&configv1alpha1.ArgoTranslator{},
 			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
@@ -238,8 +239,8 @@ func (i *TenancyController) lifecycle(tenant *capsulev1beta2.Tenant, ctx context
 
 		configmap := &corev1.ConfigMap{}
 		err := i.Client.Get(ctx, client.ObjectKey{
-			Name:      i.Settings.Get().ArgoCD.RBACConfigMap,
-			Namespace: i.Settings.Get().ArgoCD.Namespace},
+			Name:      i.Settings.Get().Argo.RBACConfigMap,
+			Namespace: i.Settings.Get().Argo.Namespace},
 			configmap,
 		)
 		if err != nil {

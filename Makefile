@@ -54,7 +54,7 @@ generate: controller-gen
 
 apidocs: TARGET_DIR      := $(shell mktemp -d)
 apidocs: apidocs-gen generate
-	$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/content/docs/reference/reference.md --template docs/crds.tmpl
+	$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/reference.md --template ./crds.tmpl
 
 
 ####################

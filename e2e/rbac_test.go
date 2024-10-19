@@ -16,19 +16,41 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 )
 
-var _ = Describe("Tenant Labels, Annotations & Finalizers", func() {
+var _ = Describe("Argo RBAC Reflection", func() {
 	argoaddon := &v1alpha1.ArgoAddon{}
 
 	// Create a Translator for all the tests
 	translator1 := &v1alpha1.ArgoTranslator{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "test-annotations-1",
+			Name:   "test-rbac-1",
 			Labels: e2eLabels,
 		},
 		Spec: v1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/type": "prod",
+				},
+			},
+			ProjectRoles: []v1alpha1.ArgocdProjectRolesTranslator{
+				{
+					Name: "viewer",
+					Policies: []v1alpha1.ArgocdPolicyDefinition{
+						{
+							Resource: "applications",
+							Action:   []string{"get", "update", "delete"},
+							Verb:     "allow",
+						},
+					},
+				},
+				{
+					Name: "owner",
+					Policies: []v1alpha1.ArgocdPolicyDefinition{
+						{
+							Resource: "repositories",
+							Action:   []string{"*"},
+							Verb:     "allow",
+						},
+					},
 				},
 			},
 		},

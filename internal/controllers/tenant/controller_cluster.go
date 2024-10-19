@@ -23,7 +23,7 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 	serverSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      tenant.Name,
-			Namespace: i.Settings.Get().ArgoCD.Namespace,
+			Namespace: i.Settings.Get().Argo.Namespace,
 		},
 		Type: corev1.SecretTypeOpaque,
 	}
@@ -32,7 +32,7 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 	cluster, _ := i.proxyService(ctx, tenant)
 
 	// Remove Cluster-Secret if not enabled. Token is deleted cascading via OwnerReference
-	if !i.Settings.Get().Proxy.Enabled || !utils.TenantProxyRegister(tenant) {
+	if i.provisionProxyService(ctx, tenant) {
 		err := i.Client.Delete(ctx, serverSecret)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
@@ -41,7 +41,7 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 	}
 
 	if token == "" {
-		return "", fmt.Errorf("no token provided")
+		return "", fmt.Errorf("no token provided from service-account")
 	}
 
 	// Create Cluster-Secret
@@ -125,7 +125,11 @@ func (i *TenancyController) proxyService(ctx context.Context, tenant *capsulev1b
 		// Replicate the proxy service selector
 		service.Spec.Selector = proxySvc.Spec.Selector
 
-		return controllerutil.SetOwnerReference(tenant, service, i.Client.Scheme())
+		if err := i.DynamicOwnerReference(ctx, service, tenant); err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
 		return "", err

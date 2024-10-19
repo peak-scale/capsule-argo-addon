@@ -89,7 +89,7 @@ func (in *ArgoAddonList) DeepCopyObject() runtime.Object {
 func (in *ArgoAddonSpec) DeepCopyInto(out *ArgoAddonSpec) {
 	*out = *in
 	out.Proxy = in.Proxy
-	out.ArgoCD = in.ArgoCD
+	out.Argo = in.Argo
 	if in.TranslatorSelector != nil {
 		in, out := &in.TranslatorSelector, &out.TranslatorSelector
 		*out = new(v1.LabelSelector)
