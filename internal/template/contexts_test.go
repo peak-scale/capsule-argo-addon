@@ -2,6 +2,7 @@ package template
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"testing"
 	"text/template"
@@ -18,18 +19,16 @@ func TestRenderTemplateAndUnmarshal(t *testing.T) {
 	// Define your YAML template
 	yamlTemplate := `
 tenant:
-  name: "{{ .tenant.name }}"
+  name: "{{ .Tenant.Name }}"
   namespaces:
-  {{- range .tenant.namespaces }}
+  {{- range .Tenant.Namespaces }}
     - {{ . }}
   {{- end }}
-    - {{ .config.argocd.namespace }}
+    - {{ .Config.Argo.Namespace }}
 config:
-  proxy: {{- toYaml .config.proxy | nindent 4 }}
+  proxy: {{- toYaml .Config.Proxy | nindent 4 }}
   argocd:
-    namespace: "{{ .config.argo.namespace }}"
-complete: {{ .Config | toYaml | nindent 2 }}
-
+    namespace: "{{ .Config.Argo.Namespace }}"
 `
 
 	// Source the context (Mocking the required structs)
@@ -45,7 +44,7 @@ complete: {{ .Config | toYaml | nindent 2 }}
 		Proxy: v1alpha1.ControllerCapsuleProxyConfig{
 			Enabled: true,
 		},
-		ArgoCD: v1alpha1.ControllerArgoCDConfig{
+		Argo: v1alpha1.ControllerArgoCDConfig{
 			Namespace: "argocd-namespace",
 		},
 	}, &capsulev1beta2.Tenant{
@@ -97,12 +96,23 @@ complete: {{ .Config | toYaml | nindent 2 }}
 				"argocd-namespace",
 			},
 		},
-		"Config": map[string]interface{}{
+		"config": map[string]interface{}{
+			"proxy": map[string]interface{}{
+				"Enabled":                      true,
+				"CapsuleProxyServiceName":      "",
+				"CapsuleProxyServicePort":      0,
+				"CapsuleProxyServiceNamespace": "",
+				"ServiceAccountNamespace":      "",
+			},
+
 			"argocd": map[string]interface{}{
 				"namespace": "argocd-namespace",
 			},
 		},
 	}
+
+	fmt.Printf("Expected: %#v\n", expectedMap)
+	fmt.Printf("Got: %#v\n", renderedMap)
 
 	// Deep check the result against the expected map
 	if !reflect.DeepEqual(renderedMap, expectedMap) {

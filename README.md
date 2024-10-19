@@ -3,7 +3,7 @@
 
 # Capsule ❤️ Argo
 
-![Argo Capsule Addon](docs/static/images/capsule-argo.png)
+![Argo Capsule Addon](docs/images/capsule-argo.png)
 
 
 This addon is designed for kubernetes administrators, to automatically translate their existing Capsule Tenants into Argo Appprojects. This addon adds new capabilities to the Capsule project, by allowing the administrator to create a new tenant in Capsule, and automatically create a new Argo Appproject for that tenant. This addon is designed to be used in conjunction with the Capsule project, and is not intended to be used as a standalone project.
@@ -19,7 +19,7 @@ The project's goal is to create a very generic experience for administrators. We
 
 ## Documentation
 
-See the [Documentation](docs/overview.md) for more information on how to use this addon.
+See the [Documentation](docs/README.md) for more information on how to use this addon.
 
 ## License
 

@@ -78,7 +78,13 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// Finalize Dependencies
+	log.V(5).Info("reconciling addons")
+	err := i.reconcile(ctx, log, origin)
+	if err != nil {
+		log.Error(err, "reconcile error")
+		return ctrl.Result{}, nil
+	}
+
 	if !origin.ObjectMeta.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(origin, utils.ControllerFinalizer) {
 			log.V(5).Info("finalizing tenant")
@@ -91,13 +97,6 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 		return ctrl.Result{
 			Requeue: false,
 		}, nil
-	}
-
-	log.V(5).Info("reconciling addons")
-	err := i.reconcile(ctx, log, origin)
-	if err != nil {
-		log.Error(err, "reconcile error")
-		return ctrl.Result{}, nil
 	}
 
 	if !controllerutil.ContainsFinalizer(origin, utils.ControllerFinalizer) {

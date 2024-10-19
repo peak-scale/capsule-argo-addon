@@ -54,7 +54,52 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		return gerr
 	}
 
-	// Lifecycle Approject
+	// Lifecycle Approject (If marked for deletion remove finalizers)
+	if !appProject.ObjectMeta.DeletionTimestamp.IsZero() {
+		log.V(5).Info("removing finalizers", "appproject", appProject.Name)
+		_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
+			for _, translator := range translators {
+				if controllerutil.ContainsFinalizer(appProject, translatorctl.TranslatorFinalizer(translator)) {
+					controllerutil.RemoveFinalizer(appProject, translatorctl.TranslatorFinalizer(translator))
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// Handle when the tenant is being deleted but the AppProject is decoupled
+	// In this case we remove the owner reference and the tenant tracking label so the Appproject can still exist
+	if tenant.ObjectMeta.DeletionTimestamp != nil && utils.TenantDecoupleProject(tenant) {
+		log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
+		_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
+			// Remove any Translator References
+			for _, translator := range translators {
+				if controllerutil.ContainsFinalizer(appProject, translatorctl.TranslatorFinalizer(translator)) {
+					controllerutil.RemoveFinalizer(appProject, translatorctl.TranslatorFinalizer(translator))
+				}
+			}
+
+			// Remove References to origin Tenant
+			if err := i.DynamicRemoveOwnerReference(ctx, appProject, tenant); err != nil {
+				return err
+			}
+
+			// Remove tenant tracking label
+			appProject.Labels = utils.TranslatorRemoveTenantLabels(appProject.GetLabels())
+
+			return nil
+		})
+
+		return nil
+	}
+
+	// Lifecycle Approject (If no translators are present, remove the Approject)
 	if len(translators) == 0 {
 		// Approject is already absent
 		if k8serrors.IsNotFound(gerr) {
@@ -64,15 +109,15 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		// Delete the AppProject when it's not decoupled
 		if !utils.TenantDecoupleProject(tenant) {
 			return i.Client.Delete(ctx, appProject)
+		} else {
+			// Remove References to origin Tenant
+			if err := i.DynamicRemoveOwnerReference(ctx, appProject, tenant); err != nil {
+				return err
+			}
 		}
 	}
-	// Fetch the current state of the AppProject
-	err = i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().Argo.Namespace}, appProject)
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
 
-	log.Info("reconciling argo project", "project", appProject)
+	log.Info("reconcile appproject", "appproject", appProject.Name)
 
 	_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
 		// Prepare metadata
@@ -95,9 +140,9 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 			if err != nil {
 				return err
 			}
-			log.V(7).Info("translator-config", "structured", cfg1, "templated", cfg2)
+			log.V(7).Info("translator-config", "appproject", appProject.Name, "structured", cfg1, "templated", cfg2)
 
-			log.V(7).Info("translator-config", "config", translatorCfg.ProjectSpec)
+			log.V(7).Info("translator-config", "appproject", appProject.Name, "config", translatorCfg.ProjectSpec)
 
 			// Use mergo to merge non-empty fields from translatorCfg.ProjectSpec into appProject.Spec
 			err = mergo.Merge(translatedSpec, translatorCfg.ProjectSpec)
@@ -123,15 +168,15 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 			}
 		}
 
-		log.V(7).Info("combined translators config", "config", translatedSpec)
+		log.V(7).Info("combined translators config", "appproject", appProject.Name, "config", translatedSpec)
 
 		//// Merge the translatedSpec into the appProject.Spec
 		if utils.TenantReadOnly(tenant) {
-			log.V(5).Info("overwriting appproject")
+			log.V(5).Info("overwriting spec", "appproject", appProject.Name)
 			// Overwrite translatedSpec into the appProject.Spec
 			appProject.Spec = *translatedSpec
 		} else {
-			log.V(5).Info("combining appproject")
+			log.V(5).Info("merging spec")
 			// Merge with current Spec
 			err = mergo.Merge(&appProject.Spec, translatedSpec, mergo.WithOverride)
 			if err != nil {
@@ -150,13 +195,13 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		// Add the proxy destination when the proxy is enabled and there are translators
 		case i.Settings.Get().Proxy.Enabled && len(translators) > 0:
 			if !argo.ProjectHasDestination(appProject, proxyDestination) {
-				log.V(5).Info("adding proxy destination")
+				log.V(5).Info("adding proxy destination", "appproject", appProject.Name)
 				appProject.Spec.Destinations = append(appProject.Spec.Destinations, proxyDestination)
 			}
 		// Remove the proxy destination
 		default:
 			if argo.ProjectHasDestination(appProject, proxyDestination) {
-				log.V(5).Info("removing proxy destination")
+				log.V(5).Info("removing proxy destination", "appproject", appProject.Name)
 				argo.RemoveProjectDestination(appProject, proxyDestination)
 			}
 		}
@@ -164,7 +209,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		// Couple oder Decouple the AppProject
 
 		// Check if tenant is being deleted (Remove owner reference)
-		log.V(5).Info("ensuring ownerreference", appProject)
+		log.V(5).Info("ensuring ownerreference", "appproject", appProject.Name)
 		if err := i.DynamicOwnerReference(ctx, appProject, tenant); err != nil {
 			return err
 		}
@@ -181,7 +226,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		return err
 	}
 
-	log.V(5).Info("reflected argo permissions", "configmap", i.Settings.Get().Argo.RBACConfigMap, "namespace", i.Settings.Get().Argo.Namespace, "key", argo.ArgoPolicyName(tenant))
+	log.V(5).Info("reflected argo permissions", "appproject", appProject.Name, "configmap", i.Settings.Get().Argo.RBACConfigMap, "namespace", i.Settings.Get().Argo.Namespace, "key", argo.ArgoPolicyName(tenant))
 	return nil
 }
 
@@ -310,21 +355,3 @@ func (i *TenancyController) reflectArgoCSV(
 
 	return finalCSV, nil
 }
-
-//func (i *TenancyController) argoPolicyTranslator(ctx context.Context, tenant *capsulev1beta2.Tenant, translators []v1alpha1.TenantTranslator) (roles []argocdv1alpha1.ProjectRole, err error) {
-//	// Iterate over the translators
-//	for _, translator := range translators {
-//		for i, translatorMap := range *translator.ProjectRoles {
-//			role := &argocdv1alpha1.ProjectRole{
-//				Name: tenant.Name + "-" + translatorMap.Name + "-" + strconv.Itoa(i),
-//			}
-//
-//			// Translate the policies
-//			var policies []string
-//			for _, pol := range translatorMap.Policies {
-//				policies = append(policies, argoPolicyString(tenant, translator, pol))
-//			}
-//			role.Policies = policies
-//		}
-//	}
-//}

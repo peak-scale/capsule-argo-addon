@@ -80,6 +80,12 @@ func TranslatorTrackingLabels(tenant *capsulev1beta2.Tenant) map[string]string {
 	return labels
 }
 
+func TranslatorRemoveTenantLabels(labels map[string]string) map[string]string {
+	delete(labels, ManagedTenantLabel)
+
+	return labels
+}
+
 // Common Labels for tracking resources provisioned by this controller
 func TrackingLabels() map[string]string {
 	return map[string]string{

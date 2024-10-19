@@ -41,6 +41,24 @@ var tntSolar = &capsulev1beta2.Tenant{
 						Kind: "User",
 						Name: "bob",
 					},
+					{
+						Name: "solar-users",
+						Kind: "Group",
+					},
+				},
+			},
+
+			{
+				ClusterRoleName: "tenant-operators",
+				Subjects: []rbacv1.Subject{
+					{
+						Kind: "User",
+						Name: "gatsby",
+					},
+					{
+						Name: "operators",
+						Kind: "Group",
+					},
 				},
 			},
 		},
@@ -73,7 +91,11 @@ var tntOil = &capsulev1beta2.Tenant{
 						Name: "bob",
 					},
 					{
-						Name: "solar-users",
+						Name: "oil-users",
+						Kind: "Group",
+					},
+					{
+						Name: "operators",
 						Kind: "Group",
 					},
 				},

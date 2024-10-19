@@ -12,6 +12,11 @@ import (
 // Add Ownerreference, which does not cascade a deletion of the tenant
 // Also considers Decoupling from the tenant
 func (i *TenancyController) DynamicOwnerReference(ctx context.Context, obj client.Object, tenant *capsulev1beta2.Tenant) (err error) {
+	err = controllerutil.SetControllerReference(tenant, obj, i.Client.Scheme())
+	if err != nil {
+		return
+	}
+
 	if utils.TenantDecoupleProject(tenant) {
 		ownerRefs := obj.GetOwnerReferences()
 		// Remove blockOwnerDeletion and controller only if they are currently set
@@ -29,11 +34,29 @@ func (i *TenancyController) DynamicOwnerReference(ctx context.Context, obj clien
 		if needsUpdate {
 			obj.SetOwnerReferences(ownerRefs)
 		}
-	} else {
-		return controllerutil.SetControllerReference(tenant, obj, i.Client.Scheme())
 	}
 
 	return nil
+}
+
+// Remove an OwnerReference from an object from a tenant
+func (i *TenancyController) DynamicRemoveOwnerReference(ctx context.Context, obj client.Object, tenant *capsulev1beta2.Tenant) (err error) {
+	ownerRefs := obj.GetOwnerReferences()
+	// Remove blockOwnerDeletion and controller only if they are currently set
+	needsUpdate := false
+	for i, ownerRef := range ownerRefs {
+		if ownerRef.UID == tenant.UID {
+			ownerRefs = append(ownerRefs[:i], ownerRefs[i+1:]...)
+			needsUpdate = true
+			break
+		}
+	}
+	if needsUpdate {
+		obj.SetOwnerReferences(ownerRefs)
+	}
+
+	return nil
+
 }
 
 // Determines if the proxy service should be registered

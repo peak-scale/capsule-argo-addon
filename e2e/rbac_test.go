@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bsm/gomega"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 
-	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
+	"github.com/peak-scale/capsule-argo-addon/internal/argo"
 )
 
 var _ = Describe("Argo RBAC Reflection", func() {
@@ -33,7 +34,50 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			},
 			ProjectRoles: []v1alpha1.ArgocdProjectRolesTranslator{
 				{
-					Name: "viewer",
+					Name:         "viewer",
+					ClusterRoles: []string{"tenant-viewer"},
+					Policies: []v1alpha1.ArgocdPolicyDefinition{
+						{
+							Resource: "applications",
+							Action:   []string{"get", "update", "delete"},
+							Verb:     "allow",
+						},
+					},
+				},
+				{
+					Name:         "owner",
+					ClusterRoles: []string{"admin"},
+					Policies: []v1alpha1.ArgocdPolicyDefinition{
+						{
+							Resource: "repositories",
+							Action:   []string{"*"},
+							Verb:     "allow",
+						},
+					},
+					Owner: true,
+				},
+			},
+		},
+	}
+	translator2 := &v1alpha1.ArgoTranslator{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "test-rbac-2",
+			Labels: e2eLabels,
+		},
+		Spec: v1alpha1.ArgoTranslatorSpec{
+			Selector: &metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "app.kubernetes.io/type",
+						Operator: metav1.LabelSelectorOpIn,
+						Values:   []string{"dev", "prod"},
+					},
+				},
+			},
+
+			ProjectRoles: []v1alpha1.ArgocdProjectRolesTranslator{
+				{
+					Name: "operators",
 					Policies: []v1alpha1.ArgocdPolicyDefinition{
 						{
 							Resource: "applications",
@@ -55,32 +99,15 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			},
 		},
 	}
-	translator2 := &v1alpha1.ArgoTranslator{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "test-annotations-2",
-			Labels: e2eLabels,
-		},
-		Spec: v1alpha1.ArgoTranslatorSpec{
-			Selector: &metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "app.kubernetes.io/type",
-						Operator: metav1.LabelSelectorOpIn,
-						Values:   []string{"dev", "prod"},
-					},
-				},
-			},
-		},
-	}
 
 	// Create Tenants
 	solar := tntSolar
+	solar.Name = "solar-rbac-e2e"
 	solar.Labels["app.kubernetes.io/type"] = "dev"
-	solar.Annotations = map[string]string{}
 
 	oil := tntOil
-	oil.Labels["app.kubernetes.io/type"] = "prod"
-	oil.Annotations = map[string]string{}
+	oil.Name = "oil-rbac-e2e"
+	oil.Labels["app.kubernetes.io/type"] = "dev"
 
 	JustBeforeEach(func() {
 		for _, tran := range []*v1alpha1.ArgoTranslator{translator1, translator2} {
@@ -122,8 +149,8 @@ var _ = Describe("Argo RBAC Reflection", func() {
 	})
 
 	// Test case for ensuring the tenant is created successfully
-	It("should add finalizers for matched translators", func() {
-		By("configuration alignment", func() {
+	It("Correctly Reflect Argo RBAC", func() {
+		By("set corresponding settings", func() {
 			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: "default"}, argoaddon)
 			argoaddon.Spec.TranslatorSelector = &metav1.LabelSelector{
 				MatchLabels: e2eLabels,
@@ -132,21 +159,20 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
 		})
 
-		By("appproject (solar)", func() {
-			approject := &argocdv1alpha1.AppProject{}
-			err := k8sClient.Get(context.Background(), client.ObjectKey{
-				Name:      solar.GetName(),
+		By("verify argo rbac permissions csv (solar)", func() {
+
+			configmap := &corev1.ConfigMap{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{
+				Name:      argoaddon.Spec.Argo.RBACConfigMap,
 				Namespace: argoaddon.Spec.Argo.Namespace,
-			}, approject)
-			Expect(err).ToNot(HaveOccurred())
+			}, configmap)).To(Succeed())
 
-			expectedProjectFinalizers := []string{
-				translator.TranslatorFinalizer(translator1),
-				translator.TranslatorFinalizer(translator2),
-			}
+			rbacSolar, ok := configmap.Data[argo.ArgoPolicyName(solar)]
+			Expect(ok).To(.BeTrue(), "RBAC CSV entry for solar is missing in ConfigMap")
 
-			for _, finalizer := range expectedProjectFinalizers {
-				Expect(approject.GetFinalizers()).To(ContainElement(finalizer), "Missing expected finalizer: %s", finalizer)
+			// Extract CSV
+			if rbacSolar, ok := configmap.Data[argo.ArgoPolicyName(solar)]; ok {
+
 			}
 		})
 
