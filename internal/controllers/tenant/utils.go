@@ -3,7 +3,7 @@ package tenant
 import (
 	"context"
 
-	"github.com/peak-scale/capsule-argo-addon/internal/utils"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -17,7 +17,7 @@ func (i *TenancyController) DynamicOwnerReference(ctx context.Context, obj clien
 		return
 	}
 
-	if utils.TenantDecoupleProject(tenant) {
+	if meta.TenantDecoupleProject(tenant) {
 		ownerRefs := obj.GetOwnerReferences()
 		// Remove blockOwnerDeletion and controller only if they are currently set
 		needsUpdate := false
@@ -65,7 +65,7 @@ func (i *TenancyController) provisionProxyService(ctx context.Context, tenant *c
 
 	// Check if the tenant is registered for the proxy
 	if i.Settings.Get().Proxy.Enabled {
-		if utils.TenantProxyRegister(tenant) {
+		if meta.TenantProxyRegister(tenant) {
 			provision = true
 		}
 	}

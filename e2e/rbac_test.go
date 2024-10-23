@@ -3,8 +3,8 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/bsm/gomega"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	addonsv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/argo"
 )
 
@@ -101,11 +102,11 @@ var _ = Describe("Argo RBAC Reflection", func() {
 	}
 
 	// Create Tenants
-	solar := tntSolar
+	solar := tntSolar.DeepCopy()
 	solar.Name = "solar-rbac-e2e"
 	solar.Labels["app.kubernetes.io/type"] = "dev"
 
-	oil := tntOil
+	oil := tntOil.DeepCopy()
 	oil.Name = "oil-rbac-e2e"
 	oil.Labels["app.kubernetes.io/type"] = "dev"
 
@@ -159,7 +160,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
 		})
 
-		By("verify argo rbac permissions csv (solar)", func() {
+		By("verify argo default rbac permissions csv (solar)", func() {
 
 			configmap := &corev1.ConfigMap{}
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{
@@ -168,11 +169,25 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			}, configmap)).To(Succeed())
 
 			rbacSolar, ok := configmap.Data[argo.ArgoPolicyName(solar)]
-			Expect(ok).To(.BeTrue(), "RBAC CSV entry for solar is missing in ConfigMap")
+			Expect(ok).To(BeTrue(), "RBAC CSV entry for solar is missing in ConfigMap")
 
-			// Extract CSV
-			if rbacSolar, ok := configmap.Data[argo.ArgoPolicyName(solar)]; ok {
+			// Define Which Lines we are expecting in the CSV
+			expectedLines := append(argo.DefaultPolicies(solar, true), []string{
+				argo.PolicyString(argo.TenantPolicy(solar, "viewer"),
+					solar.Name,
+					addonsv1alpha1.ArgocdPolicyDefinition{
+						Resource: "projects",
+						Action:   []string{"get"},
+						Verb:     "allow",
+					}),
+			}...)
 
+			// Extract lines from the actual CSV data
+			extractedLines := strings.Split(rbacSolar, "\n")
+
+			By("verifying each expected line exists in the extracted CSV")
+			for _, expectedLine := range expectedLines {
+				Expect(extractedLines).To(ContainElement(expectedLine), "missing expected CSV line: %s", expectedLine)
 			}
 		})
 

@@ -15,6 +15,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/argo"
 	translatorctl "github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -75,7 +76,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 
 	// Handle when the tenant is being deleted but the AppProject is decoupled
 	// In this case we remove the owner reference and the tenant tracking label so the Appproject can still exist
-	if tenant.ObjectMeta.DeletionTimestamp != nil && utils.TenantDecoupleProject(tenant) {
+	if tenant.ObjectMeta.DeletionTimestamp != nil && meta.TenantDecoupleProject(tenant) {
 		log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
 		_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
 			// Remove any Translator References
@@ -91,7 +92,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 			}
 
 			// Remove tenant tracking label
-			appProject.Labels = utils.TranslatorRemoveTenantLabels(appProject.GetLabels())
+			appProject.Labels = meta.TranslatorRemoveTenantLabels(appProject.GetLabels())
 
 			return nil
 		})
@@ -107,7 +108,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		}
 
 		// Delete the AppProject when it's not decoupled
-		if !utils.TenantDecoupleProject(tenant) {
+		if !meta.TenantDecoupleProject(tenant) {
 			return i.Client.Delete(ctx, appProject)
 		} else {
 			// Remove References to origin Tenant
@@ -121,7 +122,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 
 	_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
 		// Prepare metadata
-		appProject.ObjectMeta.Labels = utils.TranslatorTrackingLabels(tenant)
+		appProject.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
 		if appProject.ObjectMeta.Annotations == nil {
 			appProject.ObjectMeta.Annotations = make(map[string]string)
 		}
@@ -171,7 +172,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 		log.V(7).Info("combined translators config", "appproject", appProject.Name, "config", translatedSpec)
 
 		//// Merge the translatedSpec into the appProject.Spec
-		if utils.TenantReadOnly(tenant) {
+		if meta.TenantReadOnly(tenant) {
 			log.V(5).Info("overwriting spec", "appproject", appProject.Name)
 			// Overwrite translatedSpec into the appProject.Spec
 			appProject.Spec = *translatedSpec
@@ -291,10 +292,13 @@ func (i *TenancyController) reflectArgoCSV(
 	var sb strings.Builder
 
 	// Get Permissions for Tenant
-	roles := utils.GetClusterRolePermissions(tenant)
+	roles := tenant.
+		utils.GetClusterRolePermissions(tenant)
 
 	// Add Default Policies for App-Project
-	sb.WriteString(argo.DefaultPolicies(tenant, i.provisionProxyService(ctx, tenant)))
+	for _, dlts := range argo.DefaultPolicies(tenant, i.provisionProxyService(ctx, tenant)) {
+		sb.WriteString(dlts)
+	}
 
 	// Iterate over the translators custom CSV and append them
 	for _, translator := range translators {

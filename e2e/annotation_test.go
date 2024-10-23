@@ -52,11 +52,11 @@ var _ = Describe("Tenant Labels, Annotations & Finalizers", func() {
 	}
 
 	// Create Tenants
-	solar := tntSolar
+	solar := tntSolar.DeepCopy()
 	solar.Labels["app.kubernetes.io/type"] = "dev"
 	solar.Annotations = map[string]string{}
 
-	oil := tntOil
+	oil := tntOil.DeepCopy()
 	oil.Labels["app.kubernetes.io/type"] = "prod"
 	oil.Annotations = map[string]string{}
 

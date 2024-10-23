@@ -6,9 +6,9 @@ import (
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/reflection"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
-	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -47,14 +47,14 @@ func (i *TranslatorController) Reconcile(ctx context.Context, request ctrl.Reque
 
 	// Finalize Dependencies
 	if !origin.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.ContainsFinalizer(origin, utils.ControllerFinalizer) {
+		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 			log.V(5).Info("finalizing translator")
 			err := i.finalize(ctx, log, origin)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
 
-			controllerutil.RemoveFinalizer(origin, utils.ControllerFinalizer)
+			controllerutil.RemoveFinalizer(origin, meta.ControllerFinalizer)
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 				if err := i.Client.Update(ctx, origin); err != nil {
 					return err
@@ -73,8 +73,8 @@ func (i *TranslatorController) Reconcile(ctx context.Context, request ctrl.Reque
 		}, nil
 	}
 
-	if !controllerutil.ContainsFinalizer(origin, utils.ControllerFinalizer) {
-		controllerutil.AddFinalizer(origin, utils.ControllerFinalizer)
+	if !controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
+		controllerutil.AddFinalizer(origin, meta.ControllerFinalizer)
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 			if err := i.Client.Update(ctx, origin); err != nil {
 				return err
@@ -107,7 +107,7 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 		// Remove the approject from the tenant
 		approject := &argocdapi.AppProject{}
 		err = i.Client.Get(ctx, client.ObjectKey{
-			Name:      utils.TenantProjectName(tenant),
+			Name:      meta.TenantProjectName(tenant),
 			Namespace: i.Settings.Get().Argo.Namespace,
 		}, approject)
 		if err != nil {

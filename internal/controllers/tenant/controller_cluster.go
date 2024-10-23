@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-logr/logr"
-	"github.com/peak-scale/capsule-argo-addon/internal/utils"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,7 +47,7 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 	// Create Cluster-Secret
 	_, err := controllerutil.CreateOrUpdate(ctx, i.Client, serverSecret, func() error {
 		// Update secret metadata
-		serverSecret.Labels = utils.TranslatorTrackingLabels(tenant)
+		serverSecret.Labels = meta.TranslatorTrackingLabels(tenant)
 		serverSecret.Labels = map[string]string{
 			"argocd.argoproj.io/secret-type": "cluster",
 		}
@@ -91,7 +91,7 @@ func (i *TenancyController) proxyService(ctx context.Context, tenant *capsulev1b
 	}
 
 	// Validate if Proxy is enabled, lifeycle the service if not
-	if !i.Settings.Get().Proxy.Enabled || !utils.TenantProxyRegister(tenant) {
+	if !i.Settings.Get().Proxy.Enabled || !meta.TenantProxyRegister(tenant) {
 		err := i.Client.Delete(ctx, service)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
@@ -117,7 +117,7 @@ func (i *TenancyController) proxyService(ctx context.Context, tenant *capsulev1b
 
 	// Replicate a proxy service for the tenant
 	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, service, func() error {
-		service.Labels = utils.TranslatorTrackingLabels(tenant)
+		service.Labels = meta.TranslatorTrackingLabels(tenant)
 
 		// Replicate the proxy service ports
 		service.Spec.Ports = proxySvc.Spec.Ports

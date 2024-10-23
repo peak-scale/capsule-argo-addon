@@ -141,7 +141,7 @@ docker:
 ####################
 # -- Install E2E Tools
 ####################
-K3S_CLUSTER ?= "capsule-addons"
+K3S_CLUSTER ?= "capsule-argo-addon"
 
 e2e-build/%: kind
 	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --image=kindest/node:$*

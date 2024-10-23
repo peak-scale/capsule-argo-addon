@@ -8,8 +8,8 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/argo"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
-	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +86,7 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 	}
 
 	if !origin.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.ContainsFinalizer(origin, utils.ControllerFinalizer) {
+		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 			log.V(5).Info("finalizing tenant")
 			err := i.finalize(origin, ctx)
 			if err != nil {
@@ -99,8 +99,8 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 		}, nil
 	}
 
-	if !controllerutil.ContainsFinalizer(origin, utils.ControllerFinalizer) {
-		controllerutil.AddFinalizer(origin, utils.ControllerFinalizer)
+	if !controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
+		controllerutil.AddFinalizer(origin, meta.ControllerFinalizer)
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 			if err := i.Client.Update(ctx, origin); err != nil {
 				return err
@@ -224,17 +224,33 @@ func (i *TenancyController) aggregateConfigTranslators(allTranslators *v1alpha1.
 }
 
 func (i *TenancyController) finalize(tenant *capsulev1beta2.Tenant, ctx context.Context) error {
-	return i.lifecycle(tenant, ctx)
+	return i.lifecycle(ctx, tenant)
 }
 
 // Patch the tenant from the argocd configmap
-func (i *TenancyController) lifecycle(tenant *capsulev1beta2.Tenant, ctx context.Context) (err error) {
-	if !controllerutil.ContainsFinalizer(tenant, utils.ControllerFinalizer) {
+func (i *TenancyController) lifecycle(ctx context.Context, tenant *capsulev1beta2.Tenant) (err error) {
+	if !controllerutil.ContainsFinalizer(tenant, meta.ControllerFinalizer) {
 		return nil
 	}
 
 	// Update existing configmap with new csv
-	if !utils.TenantDecoupleProject(tenant) {
+	err = i.lifecycleArgo(ctx, tenant)
+
+	// Remove Finalizers after tenant
+	controllerutil.RemoveFinalizer(tenant, meta.ControllerFinalizer)
+	if err := i.Client.Update(ctx, tenant); err != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (i *TenancyController) lifecycleArgo(ctx context.Context, tenant *capsulev1beta2.Tenant) (err error) {
+	// Update existing configmap with new csv
+	if !meta.TenantDecoupleProject(tenant) {
 
 		configmap := &corev1.ConfigMap{}
 		err := i.Client.Get(ctx, client.ObjectKey{
@@ -255,15 +271,5 @@ func (i *TenancyController) lifecycle(tenant *capsulev1beta2.Tenant, ctx context
 			return err
 		}
 	}
-
-	// Remove Finalizers after tenant
-	controllerutil.RemoveFinalizer(tenant, utils.ControllerFinalizer)
-	if err := i.Client.Update(ctx, tenant); err != nil {
-		return err
-	}
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

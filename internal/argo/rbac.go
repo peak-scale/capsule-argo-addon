@@ -52,41 +52,41 @@ func BindingString(subject v1.Subject, role string) string {
 }
 
 // Adds Default Policies (So Users can have basic interractions with the project)
-func DefaultPolicies(tenant *capsulev1beta2.Tenant, clusterPermission bool) (result string) {
+func DefaultPolicies(tenant *capsulev1beta2.Tenant, clusterPermission bool) (result []string) {
 	// Read-Only Policy
-	result += PolicyString(DefaultPolicyReadOnly(tenant),
+	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
 			Resource: "projects",
 			Action:   []string{"get"},
 			Verb:     "allow",
-		})
+		}))
 
-	result += PolicyString(DefaultPolicyOwner(tenant),
+	result = append(result, PolicyString(DefaultPolicyOwner(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
 			Resource: "projects",
 			Action:   []string{"update"},
 			Verb:     "allow",
-		})
+		}))
 
 	if clusterPermission {
-		result += PolicyString(DefaultPolicyReadOnly(tenant),
+		result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 			tenant.Name,
 			addonsv1alpha1.ArgocdPolicyDefinition{
 				Resource: "clusters",
 				Action:   []string{"get"},
 				Verb:     "allow",
 				Path:     "*",
-			})
-		result += PolicyString(DefaultPolicyOwner(tenant),
+			}))
+		result = append(result, PolicyString(DefaultPolicyOwner(tenant),
 			tenant.Name,
 			addonsv1alpha1.ArgocdPolicyDefinition{
 				Resource: "clusters",
 				Action:   []string{"update"},
 				Verb:     "allow",
 				Path:     "*",
-			})
+			}))
 	}
 
 	return result
@@ -99,5 +99,10 @@ func DefaultPolicyOwner(tenant *capsulev1beta2.Tenant) string {
 
 // Default Policy for Tenant Read-Only
 func DefaultPolicyReadOnly(tenant *capsulev1beta2.Tenant) string {
+	return fmt.Sprintf("role:%s:read-only", tenant.Name)
+}
+
+// Default Policy for Tenant Read-Only
+func TenantPolicy(tenant *capsulev1beta2.Tenant, policyName string) string {
 	return fmt.Sprintf("role:%s:read-only", tenant.Name)
 }

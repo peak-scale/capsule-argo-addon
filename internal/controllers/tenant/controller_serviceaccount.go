@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/peak-scale/capsule-argo-addon/internal/utils"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,7 +28,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	namespace := i.Settings.Get().Proxy.ServiceAccountNamespace
 
 	// Verify if ServiceAccount-Namespace is declared on tenant-basis
-	if ns := utils.TenantServiceAccountNamespace(tenant); ns != "" {
+	if ns := meta.TenantServiceAccountNamespace(tenant); ns != "" {
 		namespace = ns
 	}
 
@@ -54,7 +54,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		if accountResource.ObjectMeta.Labels == nil {
 			accountResource.ObjectMeta.Labels = make(map[string]string)
 		}
-		accountResource.ObjectMeta.Labels = utils.TranslatorTrackingLabels(tenant)
+		accountResource.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
 
 		if err := i.DynamicOwnerReference(ctx, accountResource, tenant); err != nil {
 			return err
@@ -77,7 +77,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 
 	// Create Account Token
 	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tokenResource, func() (err error) {
-		tokenResource.ObjectMeta.Labels = utils.TranslatorTrackingLabels(tenant)
+		tokenResource.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
 
 		if tokenResource.ObjectMeta.Annotations == nil {
 			tokenResource.ObjectMeta.Annotations = make(map[string]string)
