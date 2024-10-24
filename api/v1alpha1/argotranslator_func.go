@@ -129,10 +129,10 @@ func (in *ArgoTranslator) AssignTenant(tnt *capsulev1beta2.Tenant) {
 }
 
 // Removes a tenant from the ArgoTranslator Status
-func (in *ArgoTranslator) UnassignTenant(tnt *capsulev1beta2.Tenant) {
+func (in *ArgoTranslator) UnassignTenant(tnt string) {
 	var tnts []string
 	for _, t := range in.Status.Tenants {
-		if t != tnt.GetName() {
+		if t != tnt {
 			tnts = append(tnts, t)
 		}
 	}

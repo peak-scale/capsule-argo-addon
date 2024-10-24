@@ -5,6 +5,7 @@ import (
 
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -22,6 +23,18 @@ func GetTranslatingFinalizers(obj client.Object) (translators []string) {
 	for _, finalizer := range obj.GetFinalizers() {
 		if strings.HasPrefix(finalizer, FinalizerPrefix) {
 			translators = append(translators, strings.TrimPrefix(finalizer, FinalizerPrefix))
+		}
+	}
+
+	return
+}
+
+// Get all translators based on their finalizer
+func RemoveTranslatingFinalizers(obj client.Object) (translators []string) {
+	// Iterate over the finalizers and check if any contain the specified prefix
+	for _, finalizer := range obj.GetFinalizers() {
+		if strings.HasPrefix(finalizer, FinalizerPrefix) {
+			controllerutil.RemoveFinalizer(obj, finalizer)
 		}
 	}
 

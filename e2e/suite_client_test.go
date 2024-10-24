@@ -12,7 +12,7 @@ type e2eClient struct {
 }
 
 func (e *e2eClient) sleep() {
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 }
 
 func (e *e2eClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
@@ -34,6 +34,7 @@ func (e *e2eClient) Create(ctx context.Context, obj client.Object, opts ...clien
 }
 
 func (e *e2eClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	defer e.sleep()
 
 	return e.Client.Delete(ctx, obj, opts...)
 }
@@ -51,6 +52,7 @@ func (e *e2eClient) Patch(ctx context.Context, obj client.Object, patch client.P
 }
 
 func (e *e2eClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
+	defer e.sleep()
 
 	return e.Client.DeleteAllOf(ctx, obj, opts...)
 }

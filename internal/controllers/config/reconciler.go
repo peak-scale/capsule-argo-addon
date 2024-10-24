@@ -133,7 +133,7 @@ func (r *ConfigReconciler) reconcile(
 	log.V(5).Info("Validated settings", "settings", origin.Spec)
 
 	// Update the store with the new configuration
-	r.Store.Update(origin.Spec)
+	r.Store.Update(&origin.Spec)
 
 	// Update the status with the new configuration
 	//origin.Status.Config = origin.Spec.DeepCopy().Config

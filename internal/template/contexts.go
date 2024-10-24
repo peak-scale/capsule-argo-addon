@@ -6,7 +6,7 @@ import (
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
-func ConfigContext(cluster string, translator *v1alpha1.ArgoTranslator, config v1alpha1.ArgoAddonSpec, tenant *capsulev1beta2.Tenant) interface{} {
+func ConfigContext(cluster string, translator *v1alpha1.ArgoTranslator, config *v1alpha1.ArgoAddonSpec, tenant *capsulev1beta2.Tenant) interface{} {
 
 	ctx := map[string]interface{}{
 		"Tenant": map[string]interface{}{

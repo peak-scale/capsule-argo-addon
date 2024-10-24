@@ -87,23 +87,25 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 
 	// Handle when the tenant is being deleted but the AppProject is decoupled
 	// In this case we remove the owner reference and the tenant tracking label so the Appproject can still exist
-	if tenant.ObjectMeta.DeletionTimestamp != nil && meta.TenantDecoupleProject(tenant) {
-		log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
+	if tenant.ObjectMeta.DeletionTimestamp != nil {
+		log.V(5).Info("removing translators", "appproject", appProject.Name)
 		_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
 			// Remove any Translator References
 			for _, translator := range translators {
-				if controllerutil.ContainsFinalizer(appProject, translatorctl.TranslatorFinalizer(translator)) {
-					controllerutil.RemoveFinalizer(appProject, translatorctl.TranslatorFinalizer(translator))
+				if err := translatorctl.RemoveTranslatorForTenant(ctx, i.Client, log, translator, tenant, appProject, i.Settings); err != nil {
+					return err
 				}
 			}
+			if meta.TenantDecoupleProject(tenant) {
+				log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
+				// Remove References to origin Tenant
+				if err := i.DynamicRemoveOwnerReference(ctx, appProject, tenant); err != nil {
+					return err
+				}
 
-			// Remove References to origin Tenant
-			if err := i.DynamicRemoveOwnerReference(ctx, appProject, tenant); err != nil {
-				return err
+				// Remove tenant tracking label
+				appProject.Labels = meta.TranslatorRemoveTenantLabels(appProject.GetLabels())
 			}
-
-			// Remove tenant tracking label
-			appProject.Labels = meta.TranslatorRemoveTenantLabels(appProject.GetLabels())
 
 			return nil
 		})

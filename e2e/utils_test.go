@@ -49,6 +49,48 @@ func cleanResources(res []client.Object, selector labels.Selector) (err error) {
 	return nil
 }
 
+func CleanTranslators(selector labels.Selector) error {
+	res := &v1alpha1.ArgoTranslatorList{}
+
+	listOptions := client.ListOptions{
+		LabelSelector: selector,
+	}
+
+	// List the resources based on the provided label selector
+	if err := k8sClient.List(context.TODO(), res, &listOptions); err != nil {
+		return fmt.Errorf("failed to list translators: %w", err)
+	}
+
+	for _, app := range res.Items {
+		if err := k8sClient.Delete(context.TODO(), &app); err != nil {
+			return fmt.Errorf("failed to delete translator %s: %w", app.GetName(), err)
+		}
+	}
+
+	return nil
+}
+
+func CleanTenants(selector labels.Selector) error {
+	res := &capsulev1beta2.TenantList{}
+
+	listOptions := client.ListOptions{
+		LabelSelector: selector,
+	}
+
+	// List the resources based on the provided label selector
+	if err := k8sClient.List(context.TODO(), res, &listOptions); err != nil {
+		return fmt.Errorf("failed to list tenants: %w", err)
+	}
+
+	for _, app := range res.Items {
+		if err := k8sClient.Delete(context.TODO(), &app); err != nil {
+			return fmt.Errorf("failed to delete tenant %s: %w", app.GetName(), err)
+		}
+	}
+
+	return nil
+}
+
 func CleanAppProjects(selector labels.Selector, namespace string) error {
 	res := &argocdv1alpha1.AppProjectList{}
 

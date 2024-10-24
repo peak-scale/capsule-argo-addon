@@ -8,6 +8,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/argo"
+	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -86,6 +87,23 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 	}
 
 	if !origin.ObjectMeta.DeletionTimestamp.IsZero() || len(translators) == 0 {
+		// Wait until all translators have finished
+		if len(translator.GetTranslatingFinalizers(origin)) == 0 {
+			if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
+				log.V(5).Info("finalizing tenant")
+				err := i.finalize(origin, ctx)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+
+			return ctrl.Result{
+				Requeue: false,
+			}, nil
+		}
+
+		log.V(5).Info("")
+
 		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 			log.V(5).Info("finalizing tenant")
 			err := i.finalize(origin, ctx)
@@ -166,7 +184,7 @@ func (i *TenancyController) reconcile(
 	for _, unmatched := range unmatchedTranslators {
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tenant.DeepCopy(), func() error {
-				unmatched.UnassignTenant(tenant)
+				unmatched.UnassignTenant(tenant.Name)
 
 				return i.Client.Status().Update(ctx, unmatched, &client.SubResourceUpdateOptions{})
 			})

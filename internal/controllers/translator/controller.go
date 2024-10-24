@@ -87,13 +87,43 @@ func (i *TranslatorController) Reconcile(ctx context.Context, request ctrl.Reque
 			if err != nil {
 				return ctrl.Result{}, err
 			}
-
 		}
+
 		// Stop reconciliation as the item is being deleted
 		return ctrl.Result{
 			Requeue: false,
 		}, nil
 	}
+
+	// Collect Tenants from Status and verify if they are still active
+	tnts := origin.GetTenants()
+	for _, tnt := range tnts {
+		tenant := &capsulev1beta2.Tenant{}
+		err := i.Client.Get(ctx, client.ObjectKey{
+			Name: tnt,
+		}, tenant)
+		// Remove unexisting tenants
+		if k8serrors.IsNotFound(err) {
+			log.V(5).Info("garbage collection", "tenant", tenant.Name)
+			origin.UnassignTenant(tnt)
+			continue
+		}
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Update Status if necessary
+	//err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+	//	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, origin, func() error {
+	//		return i.Client.Status().Update(ctx, origin, &client.SubResourceUpdateOptions{})
+	//	})
+	//
+	//	return
+	//})
+	//if err != nil {
+	//	return ctrl.Result{}, err
+	//}
 
 	if !controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 		controllerutil.AddFinalizer(origin, meta.ControllerFinalizer)
@@ -122,16 +152,8 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 		err := i.Client.Get(ctx, client.ObjectKey{
 			Name: tnt,
 		}, tenant)
-		if k8serrors.IsNotFound(err) {
-			continue
-		}
-		if err != nil {
+		if err != nil && !k8serrors.IsNotFound(err) {
 			return err
-		}
-
-		// if tenant is no longer managing an approject
-		if !controllerutil.ContainsFinalizer(tenant, meta.ControllerFinalizer) {
-			continue
 		}
 
 		// Remove the approject from the tenant
@@ -147,47 +169,13 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 			return err
 		}
 
-		// Remove the approject from the tenant
-		cfg, err := translator.Spec.ProjectSettings.GetConfig(
-			tpl.ConfigContext("", translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
-		if err != nil {
+		// if tenant is no longer managing an approject
+		//if !controllerutil.ContainsFinalizer(tenant, meta.ControllerFinalizer) {
+		//	continue
+		//}
+
+		if err := RemoveTranslatorForTenant(ctx, i.Client, log, translator, tenant, approject, i.Settings); err != nil {
 			return err
-		}
-
-		currentSpec := approject.Spec.DeepCopy()
-
-		reflection.Subtract(currentSpec, &cfg.ProjectSpec)
-
-		log.V(7).Info("finalized spec", "spec", currentSpec)
-		approject.Spec = *currentSpec
-
-		// Remove transformer labels from the approject
-		for key, value := range cfg.ProjectMeta.Labels {
-			if currentValue, ok := approject.Labels[key]; ok {
-				if currentValue == value {
-					delete(approject.Labels, key)
-				}
-			}
-		}
-
-		// Remove transformer annotations from the approject
-		for key, value := range cfg.ProjectMeta.Annotations {
-			if currentValue, ok := approject.Annotations[key]; ok {
-				if currentValue == value {
-					delete(approject.Annotations, key)
-				}
-			}
-		}
-
-		// Remove Finalizers from the approject
-		finalizers := append(cfg.ProjectMeta.Finalizers, TranslatorFinalizer(translator))
-		for _, finalizer := range finalizers {
-			if controllerutil.ContainsFinalizer(approject, finalizer) {
-				controllerutil.RemoveFinalizer(approject, finalizer)
-				if err != nil {
-					return err
-				}
-			}
 		}
 
 		err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
@@ -196,6 +184,63 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 		})
 		if err != nil {
 			return err
+		}
+
+	}
+
+	return nil
+}
+
+// Remove Translator for tenant
+func RemoveTranslatorForTenant(
+	ctx context.Context,
+	c client.Client,
+	log logr.Logger,
+	translator *configv1alpha1.ArgoTranslator,
+	tenant *capsulev1beta2.Tenant,
+	approject *argocdapi.AppProject,
+	settings *stores.ConfigStore,
+) error {
+
+	// Remove the approject from the tenant
+	cfg, err := translator.Spec.ProjectSettings.GetConfig(
+		tpl.ConfigContext("", translator, settings.Get(), tenant), tpl.ExtraFuncMap())
+	if err != nil {
+		return err
+	}
+
+	currentSpec := approject.Spec.DeepCopy()
+
+	reflection.Subtract(currentSpec, &cfg.ProjectSpec)
+
+	log.V(7).Info("finalized spec", "spec", currentSpec)
+	approject.Spec = *currentSpec
+
+	// Remove transformer labels from the approject
+	for key, value := range cfg.ProjectMeta.Labels {
+		if currentValue, ok := approject.Labels[key]; ok {
+			if currentValue == value {
+				delete(approject.Labels, key)
+			}
+		}
+	}
+	// Remove transformer annotations from the approject
+	for key, value := range cfg.ProjectMeta.Annotations {
+		if currentValue, ok := approject.Annotations[key]; ok {
+			if currentValue == value {
+				delete(approject.Annotations, key)
+			}
+		}
+	}
+
+	// Remove Finalizers from the approject
+	finalizers := append(cfg.ProjectMeta.Finalizers, TranslatorFinalizer(translator))
+	for _, finalizer := range finalizers {
+		if controllerutil.ContainsFinalizer(approject, finalizer) {
+			controllerutil.RemoveFinalizer(approject, finalizer)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

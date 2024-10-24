@@ -1,16 +1,12 @@
 package e2e_test
 
 import (
-	"context"
-
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/scheme"
 	"k8s.io/utils/ptr"
@@ -49,32 +45,10 @@ var _ = BeforeSuite(func() {
 
 	k8sClient = &e2eClient{Client: ctrlClient}
 
-	appprojects := &argocdv1alpha1.AppProjectList{}
-	err = k8sClient.List(context.TODO(), appprojects, &client.ListOptions{
-		Namespace: "argocd", // Or leave empty for cluster-scoped resources
-	})
-	Expect(err).ToNot(HaveOccurred())
-
-	// Cleanup anything left from previous tests (Relevant resources)
-	_ = []client.Object{
-		&v1alpha1.ArgoTranslator{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "argocd",
-			},
-		},
-		&argocdv1alpha1.AppProject{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "argocd",
-			},
-		},
-		&capsulev1beta2.Tenant{},
-	}
+	Expect(CleanTenants(e2eSelector())).ToNot(HaveOccurred())
+	Expect(CleanTranslators(e2eSelector())).ToNot(HaveOccurred())
 
 	Eventually(CleanAppProjects(e2eSelector(), "argocd"))
-
-	//Eventually(func() error {
-	//	return cleanResources(resourcesToClean, e2eSelector())
-	//}, defaultTimeoutInterval, defaultPollInterval).Should(Succeed())
 })
 
 var _ = AfterSuite(func() {

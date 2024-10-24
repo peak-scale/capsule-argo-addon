@@ -40,7 +40,7 @@ config:
 				},
 			},
 		},
-	}, v1alpha1.ArgoAddonSpec{
+	}, &v1alpha1.ArgoAddonSpec{
 		Proxy: v1alpha1.ControllerCapsuleProxyConfig{
 			Enabled: true,
 		},

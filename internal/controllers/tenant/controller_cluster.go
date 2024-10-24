@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/go-logr/logr"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
@@ -40,8 +39,9 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 		return "", nil
 	}
 
+	// No token was deliviered, maybe in a next run :/
 	if token == "" {
-		return "", fmt.Errorf("no token provided from service-account")
+		return "", nil
 	}
 
 	// Create Cluster-Secret
@@ -101,9 +101,9 @@ func (i *TenancyController) proxyService(ctx context.Context, log logr.Logger, t
 		}
 
 		// Return proxy service url
-		if !i.Settings.Get().Proxy.Enabled {
-			return i.proxyServiceName(tenant)
-		}
+		//if !i.Settings.Get().Proxy.Enabled {
+		//	return i.proxyServiceName(tenant)
+		//}
 
 		return "", nil
 
@@ -141,14 +141,5 @@ func (i *TenancyController) proxyService(ctx context.Context, log logr.Logger, t
 	i.Log.V(5).Info("Proxy Service created", "name", tenant.Name)
 
 	// Returns the proxy service url
-	return "https://" + replicatedName + "." +
-		i.Settings.Get().Proxy.CapsuleProxyServiceNamespace + ".svc:" +
-		strconv.Itoa(int(i.Settings.Get().Proxy.CapsuleProxyServicePort)), nil
-}
-
-// Resolve Proxy-Service for the tenant
-func (i *TenancyController) proxyServiceName(tenant *capsulev1beta2.Tenant) (url string, err error) {
-	return "https://" + i.Settings.Get().Proxy.CapsuleProxyServiceName + "." +
-		i.Settings.Get().Proxy.CapsuleProxyServiceNamespace + ".svc:" +
-		strconv.Itoa(int(i.Settings.Get().Proxy.CapsuleProxyServicePort)), nil
+	return i.Settings.Get().ProxyServiceString(tenant), nil
 }
