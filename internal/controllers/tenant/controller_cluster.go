@@ -29,10 +29,10 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 	}
 
 	// Handle the Proxy-Service for the tenant
-	cluster, _ := i.proxyService(ctx, tenant)
+	cluster, _ := i.proxyService(ctx, log, tenant)
 
 	// Remove Cluster-Secret if not enabled. Token is deleted cascading via OwnerReference
-	if i.provisionProxyService(ctx, tenant) {
+	if !i.provisionProxyService(tenant) {
 		err := i.Client.Delete(ctx, serverSecret)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
@@ -80,7 +80,7 @@ func (i *TenancyController) reconcileArgoCluster(ctx context.Context, log logr.L
 }
 
 // Proxy Service for the tenant
-func (i *TenancyController) proxyService(ctx context.Context, tenant *capsulev1beta2.Tenant) (url string, err error) {
+func (i *TenancyController) proxyService(ctx context.Context, log logr.Logger, tenant *capsulev1beta2.Tenant) (url string, err error) {
 	// Create a dedicated service for the tenant
 	replicatedName := tenant.Name
 	service := &corev1.Service{
@@ -90,11 +90,14 @@ func (i *TenancyController) proxyService(ctx context.Context, tenant *capsulev1b
 		},
 	}
 
+	log.V(7).Info("reconciling service", "service", replicatedName, "namespace", i.Settings.Get().Proxy.CapsuleProxyServiceNamespace)
+
 	// Validate if Proxy is enabled, lifeycle the service if not
-	if !i.Settings.Get().Proxy.Enabled || !meta.TenantProxyRegister(tenant) {
+	if !i.provisionProxyService(tenant) {
+		log.V(7).Info("lifecycling proxy service")
 		err := i.Client.Delete(ctx, service)
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
+			return "", fmt.Errorf("failed to lifecycle service: %w", err)
 		}
 
 		// Return proxy service url

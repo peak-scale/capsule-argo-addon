@@ -1,0 +1,10 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  annotations:
+    force: "true"
+  labels:
+    argo.addons.projectcapsule.dev/e2e: "true"
+  name: wind
+  namespace: argocd
+spec: {}

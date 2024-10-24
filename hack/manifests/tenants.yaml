@@ -52,6 +52,12 @@ spec:
     kind: Group
   - name: alice
     kind: User
+  additionalRoleBindings:
+  - clusterRoleName: tenant-viewer
+    subjects:
+    - name: bob
+      kind: User
+
 
 
 

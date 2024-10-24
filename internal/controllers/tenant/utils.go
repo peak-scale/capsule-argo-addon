@@ -60,14 +60,12 @@ func (i *TenancyController) DynamicRemoveOwnerReference(ctx context.Context, obj
 }
 
 // Determines if the proxy service should be registered
-func (i *TenancyController) provisionProxyService(ctx context.Context, tenant *capsulev1beta2.Tenant) (provision bool) {
+func (i *TenancyController) provisionProxyService(tenant *capsulev1beta2.Tenant) (provision bool) {
 	provision = false
 
 	// Check if the tenant is registered for the proxy
-	if i.Settings.Get().Proxy.Enabled {
-		if meta.TenantProxyRegister(tenant) {
-			provision = true
-		}
+	if i.Settings.Get().Proxy.Enabled && meta.TenantProxyRegister(tenant) {
+		provision = true
 	}
 
 	return

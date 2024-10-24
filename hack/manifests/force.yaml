@@ -1,0 +1,11 @@
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: solar-e2e-force
+  labels:
+    app.kubernetes.io/type: dev
+spec:
+  owners:
+  - name: solar-users
+    kind: Group

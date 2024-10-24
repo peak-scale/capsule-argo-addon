@@ -32,6 +32,8 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		namespace = ns
 	}
 
+	log.V(7).Info("reconciling serviceaccount", "serviceaccount", serviceAccount, "namespace", namespace)
+
 	accountResource := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      serviceAccount,
@@ -40,12 +42,19 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	}
 
 	// Remove ServiceAccount if not enabled
-	if i.provisionProxyService(ctx, tenant) {
+	if !i.provisionProxyService(tenant) {
+		log.V(7).Info("lifecycling serviceaccount")
 		err := i.Client.Delete(ctx, accountResource)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
 		}
 		return "", nil
+	}
+
+	// Add ServiceAccount to Tenant-Spec
+	err = i.addServiceAccountOwner(ctx, log, tenant, namespace, serviceAccount)
+	if err != nil {
+		return "", err
 	}
 
 	// Create ServiceAccount
@@ -105,11 +114,6 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 
 	token = string(t)
 
-	err = i.addServiceAccountOwner(ctx, tenant, namespace, serviceAccount)
-	if err != nil {
-		return "", err
-	}
-
 	i.Log.V(5).Info("SeriviceAccount created", "name", tenant.Name)
 
 	return
@@ -118,6 +122,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 // Adds the given service account as an owner to the tenant
 func (i *TenancyController) addServiceAccountOwner(
 	ctx context.Context,
+	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
 	namespace string,
 	name string,
@@ -130,12 +135,14 @@ func (i *TenancyController) addServiceAccountOwner(
 	// Check if the owner is already present
 	for _, o := range tenant.Spec.Owners {
 		if o.Kind == owner.Kind && o.Name == owner.Name {
+			log.V(5).Info("serviceaccount already owner")
 			return nil
 		}
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (conflict error) {
 		_ = i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant)
+		log.V(5).Info("adding serviceaccount as owner")
 
 		tenant.Spec.Owners = append(tenant.Spec.Owners, owner)
 		if conflict = i.Client.Update(ctx, tenant); err != nil {

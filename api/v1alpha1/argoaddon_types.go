@@ -25,7 +25,13 @@ import (
 
 // ArgoAddonSpec defines the desired state of ArgoAddon
 type ArgoAddonSpec struct {
+	// When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+	// and overwritten. When disabled the approjects will not be changed or adopted.
+	//+kubebuilder:default=false
+	Force bool `json:"force"`
+
 	// Capsule-Proxy configuration for the controller
+	//+kubebuilder:default={}
 	Proxy ControllerCapsuleProxyConfig `json:"proxy,omitempty"`
 
 	// ArgoCD configuration

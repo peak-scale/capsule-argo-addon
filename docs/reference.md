@@ -42,7 +42,9 @@ ArgoAddonSpec defines the desired state of ArgoAddon
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
 | **[argo](#argoaddonspecargo)** | object | ArgoCD configuration<br/><i>Default</i>: map[namespace:argocd rbacConfigMap:argocd-rbac-cm]<br/> | false |
-| **[proxy](#argoaddonspecproxy)** | object | Capsule-Proxy configuration for the controller | false |
+| **force** | boolean | When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+and overwritten. When disabled the approjects will not be changed or adopted.<br/><i>Default</i>: false<br/> | false |
+| **[proxy](#argoaddonspecproxy)** | object | Capsule-Proxy configuration for the controller<br/><i>Default</i>: map[]<br/> | false |
 | **[translatorSelector](#argoaddonspectranslatorselector)** | object | Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used. | false |
 
 
@@ -127,7 +129,9 @@ Last applied valid configuration
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
 | **[argo](#argoaddonstatusloadedargo)** | object | ArgoCD configuration<br/><i>Default</i>: map[namespace:argocd rbacConfigMap:argocd-rbac-cm]<br/> | false |
-| **[proxy](#argoaddonstatusloadedproxy)** | object | Capsule-Proxy configuration for the controller | false |
+| **force** | boolean | When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+and overwritten. When disabled the approjects will not be changed or adopted.<br/><i>Default</i>: false<br/> | false |
+| **[proxy](#argoaddonstatusloadedproxy)** | object | Capsule-Proxy configuration for the controller<br/><i>Default</i>: map[]<br/> | false |
 | **[translatorSelector](#argoaddonstatusloadedtranslatorselector)** | object | Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used. | false |
 
 

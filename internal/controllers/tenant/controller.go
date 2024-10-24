@@ -71,7 +71,7 @@ func (i *TenancyController) SetupWithManager(ctx context.Context, mgr ctrl.Manag
 func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	log := i.Log.WithValues("tenant", request.Name)
 
-	log.V(7).Info("effective configuration", "config", i.Settings.Get())
+	log.V(7).Info("controller configuration", "config", i.Settings.Get())
 
 	origin := &capsulev1beta2.Tenant{}
 	if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
@@ -79,13 +79,13 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 	}
 
 	log.V(5).Info("reconciling addons")
-	err := i.reconcile(ctx, log, origin)
+	translators, err := i.reconcile(ctx, log, origin)
 	if err != nil {
 		log.Error(err, "reconcile error")
 		return ctrl.Result{}, nil
 	}
 
-	if !origin.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !origin.ObjectMeta.DeletionTimestamp.IsZero() || len(translators) == 0 {
 		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 			log.V(5).Info("finalizing tenant")
 			err := i.finalize(origin, ctx)
@@ -118,33 +118,30 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 }
 
 // Reconcile all the assets
-func (i *TenancyController) reconcile(ctx context.Context, log logr.Logger, tenant *capsulev1beta2.Tenant) error {
+func (i *TenancyController) reconcile(
+	ctx context.Context,
+	log logr.Logger,
+	tenant *capsulev1beta2.Tenant,
+) (translators []*configv1alpha1.ArgoTranslator, err error) {
 	allTranslators := &v1alpha1.ArgoTranslatorList{}
 	if err := i.Client.List(context.Background(), allTranslators); err != nil {
-		return err
+		return nil, err
 	}
 
 	log.V(3).Info("available translators", "count", len(allTranslators.Items))
 
 	// Fetch Translators Applying to the Tenant
-	translators, unmatchedTranslators, err := i.aggregateConfigTranslators(allTranslators, tenant)
+	var unmatchedTranslators []*configv1alpha1.ArgoTranslator
+	translators, unmatchedTranslators, err = i.aggregateConfigTranslators(allTranslators, tenant)
 	log.V(3).Info("matched translators", "count", len(translators))
 	if err != nil {
-		return err
+		return translators, err
 	}
 
 	// Reconcile the Argo Assets
 	err = i.reconcileArgoProject(ctx, log, tenant, translators)
 	if err != nil {
-		return err
-	}
-
-	// Remove the lifecycle if there are no translators
-	if len(translators) == 0 {
-		//err = i.lifecycle(tenant, ctx)
-		//if err != nil {
-		//	return fmt.Errorf("failed to lifecycle translator: %w", err)
-		//}
+		return translators, err
 	}
 
 	// Update the tenant status
@@ -159,7 +156,7 @@ func (i *TenancyController) reconcile(ctx context.Context, log logr.Logger, tena
 			return
 		})
 		if err != nil {
-			return err
+			return translators, err
 		}
 	}
 
@@ -177,10 +174,10 @@ func (i *TenancyController) reconcile(ctx context.Context, log logr.Logger, tena
 			return
 		})
 		if err != nil {
-			return err
+			return translators, err
 		}
 	}
-	return nil
+	return translators, nil
 }
 
 // Selects all the translators from the configuration, which match the tenant's labels
@@ -209,6 +206,7 @@ func (i *TenancyController) aggregateConfigTranslators(allTranslators *v1alpha1.
 		var selector labels.Selector
 		selector, err = metav1.LabelSelectorAsSelector(translator.Spec.Selector)
 		if err != nil {
+
 			return
 		}
 

@@ -10,12 +10,15 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/reflection"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
@@ -34,6 +37,25 @@ type TranslatorController struct {
 func (i *TranslatorController) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1alpha1.ArgoTranslator{}).
+		// Reconcile when an appproject is directly deleted and may include non translated
+		// attributes, which should not be wiped.
+		Watches(&argocdapi.AppProject{},
+			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
+				// Based on finalizers get other finalizing translators
+				translators := GetTranslatingFinalizers(a)
+
+				var requests []reconcile.Request
+				for _, translator := range translators {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: types.NamespacedName{
+							Name: translator,
+						},
+					})
+				}
+
+				return requests
+			}),
+		).
 		Complete(i)
 }
 
@@ -100,8 +122,16 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 		err := i.Client.Get(ctx, client.ObjectKey{
 			Name: tnt,
 		}, tenant)
+		if k8serrors.IsNotFound(err) {
+			continue
+		}
 		if err != nil {
 			return err
+		}
+
+		// if tenant is no longer managing an approject
+		if !controllerutil.ContainsFinalizer(tenant, meta.ControllerFinalizer) {
+			continue
 		}
 
 		// Remove the approject from the tenant
@@ -110,6 +140,9 @@ func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, tr
 			Name:      meta.TenantProjectName(tenant),
 			Namespace: i.Settings.Get().Argo.Namespace,
 		}, approject)
+		if k8serrors.IsNotFound(err) {
+			continue
+		}
 		if err != nil {
 			return err
 		}

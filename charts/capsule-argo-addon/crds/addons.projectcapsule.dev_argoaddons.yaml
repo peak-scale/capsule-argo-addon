@@ -53,7 +53,14 @@ spec:
                       controller)
                     type: string
                 type: object
+              force:
+                default: false
+                description: |-
+                  When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+                  and overwritten. When disabled the approjects will not be changed or adopted.
+                type: boolean
               proxy:
+                default: {}
                 description: Capsule-Proxy configuration for the controller
                 properties:
                   enabled:
@@ -127,6 +134,8 @@ spec:
                     type: object
                 type: object
                 x-kubernetes-map-type: atomic
+            required:
+            - force
             type: object
           status:
             description: ArgoAddonStatus defines the observed state of ArgoAddon
@@ -148,7 +157,14 @@ spec:
                           the controller)
                         type: string
                     type: object
+                  force:
+                    default: false
+                    description: |-
+                      When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+                      and overwritten. When disabled the approjects will not be changed or adopted.
+                    type: boolean
                   proxy:
+                    default: {}
                     description: Capsule-Proxy configuration for the controller
                     properties:
                       enabled:
@@ -223,6 +239,8 @@ spec:
                         type: object
                     type: object
                     x-kubernetes-map-type: atomic
+                required:
+                - force
                 type: object
             type: object
         type: object

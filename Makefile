@@ -148,7 +148,7 @@ e2e-build/%: kind
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
-	$(GINKGO) -r -v ./e2e
+	$(GINKGO) -r -vv ./e2e
 
 e2e-destroy: kind
 	$(KIND) delete cluster --name $(K3S_CLUSTER)

@@ -11,38 +11,38 @@ spec:
         values:
           - dev
           - prod
-  #settings:
-  #  structured:
-  #    spec:
-  #      permitOnlyProjectScopedClusters: false
-  #      destinations:
-  #        - name: "my-structure"
-  #          namespace: "sad-namespace"
-  #      clusterResourceWhitelist:
-  #        - group: "dao"
-  #          kind: "meow"
-  #  template: |
-  #    meta:
-  #      labels:
-  #          hello: "baka"
-  #      annotations:
-  #        some-annotation: "value"
-  #    spec:
-  #      description: {{ $.Config.ArgoCD.Namespace | quote }}
-  #      destinations:
-  #        - name: "my-cluster"
-  #          namespace: "my-namespace"
-  #      clusterResourceWhitelist:
-  #        - group: "*"
-  #          kind: "*"
-  #      namespaceResourceWhitelist:
-  #        - group: "*"
-  #          kind: "ConfigMap"
-  #      sourceNamespaces:
-  #      - {{ $.Config.ArgoCD.Namespace | quote }}
-  #      {{- range $_, $value := $.Tenant.Namespaces }}
-  #      - {{ $value | quote }}
-  #      {{- end }}
+  settings:
+    structured:
+      spec:
+        permitOnlyProjectScopedClusters: false
+        destinations:
+          - name: "my-structure"
+            namespace: "sad-namespace"
+        clusterResourceWhitelist:
+          - group: "dao"
+            kind: "meow"
+    template: |
+      meta:
+        labels:
+            hello: "baka"
+        annotations:
+          some-annotation: "value"
+      spec:
+        description: {{ $.Config.Argo.Namespace | quote }}
+        destinations:
+          - name: "my-cluster"
+            namespace: "my-namespace"
+        clusterResourceWhitelist:
+          - group: "*"
+            kind: "*"
+        namespaceResourceWhitelist:
+          - group: "*"
+            kind: "ConfigMap"
+        sourceNamespaces:
+        - {{ $.Config.Argo.Namespace | quote }}
+        {{- range $_, $value := $.Tenant.Namespaces }}
+        - {{ $value | quote }}
+        {{- end }}
   roles:
   # This creates the baseline role. All users with the cluster-role "admin" will be able to access all repositories
   - name: "viewer"
@@ -50,7 +50,7 @@ spec:
       - "tenant-viewer"
     policies:
     - resource: "applications"
-      action: ["get", "update", "delete"]
+      action: ["*"]
   - name: "owner"
     # Selects entities which are mapped to the clusterRole "admin
     clusterRoles:

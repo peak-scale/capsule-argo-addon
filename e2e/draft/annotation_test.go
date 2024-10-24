@@ -1,4 +1,4 @@
-package e2e
+package e2e_test
 
 import (
 	"context"
@@ -23,7 +23,7 @@ var _ = Describe("Tenant Labels, Annotations & Finalizers", func() {
 	translator1 := &v1alpha1.ArgoTranslator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "test-annotations-1",
-			Labels: e2eLabels,
+			Labels: e2eLabels(),
 		},
 		Spec: v1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{

@@ -21,6 +21,12 @@ The project's goal is to create a very generic experience for administrators. We
 
 See the [Documentation](docs/README.md) for more information on how to use this addon.
 
+# Demo 
+
+Spin up a live demonstration of the addon on Killercoda:
+
+- []
+
 ## License
 
 Copyright 2024.

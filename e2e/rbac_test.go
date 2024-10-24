@@ -1,8 +1,7 @@
-package e2e
+package e2e_test
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -19,13 +18,15 @@ import (
 )
 
 var _ = Describe("Argo RBAC Reflection", func() {
+	// Resources
 	argoaddon := &v1alpha1.ArgoAddon{}
+	originalArgoAddon := &v1alpha1.ArgoAddon{}
 
 	// Create a Translator for all the tests
 	translator1 := &v1alpha1.ArgoTranslator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "test-rbac-1",
-			Labels: e2eLabels,
+			Labels: e2eLabels(),
 		},
 		Spec: v1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
@@ -63,7 +64,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 	translator2 := &v1alpha1.ArgoTranslator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "test-rbac-2",
-			Labels: e2eLabels,
+			Labels: e2eLabels(),
 		},
 		Spec: v1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
@@ -111,6 +112,9 @@ var _ = Describe("Argo RBAC Reflection", func() {
 	oil.Labels["app.kubernetes.io/type"] = "dev"
 
 	JustBeforeEach(func() {
+		Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, originalArgoAddon)).To(Succeed())
+		argoaddon = originalArgoAddon.DeepCopy()
+
 		for _, tran := range []*v1alpha1.ArgoTranslator{translator1, translator2} {
 			Eventually(func() error {
 				tran.ResourceVersion = ""
@@ -127,26 +131,14 @@ var _ = Describe("Argo RBAC Reflection", func() {
 		}
 	})
 	JustAfterEach(func() {
-		translators := &v1alpha1.ArgoTranslatorList{}
-		tenants := &capsulev1beta2.TenantList{}
+		resourcesToClean := []client.Object{
+			&v1alpha1.ArgoTranslator{},
+			&capsulev1beta2.Tenant{},
+		}
 
-		Eventually(func() (err error) {
-			return k8sClient.DeleteAllOf(context.TODO(), &v1alpha1.ArgoTranslator{}, &client.DeleteAllOfOptions{
-				ListOptions: client.ListOptions{
-					LabelSelector: e2eSelector(),
-				},
-			})
+		Eventually(func() error {
+			return cleanResources(resourcesToClean, e2eSelector())
 		}, defaultTimeoutInterval, defaultPollInterval).Should(Succeed())
-		fmt.Printf("Found %d ArgoTranslators to delete\n", len(translators.Items))
-
-		Eventually(func() (err error) {
-			return k8sClient.DeleteAllOf(context.TODO(), &capsulev1beta2.Tenant{}, &client.DeleteAllOfOptions{
-				ListOptions: client.ListOptions{
-					LabelSelector: e2eSelector(),
-				},
-			})
-		}, defaultTimeoutInterval, defaultPollInterval).Should(Succeed())
-		fmt.Printf("Found %d Tenants to delete\n", len(tenants.Items))
 	})
 
 	// Test case for ensuring the tenant is created successfully
@@ -154,7 +146,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 		By("set corresponding settings", func() {
 			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: "default"}, argoaddon)
 			argoaddon.Spec.TranslatorSelector = &metav1.LabelSelector{
-				MatchLabels: e2eLabels,
+				MatchLabels: e2eLabels(),
 			}
 			argoaddon.Spec.Argo.Namespace = "argocd"
 			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())

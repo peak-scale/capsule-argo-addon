@@ -14,6 +14,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/argo"
+	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	translatorctl "github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
@@ -44,7 +45,7 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 	// Initialize AppProject
 	appProject := &argocdv1alpha1.AppProject{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      utils.TenantProjectName(tenant),
+			Name:      meta.TenantProjectName(tenant),
 			Namespace: i.Settings.Get().Argo.Namespace,
 		},
 	}
@@ -53,6 +54,16 @@ func (i *TenancyController) reconcileArgoProject(ctx context.Context, log logr.L
 	gerr := i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().Argo.Namespace}, appProject)
 	if gerr != nil && !k8serrors.IsNotFound(gerr) {
 		return gerr
+	}
+
+	// Don't Force, When project already exists
+	if !translator.ContainsTranslatorFinalizer(appProject) {
+		if !i.Settings.Get().Force && !k8serrors.IsNotFound(gerr) {
+			log.V(1).Info("appproject already present, not overriding", "appproject", appProject.Name)
+
+			return nil
+		}
+
 	}
 
 	// Lifecycle Approject (If marked for deletion remove finalizers)
@@ -292,11 +303,10 @@ func (i *TenancyController) reflectArgoCSV(
 	var sb strings.Builder
 
 	// Get Permissions for Tenant
-	roles := tenant.
-		utils.GetClusterRolePermissions(tenant)
+	roles := utils.GetClusterRolePermissions(tenant)
 
 	// Add Default Policies for App-Project
-	for _, dlts := range argo.DefaultPolicies(tenant, i.provisionProxyService(ctx, tenant)) {
+	for _, dlts := range argo.DefaultPolicies(tenant, i.provisionProxyService(tenant)) {
 		sb.WriteString(dlts)
 	}
 
