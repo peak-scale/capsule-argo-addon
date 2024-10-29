@@ -1,3 +1,4 @@
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
 
 > This addon is currently in public beta and under active development. Please report any issues you encounter. Using it in production is not recommended as it may lead to unexpected behaviors.
 
