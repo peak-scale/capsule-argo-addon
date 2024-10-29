@@ -10,7 +10,6 @@ This addon is designed for kubernetes administrators, to automatically translate
 
 We have chosen a very loose implementation which makes use of so called "Translators" to translate the Capsule Tenant into an Argo Appproject. This allows us to easily add new translators for different use cases and translate permissions from the Capsule Tenant into the Argo Appproject.
 
-
 ![Argo Capsule Addon Overview](docs/images/addon-overview.svg)
 
 By design the Addon is designed to work with the capsule-proxy. Meaning each Appproject gets it's own declarative and project scoped cluster. Which is finally a dedicated ServiceAccount, who is promoted as owner on the corresponding tenant.
@@ -25,7 +24,7 @@ See the [Documentation](docs/README.md) for more information on how to use this 
 
 Spin up a live demonstration of the addon on Killercoda:
 
-- []()
+- [https://killercoda.com/peak-scale-test/course/solutions/capsule-argo-addon](https://killercoda.com/peak-scale-test/course/solutions/capsule-argo-addon)
 
 ## Support
 

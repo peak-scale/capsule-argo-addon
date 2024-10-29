@@ -34,9 +34,10 @@ release:
     - `ghcr.io/peak-scale/{{ .ProjectName }}:latest`
 
     **Helm Chart**
-    View this release on [Artifact Hub](https://artifacthub.io/packages/helm/peak-scale/capsule-argo-addon/{{ .Version }}) or use the OCI helm chart:
+    View this release on [Artifact Hub](https://artifacthub.io/packages/helm/capsule-argo-addon/capsule-argo-addon)
 
-    - `ghcr.io/peak-scale/charts/{{ .ProjectName }}:{{ .Version }}`
+    [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
+
 
 checksum:
   name_template: 'checksums.txt'
