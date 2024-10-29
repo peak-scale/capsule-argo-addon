@@ -1,0 +1,32 @@
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoTranslator
+metadata:
+  name: just-role-translation
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/type: dev
+  roles:
+  - clusterRoles:
+    - tenant-viewer
+    - tenant-operators
+    name: viewer
+    owner: false
+    policies:
+    - action:
+      - get
+      - update
+      - delete
+      path: '*'
+      resource: applications
+      verb: allow
+  - clusterRoles:
+    - admin
+    name: owner
+    owner: true
+    policies:
+    - action:
+      - '*'
+      path: '*'
+      resource: repositories
+      verb: allow

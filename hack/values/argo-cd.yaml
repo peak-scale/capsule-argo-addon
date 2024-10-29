@@ -1,0 +1,22 @@
+server.extraArgs:
+  - --insecure
+configs:
+  rbac:
+    policy.csv: |
+      # Define Policies
+      p, role:anonymous, *, *, */*, deny
+    policy.default: "role:anonymous"
+  cm:
+    accounts.alice: apiKey, login
+    accounts.bob: apiKey, login
+    accounts.guy: apiKey, login
+    users.anonymous.enabled: "false"
+    resource.customizations.ignoreDifferences.Namespace: |
+      jqPathExpressions:
+      - '.metadata.labels'
+  secret:
+    extra:
+      admin.password: "$2a$10$3Fk9Mk6pDYxSts4xYGZvBuYovOGv03XY2d6DVAtyR7TlCwN4rO9dm"
+      accounts.alice.password: "$2a$10$3Fk9Mk6pDYxSts4xYGZvBuYovOGv03XY2d6DVAtyR7TlCwN4rO9dm"
+      accounts.bob.password: "$2a$10$3Fk9Mk6pDYxSts4xYGZvBuYovOGv03XY2d6DVAtyR7TlCwN4rO9dm"
+      accounts.guy.password: "$2a$10$3Fk9Mk6pDYxSts4xYGZvBuYovOGv03XY2d6DVAtyR7TlCwN4rO9dm"

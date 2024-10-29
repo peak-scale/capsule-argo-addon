@@ -1,0 +1,7 @@
+proxy:
+  enabled: true
+  crds:
+    install: true
+image:
+  pullPolicy: Never
+  tag: "latest"

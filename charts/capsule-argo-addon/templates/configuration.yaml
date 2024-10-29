@@ -1,0 +1,31 @@
+{{/* Deploys Addon Configuration */}}
+{{- if not $.Values.crds.exclusive }}
+ {{- if $.Values.config.create }}
+   {{- $dlt_cfg := (fromYaml (include "config.defaults" $)) -}}
+   {{- $cfg := mergeOverwrite $dlt_cfg (default dict $.Values.config.spec) -}}
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoAddon
+metadata:
+  name: {{ include "config.name" $}}
+  labels:
+  {{- include "helm.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.customAnnotations }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+    {{- toYaml $cfg | nindent 2 }}
+  {{- end }}
+{{- end }}
+
+{{/* Configuration based on defaults */}}
+{{- define "config.defaults" -}}
+  {{ if .Values.proxy.enabled }}
+proxy:
+  enabled: true
+  serviceName: {{ printf "%s-proxy" (include "capsule-proxy.fullname" .) }}
+  serviceNamespace: {{ $.Release.Namespace }}
+  servicePort: 9001
+  serviceAccountNamespace: {{ $.Release.Namespace }}
+  {{- end }}
+{{- end -}}

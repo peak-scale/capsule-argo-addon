@@ -1,0 +1,29 @@
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: solar-test-decouple
+  labels:
+    app.kubernetes.io/type: dev
+  annotations:
+    argo.addons.projectcapsule.dev/decouple: "true"  
+    #argo.addons.projectcapsule.dev/force: "false"
+spec:
+  owners:
+  - name: solar-users
+    kind: Group
+---
+apiVersion: capsule.clastix.io/v1beta2
+kind: Tenant
+metadata:
+  name: nani
+  labels:
+    app.kubernetes.io/type: dev
+  annotations:
+    argo.addons.projectcapsule.dev/decouple: "false"  
+    argo.addons.projectcapsule.dev/force: "false"
+spec:
+  owners:
+  - name: solar-users
+    kind: Group
+
