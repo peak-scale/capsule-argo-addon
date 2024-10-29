@@ -34,7 +34,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
       - name: Install Cosign
-        uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19 # v3.1.2
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
       - name: Publish with KO
         id: publish
         uses: peak-scale/github-actions/make-ko-publish@38322faabccd75abfa581c435e367d446b6d2c3b # v0.1.0
