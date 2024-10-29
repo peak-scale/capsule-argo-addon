@@ -6,10 +6,10 @@ before:
   hooks:
     - go mod download
 gomod:
-  proxy: true
+  proxy: false
 
 builds:
-  - main: cmd/main.go
+  - main: ./cmd
     binary: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
     env:
       - CGO_ENABLED=0
