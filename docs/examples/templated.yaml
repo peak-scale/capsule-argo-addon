@@ -1,0 +1,86 @@
+
+---
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoTranslator
+metadata:
+    name: templated-onboarding
+spec:
+
+  # Match Tenants with the label "app.kubernetes.io/type" and  the value "dev" or "prod"
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/type
+        operator: In
+        values:
+          - dev
+          - prod
+
+  # The settings we want to pass to the appprojects. This is optional, we don't need to pass
+  # any additional configuration
+  settings:
+    # Define inline structured settings for Argo (Where we don't need templating)
+    structured:
+      meta:
+        labels:
+          "company.infra.team/managed-by": "platform"
+      spec:
+        permitOnlyProjectScopedClusters: true
+
+    # Use Templating to add more complex configuration. The configuration here is preceding over the structured configuration (This is because you might have certain triggers)
+    # where you want to overrite structured configuration.
+    template: |
+      spec:
+        description: "Managed Argo Project (Replicated {{ $.Tenant.Name }}"
+        {{- if $.Tenant.Object.Spec.cordoned }}
+        syncWindows:
+        - applications:
+          - '*'
+          duration: 1m
+          kind: deny
+          schedule: '* * * * *'
+          timeZone: UTC
+        {{- end }}
+
+        {{/* Allow Argo namespace, because the ui can just create in that namespace */}}
+        sourceNamespaces:
+        - {{ $.Config.Argo.Namespace | quote }}
+
+        {{/* Allow all other namespaces which are currently managed by the tenant */}}
+        {{- range $_, $value := $.Tenant.Namespaces }}
+        - {{ $value | quote }}
+        {{- end }}
+    
+  roles:
+
+    # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
+  - name: "viewer"
+
+    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below. 
+    clusterRoles:
+      - "tenant-viewer"
+
+    # Translated to argo permissions these users/groups have the privilege to (action "*")
+    # on (resource "application)
+    policies:
+    - resource: "applications"
+      action: ["*"]
+
+    # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
+  - name: "owner"
+
+    # All users which have the clusterRole "admin" assigned (either owner or additionalRoleBindings) will be assigned the policies below. (These are by default all tenant owners)
+    clusterRoles:
+      - "admin"
+
+    # Assigning owner to all the subjects based on the clusterRoles. This means they have the possability to make changes to the appproject. However the specs from the translators are still considered. This Option is powerful when your argo users want to manage their own Roles or SyncWindows etc.
+    owner: true
+
+    # Policies for argo which are bound to all subjects with the clusterRole "admin".
+    policies:  
+    - resource: applications
+      action: 
+      - "action//Pod/maintenance-off"
+      - "get"
+      - "sync"
+    - resource: repositories
+      action: ["*"]

@@ -1,0 +1,168 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.3
+  name: argoaddons.addons.projectcapsule.dev
+spec:
+  group: addons.projectcapsule.dev
+  names:
+    kind: ArgoAddon
+    listKind: ArgoAddonList
+    plural: argoaddons
+    singular: argoaddon
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: ArgoAddon is the Schema for the ArgoAddons API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ArgoAddonSpec defines the desired state of ArgoAddon
+            properties:
+              argo:
+                default:
+                  namespace: argocd
+                  rbacConfigMap: argocd-rbac-cm
+                description: ArgoCD configuration
+                properties:
+                  namespace:
+                    description: Namespace where the ArgoCD instance is running
+                    type: string
+                  rbacConfigMap:
+                    description: Name of the ArgoCD rbac configmap (required for the
+                      controller)
+                    type: string
+                type: object
+              force:
+                default: false
+                description: |-
+                  When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+                  and overwritten. When disabled the approjects will not be changed or adopted.
+                  This is true for any other resource as well
+                type: boolean
+              proxy:
+                default: {}
+                description: Capsule-Proxy configuration for the controller
+                properties:
+                  enabled:
+                    default: true
+                    description: |-
+                      Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+                      on the argo appproject.
+                    type: boolean
+                  serviceAccountNamespace:
+                    description: |-
+                      Default Namespace to create ServiceAccounts in for proxy access.
+                      Can be overwritten on tenant-basis
+                    type: string
+                  serviceName:
+                    default: capsule-proxy
+                    description: Name of the capsule-proxy service
+                    type: string
+                  serviceNamespace:
+                    default: capsule-system
+                    description: ' Namespace where the capsule-proxy service is running'
+                    type: string
+                  servicePort:
+                    default: 9001
+                    description: Port of the capsule-proxy service
+                    format: int32
+                    type: integer
+                  tls:
+                    default: true
+                    description: Port of the capsule-proxy service
+                    type: boolean
+                type: object
+            required:
+            - force
+            type: object
+          status:
+            description: ArgoAddonStatus defines the observed state of ArgoAddon
+            properties:
+              loaded:
+                description: Last applied valid configuration
+                properties:
+                  argo:
+                    default:
+                      namespace: argocd
+                      rbacConfigMap: argocd-rbac-cm
+                    description: ArgoCD configuration
+                    properties:
+                      namespace:
+                        description: Namespace where the ArgoCD instance is running
+                        type: string
+                      rbacConfigMap:
+                        description: Name of the ArgoCD rbac configmap (required for
+                          the controller)
+                        type: string
+                    type: object
+                  force:
+                    default: false
+                    description: |-
+                      When force is enabled, approjects which already exist with the same name as a tenant will be adopted
+                      and overwritten. When disabled the approjects will not be changed or adopted.
+                      This is true for any other resource as well
+                    type: boolean
+                  proxy:
+                    default: {}
+                    description: Capsule-Proxy configuration for the controller
+                    properties:
+                      enabled:
+                        default: true
+                        description: |-
+                          Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+                          on the argo appproject.
+                        type: boolean
+                      serviceAccountNamespace:
+                        description: |-
+                          Default Namespace to create ServiceAccounts in for proxy access.
+                          Can be overwritten on tenant-basis
+                        type: string
+                      serviceName:
+                        default: capsule-proxy
+                        description: Name of the capsule-proxy service
+                        type: string
+                      serviceNamespace:
+                        default: capsule-system
+                        description: ' Namespace where the capsule-proxy service is
+                          running'
+                        type: string
+                      servicePort:
+                        default: 9001
+                        description: Port of the capsule-proxy service
+                        format: int32
+                        type: integer
+                      tls:
+                        default: true
+                        description: Port of the capsule-proxy service
+                        type: boolean
+                    type: object
+                required:
+                - force
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

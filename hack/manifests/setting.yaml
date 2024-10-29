@@ -1,0 +1,88 @@
+---
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoTranslator
+metadata:
+    name: default-onboarding
+spec:
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/type
+        operator: In
+        values:
+          - dev
+          - prod
+  settings:
+    structured:
+      spec:
+        permitOnlyProjectScopedClusters: false
+        destinations:
+          - name: "my-structure"
+            namespace: "sad-namespace"
+        clusterResourceWhitelist:
+          - group: "dao"
+            kind: "meow"
+    template: |
+      meta:
+        labels:
+            hello: "baka"
+        annotations:
+          some-annotation: "value"
+      spec:
+        description: {{ $.Config.Argo.Namespace | quote }}
+        destinations:
+          - name: "my-cluster"
+            namespace: "my-namespace"
+        clusterResourceWhitelist:
+          - group: "*"
+            kind: "*"
+        namespaceResourceWhitelist:
+          - group: "*"
+            kind: "ConfigMap"
+        sourceNamespaces:
+        - {{ $.Config.Argo.Namespace | quote }}
+        {{- range $_, $value := $.Tenant.Namespaces }}
+        - {{ $value | quote }}
+        {{- end }}
+  roles:
+  # This creates the baseline role. All users with the cluster-role "admin" will be able to access all repositories
+  - name: "viewer"
+    clusterRoles:
+      - "tenant-viewer"
+    policies:
+    - resource: "applications"
+      action: ["*"]
+  - name: "owner"
+    # Selects entities which are mapped to the clusterRole "admin
+    clusterRoles:
+      - "admin"
+    # Allows the users to make changes to the appproject (just update verb)
+    owner: true
+    # Additional policies for the mapped entities. Allows to interact with
+    policies:  
+    - resource: applications
+      action: ["*"]
+    - resource: repositories
+      action: ["*"]
+---
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoTranslator
+metadata:
+    name: dev-onboarding
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/type: dev
+  roles:
+  # This creates the baseline role. All users with the cluster-role "admin" will be able to access all repositories
+  - name: "developers"
+    clusterRoles:
+      - "company-developers"
+    policies:
+    - resource: "*"
+      action: ["get"]
+  - name: "ops"
+    clusterRoles:
+      - "operators"
+    policies:
+    - resource: "*"
+      action: ["sync"]
