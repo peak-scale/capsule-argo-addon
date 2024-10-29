@@ -1,6 +1,6 @@
 apiVersion: v2
 name: capsule-argo-addon
-description: ArgoCD Capsule Controller
+description: Capsule Argo Addon
 type: application
 version: 0.1.0
 appVersion: "1.16.0"

@@ -9,6 +9,7 @@ bin/*
 hack/kubeconfs/
 Dockerfile.cross
 coverage.out
+.DS_Store
 
 # Test binary, build with `go test -c`
 *.test
