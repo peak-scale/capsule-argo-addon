@@ -39,12 +39,7 @@ jobs:
             echo -e '\033[0;32mDocumentation up to date\033[0m ✔'
           fi
 
-      ## Create KIND Cluster
-      - name: Create kind cluster
-        uses: helm/kind-action@dda0770415bac9fc20092cacbc54aa298604d140 # v1.8.0
-        if: steps.list-changed.outputs.changed == 'true'
-
       # Install Charts
       - name: Run chart-testing (install)
-        run: ct install --debug --config .github/configs/ct.yaml
+        run: make helm-test
         if: steps.list-changed.outputs.changed == 'true'
