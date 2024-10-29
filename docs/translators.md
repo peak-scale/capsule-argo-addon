@@ -55,6 +55,9 @@ clusterRoles:
 policies:
 - resource: "applications"
   action: ["*"]
+
+# Assigns the selected subjects the default policy "owner". Otherwise just "read-only"
+owner: false
 ```
 
 Let's use a fictive tenant, so we can understand how the Roles are Translated to Argo. We are using this Tenant:
@@ -148,30 +151,35 @@ spec:
 
 #### Default policies
 
-These policies are bootstrapped for every tenant by the controller.
+These policies are bootstrapped for every tenant by the controller. All policies provisioned by the controller are prefixed with `caa`.
 
-**Read-Only**
+##### Read-Only
+
+This policy allows the users to see the project (kind of necessary). Therefor it will be assigned to any subject which is referenced in any of the `ClusterRoles`:
 
 ```csv
-
+p, caa:role:wind:read-only,projects,get,<appproject-name>,allow
 ```
 
+If you have the capsule-proxy integration enabled, there will also be a policy which allows the users to display the clusters within the appproject:
 
-**Owner**
+```csv
+p, caa:role:wind:read-only,clusters,get,<appproject-name>/*,allow
+```
 
-If you have the capsule-proxy integration enabled, there will also be these policies:
+##### Owner
 
+This policy allows users to make changes to the appproject (if you have some sort of shared responsibility). To assign this role the attribute `owner` must be set to `true`.
 
+```csv
+p, caa:role:wind:owner,projects,update,<appproject-name>,allow
+```
 
+If you have the capsule-proxy integration enabled, there will also be a policy which allows the users to display the clusters within the appproject:
 
-
-#### Owners
-
-
-
-
-#### Templated
-
+```csv
+p, caa:role:wind:owner,clusters,*,<appproject-name>/*,allow
+```
 
 ### Project Settings
 
