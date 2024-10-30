@@ -73,7 +73,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| affinity | object | `{}` |  |
+| affinity | object | `{}` | Set affinity rules |
 | args.extraArgs | list | `[]` | A list of extra arguments to add to the capsule-argo-addon |
 | args.logLevel | int | `4` | Log Level |
 | config.create | bool | `true` | Create Plugin Configuration |
@@ -87,9 +87,10 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | imagePullSecrets | list | `[]` |  |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":10080}}` | Configure the liveness probe using Deployment probe spec |
 | nameOverride | string | `""` |  |
-| nodeSelector | object | `{}` |  |
+| nodeSelector | object | `{}` | Set the node selector |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| priorityClassName | string | `""` | Set the priority class name of the Capsule pod |
 | rbac.enabled | bool | `true` | Enable bootstraping of RBAC resources |
 | readinessProbe | object | `{"httpGet":{"path":"/readyz","port":10080}}` | Configure the readiness probe using Deployment probe spec |
 | replicaCount | int | `1` | Amount of replicas |
@@ -107,22 +108,29 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | serviceAccount.annotations | object | `{}` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `""` |  |
-| tolerations | list | `[]` |  |
+| tolerations | list | `[]` | Set list of tolerations |
+| topologySpreadConstraints | list | `[]` | Set topology spread constraints |
 
-### ServiceMonitor Parameters
+### Monitoring Parameters
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| serviceMonitor.annotations | object | `{}` | Assign additional Annotations |
-| serviceMonitor.enabled | bool | `false` | Enable ServiceMonitor |
-| serviceMonitor.endpoint.interval | string | `"15s"` | Set the scrape interval for the endpoint of the serviceMonitor |
-| serviceMonitor.endpoint.metricRelabelings | list | `[]` | Set metricRelabelings for the endpoint of the serviceMonitor |
-| serviceMonitor.endpoint.relabelings | list | `[]` | Set relabelings for the endpoint of the serviceMonitor |
-| serviceMonitor.endpoint.scrapeTimeout | string | `""` | Set the scrape timeout for the endpoint of the serviceMonitor |
-| serviceMonitor.jobLabel | string | `"app.kubernetes.io/name"` | Prometheus Joblabel |
-| serviceMonitor.labels | object | `{}` | Assign additional labels according to Prometheus' serviceMonitorSelector matching labels |
-| serviceMonitor.matchLabels | object | `{}` | Change matching labels |
-| serviceMonitor.namespace | string | `""` | Install the ServiceMonitor into a different Namespace, as the monitoring stack one (default: the release one) |
-| serviceMonitor.serviceAccount.name | string | `""` |  |
-| serviceMonitor.serviceAccount.namespace | string | `""` |  |
-| serviceMonitor.targetLabels | list | `[]` | Set targetLabels for the serviceMonitor |
+| monitoring.enabled | bool | `false` | Enable Monitoring of the Operator |
+| monitoring.rules.annotations | object | `{}` | Assign additional Annotations |
+| monitoring.rules.enabled | bool | `true` | Enable deployment of PrometheusRules |
+| monitoring.rules.groups | list | `[{"name":"TranslatorAlerts","rules":[{"alert":"TranslatorNotReady","annotations":{"description":"The Translator {{ $labels.name }} has been in a NotReady state for over 5 minutes.","summary":"Translator {{ $labels.name }} is not ready"},"expr":"cca_translator_condition{status=\"NotReady\"} == 1","for":"5m","labels":{"severity":"critical"}}]}]` | Prometheus Groups for the rule |
+| monitoring.rules.labels | object | `{}` | Assign additional labels |
+| monitoring.rules.namespace | string | `""` | Install the rules into a different Namespace, as the monitoring stack one (default: the release one) |
+| monitoring.serviceMonitor.annotations | object | `{}` | Assign additional Annotations |
+| monitoring.serviceMonitor.enabled | bool | `true` | Enable ServiceMonitor |
+| monitoring.serviceMonitor.endpoint.interval | string | `"15s"` | Set the scrape interval for the endpoint of the serviceMonitor |
+| monitoring.serviceMonitor.endpoint.metricRelabelings | list | `[]` | Set metricRelabelings for the endpoint of the serviceMonitor |
+| monitoring.serviceMonitor.endpoint.relabelings | list | `[]` | Set relabelings for the endpoint of the serviceMonitor |
+| monitoring.serviceMonitor.endpoint.scrapeTimeout | string | `""` | Set the scrape timeout for the endpoint of the serviceMonitor |
+| monitoring.serviceMonitor.jobLabel | string | `"app.kubernetes.io/name"` | Prometheus Joblabel |
+| monitoring.serviceMonitor.labels | object | `{}` | Assign additional labels according to Prometheus' serviceMonitorSelector matching labels |
+| monitoring.serviceMonitor.matchLabels | object | `{}` | Change matching labels |
+| monitoring.serviceMonitor.namespace | string | `""` | Install the ServiceMonitor into a different Namespace, as the monitoring stack one (default: the release one) |
+| monitoring.serviceMonitor.serviceAccount.name | string | `""` |  |
+| monitoring.serviceMonitor.serviceAccount.namespace | string | `""` |  |
+| monitoring.serviceMonitor.targetLabels | list | `[]` | Set targetLabels for the serviceMonitor |

@@ -166,39 +166,75 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+# -- Set the priority class name of the Capsule pod
+priorityClassName: '' # system-cluster-critical
+
+# -- Set the node selector
 nodeSelector: {}
 
+# -- Set list of tolerations
 tolerations: []
 
+# -- Set affinity rules
 affinity: {}
 
-# ServiceMonitor
-serviceMonitor:
-  # -- Enable ServiceMonitor
+# -- Set topology spread constraints
+topologySpreadConstraints: []
+
+# Monitoring Values
+monitoring:
+  # -- Enable Monitoring of the Operator
   enabled: false
-  # -- Install the ServiceMonitor into a different Namespace, as the monitoring stack one (default: the release one)
-  namespace: ''
-  # -- Assign additional labels according to Prometheus' serviceMonitorSelector matching labels
-  labels: {}
-  # -- Assign additional Annotations
-  annotations: {}
-  # -- Change matching labels
-  matchLabels: {}
-  # -- Prometheus Joblabel
-  jobLabel: app.kubernetes.io/name
-  # -- Set targetLabels for the serviceMonitor
-  targetLabels: []
-  serviceAccount:
-    # @default -- `capsule-proxy`
-    name: ""
-    # @default -- `.Release.Namespace`
-    namespace: ""
-  endpoint:
-    # -- Set the scrape interval for the endpoint of the serviceMonitor
-    interval: "15s"
-    # -- Set the scrape timeout for the endpoint of the serviceMonitor
-    scrapeTimeout: ""
-    # -- Set metricRelabelings for the endpoint of the serviceMonitor
-    metricRelabelings: []
-    # -- Set relabelings for the endpoint of the serviceMonitor
-    relabelings: []
+  # PrometheusRules
+  rules:
+    # -- Enable deployment of PrometheusRules
+    enabled: true
+    # -- Install the rules into a different Namespace, as the monitoring stack one (default: the release one)
+    namespace: ''
+    # -- Assign additional labels
+    labels: {}
+    # -- Assign additional Annotations
+    annotations: {}
+    # -- Prometheus Groups for the rule
+    groups:
+    - name: TranslatorAlerts
+      rules:
+        - alert: TranslatorNotReady
+          expr: cca_translator_condition{status="NotReady"} == 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Translator {{ $labels.name }} is not ready"
+            description: "The Translator {{ $labels.name }} has been in a NotReady state for over 5 minutes."
+
+  # ServiceMonitor
+  serviceMonitor:
+    # -- Enable ServiceMonitor
+    enabled: true
+    # -- Install the ServiceMonitor into a different Namespace, as the monitoring stack one (default: the release one)
+    namespace: ''
+    # -- Assign additional labels according to Prometheus' serviceMonitorSelector matching labels
+    labels: {}
+    # -- Assign additional Annotations
+    annotations: {}
+    # -- Change matching labels
+    matchLabels: {}
+    # -- Prometheus Joblabel
+    jobLabel: app.kubernetes.io/name
+    # -- Set targetLabels for the serviceMonitor
+    targetLabels: []
+    serviceAccount:
+      # @default -- `capsule-proxy`
+      name: ""
+      # @default -- `.Release.Namespace`
+      namespace: ""
+    endpoint:
+      # -- Set the scrape interval for the endpoint of the serviceMonitor
+      interval: "15s"
+      # -- Set the scrape timeout for the endpoint of the serviceMonitor
+      scrapeTimeout: ""
+      # -- Set metricRelabelings for the endpoint of the serviceMonitor
+      metricRelabelings: []
+      # -- Set relabelings for the endpoint of the serviceMonitor
+      relabelings: []

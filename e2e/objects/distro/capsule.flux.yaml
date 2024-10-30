@@ -37,9 +37,11 @@ spec:
       install: true
     tls:
       # -- Start the true controller that injects the CA into mutating and validating webhooks, and CRD as well.
-      enableController: true
+      enableController: false
       # -- When cert-manager is disabled, Capsule will generate the TLS certificate for webhook and CRDs conversion.
-      create: true
+      create: false
+    certManager:
+      generateCertificates: true
     manager:
       options:
         capsuleUserGroups:
