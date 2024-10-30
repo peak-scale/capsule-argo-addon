@@ -115,7 +115,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| monitoring.enabled | bool | `true` | Enable Monitoring of the Operator |
+| monitoring.enabled | bool | `false` | Enable Monitoring of the Operator |
 | monitoring.rules.annotations | object | `{}` | Assign additional Annotations |
 | monitoring.rules.enabled | bool | `true` | Enable deployment of PrometheusRules |
 | monitoring.rules.groups | list | `[{"name":"TranslatorAlerts","rules":[{"alert":"TranslatorNotReady","annotations":{"description":"The Translator {{ $labels.name }} has been in a NotReady state for over 5 minutes.","summary":"Translator {{ $labels.name }} is not ready"},"expr":"cca_translator_condition{status=\"NotReady\"} == 1","for":"5m","labels":{"severity":"critical"}}]}]` | Prometheus Groups for the rule |

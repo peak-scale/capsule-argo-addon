@@ -184,7 +184,7 @@ topologySpreadConstraints: []
 # Monitoring Values
 monitoring:
   # -- Enable Monitoring of the Operator
-  enabled: true
+  enabled: false
   # PrometheusRules
   rules:
     # -- Enable deployment of PrometheusRules
