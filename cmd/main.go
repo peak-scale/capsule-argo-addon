@@ -38,6 +38,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/config"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/tenant"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
+	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	//+kubebuilder:scaffold:imports
@@ -84,6 +85,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "fefb3d10.projectcapsule.dev",
+		PprofBindAddress:       ":8082",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -100,8 +102,11 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
 	//+kubebuilder:scaffold:builder
 	store := stores.NewConfigStore()
+
+	metricsRecorder := metrics.MustMakeRecorder()
 
 	settings := &config.ConfigReconciler{
 		Client:   mgr.GetClient(),
@@ -137,6 +142,7 @@ func main() {
 		Log:      ctrl.Log.WithName("controllers").WithName("Tenant"),
 		Recorder: mgr.GetEventRecorderFor("tenant-controller"),
 		Scheme:   mgr.GetScheme(),
+		Metrics:  metricsRecorder,
 		Settings: store,
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tenant")

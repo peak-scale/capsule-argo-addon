@@ -43,24 +43,31 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           ports:
+          {{- if and $.Values.monitoring.enabled }}
           - name: metrics
             containerPort: 8080
             protocol: TCP
+          {{- end }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12}}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      priorityClassName: {{ .Values.priorityClassName }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

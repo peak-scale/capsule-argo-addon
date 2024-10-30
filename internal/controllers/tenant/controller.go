@@ -27,12 +27,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
+	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
 )
 
 var _ reconcile.Reconciler = &TenancyController{}
 
 type TenancyController struct {
 	client.Client
+	Metrics  *metrics.Recorder
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 	Log      logr.Logger
@@ -231,6 +233,7 @@ func (i *TenancyController) reconcile(
 					})
 				}
 
+				i.Metrics.RecordTranslatorCondition(selected)
 				log.V(10).Info("new translator status", "translator", selected.Name, "status", selected.Status)
 
 				return i.Client.Status().Update(ctx, selected, &client.SubResourceUpdateOptions{})
@@ -242,6 +245,8 @@ func (i *TenancyController) reconcile(
 			log.Info("failed to update translator statius")
 			return translators, err
 		}
+
+		i.Metrics.RecordTranslatorCondition(selected)
 	}
 
 	log.V(7).Info("unmatched translators", "count", len(unmatchedTranslators))

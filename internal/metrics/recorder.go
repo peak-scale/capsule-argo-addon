@@ -1,14 +1,15 @@
 package metrics
 
 import (
+	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/prometheus/client_golang/prometheus"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	crtlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 type Recorder struct {
-	conditionGauge *prometheus.GaugeVec
+	translatorConditionGauge *prometheus.GaugeVec
+	tenantConditionGauge     *prometheus.GaugeVec
 }
 
 func MustMakeRecorder() *Recorder {
@@ -19,36 +20,45 @@ func MustMakeRecorder() *Recorder {
 
 func NewRecorder() *Recorder {
 	return &Recorder{
-		conditionGauge: prometheus.NewGaugeVec(
+		translatorConditionGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "cca_translator_condition",
 				Help: "The current condition status of a Translator.",
 			},
-			[]string{"kind", "name", "type", "status"},
+			[]string{"name", "status"},
+		),
+
+		tenantConditionGauge: prometheus.NewGaugeVec( // Initialize tenantConditionGauge here
+			prometheus.GaugeOpts{
+				Name: "cca_tenant_condition",
+				Help: "The current condition status of a Tenant.",
+			},
+			[]string{"name", "status"},
 		),
 	}
 }
 
 func (r *Recorder) Collectors() []prometheus.Collector {
 	return []prometheus.Collector{
-		r.conditionGauge,
+		r.translatorConditionGauge,
+		r.tenantConditionGauge,
 	}
 }
 
 // RecordCondition records the condition as given for the ref.
-func (r *Recorder) RecordCondition(ref corev1.ObjectReference, condition metav1.Condition) {
-	for _, status := range []metav1.ConditionStatus{metav1.ConditionTrue, metav1.ConditionFalse, metav1.ConditionUnknown} {
+func (r *Recorder) RecordTranslatorCondition(translator *configv1alpha1.ArgoTranslator) {
+	for _, status := range []string{meta.ReadyCondition, meta.NotReadyCondition} {
 		var value float64
-		if status == condition.Status {
+		if status == translator.Status.Ready {
 			value = 1
 		}
-		r.conditionGauge.WithLabelValues(ref.Kind, ref.Name, condition.Type, string(status)).Set(value)
+		r.translatorConditionGauge.WithLabelValues(translator.Name, string(status)).Set(value)
 	}
 }
 
 // DeleteCondition deletes the condition metrics for the ref.
-func (r *Recorder) DeleteCondition(ref corev1.ObjectReference, conditionType string) {
-	for _, status := range []metav1.ConditionStatus{metav1.ConditionTrue, metav1.ConditionFalse, metav1.ConditionUnknown} {
-		r.conditionGauge.DeleteLabelValues(ref.Kind, ref.Name, ref.Namespace, conditionType, string(status))
+func (r *Recorder) DeleteTranslatorCondition(translator *configv1alpha1.ArgoTranslator, conditionType string) {
+	for _, status := range []string{meta.ReadyCondition, meta.NotReadyCondition} {
+		r.translatorConditionGauge.DeleteLabelValues(translator.Name, string(status))
 	}
 }
