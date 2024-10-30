@@ -8,7 +8,13 @@ import (
 
 // Assign Tenants to the ArgoTranslator
 func (in *ArgoAddonSpec) ProxyServiceString(tenant *capsulev1beta2.Tenant) string {
-	return "https://" + in.Proxy.CapsuleProxyServiceName + "." +
+	protocol := "https"
+	if !in.Proxy.CapsuleProxyTLS {
+		protocol = "http"
+	}
+
+	// Return Connection String
+	return protocol + "://" + tenant.Name + "." +
 		in.Proxy.CapsuleProxyServiceNamespace + ".svc:" +
 		strconv.Itoa(int(in.Proxy.CapsuleProxyServicePort))
 }
