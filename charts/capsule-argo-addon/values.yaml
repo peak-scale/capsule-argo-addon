@@ -71,6 +71,10 @@ proxy:
   enabled: true
   # -- Enable Required FeatureGates
   options:
+    # -- QPS to use for interacting with Kubernetes API Server.
+    clientConnectionQPS: 50
+    # -- Burst to use for interacting with kubernetes API Server.
+    clientConnectionBurst: 100
     logLevel: "10"
     extraArgs:
     - "--feature-gates=ProxyClusterScoped=true"
@@ -78,6 +82,12 @@ proxy:
   # -- Get Certificate from cert-manager from Capsule-Proxy
   certManager:
     generateCertificates: false
+  # HorizontalPodAutoscaler
+  autoscaling:
+    # -- Specifies whether an hpa for capsule-proxy should be created.
+    enabled: true
+    targetCPUUtilizationPercentage: 75
+
 
 # Plugin Configuration
 config:
@@ -88,6 +98,13 @@ config:
   # -- Config Specification
   spec: {}
 
+# Arguments for the controller
+args:
+  # -- Log Level
+  logLevel: 4
+  # -- A list of extra arguments to add to the capsule-argo-addon
+  extraArgs: []
+
 # -- Amount of replicas
 replicaCount: 1
 image:
@@ -95,7 +112,7 @@ image:
   repository: peak-scale/capsule-argo-addon
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""

@@ -43,5 +43,8 @@ jobs:
       - uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v3
         with:
           version: v3.14.2
+      - uses: fluxcd/flux2/action@5350425cdcd5fa015337e09fa502153c0275bd4b
+        with:
+          version: 'latest'
       - name: e2e testing
         run:  KIND_K8S_VERSION="${{ matrix.k8s-version }}" make e2e
