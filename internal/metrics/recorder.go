@@ -52,13 +52,13 @@ func (r *Recorder) RecordTranslatorCondition(translator *configv1alpha1.ArgoTran
 		if status == translator.Status.Ready {
 			value = 1
 		}
-		r.translatorConditionGauge.WithLabelValues(translator.Name, string(status)).Set(value)
+		r.translatorConditionGauge.WithLabelValues(translator.Name, status).Set(value)
 	}
 }
 
 // DeleteCondition deletes the condition metrics for the ref.
 func (r *Recorder) DeleteTranslatorCondition(translator *configv1alpha1.ArgoTranslator, conditionType string) {
 	for _, status := range []string{meta.ReadyCondition, meta.NotReadyCondition} {
-		r.translatorConditionGauge.DeleteLabelValues(translator.Name, string(status))
+		r.translatorConditionGauge.DeleteLabelValues(translator.Name, status)
 	}
 }
