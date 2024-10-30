@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a new feature for Capsule
+about: Suggest a new feature for the addon
 title: ''
 labels: blocked-needs-validation, feature
 assignees: ''
