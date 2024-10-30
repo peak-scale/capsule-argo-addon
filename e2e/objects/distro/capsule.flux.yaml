@@ -42,6 +42,6 @@ spec:
       create: true
     manager:
       options:
-        userGroups:
+        capsuleUserGroups:
         - "system:serviceaccounts:capsule-argo-addon"
         forceTenantPrefix: false
