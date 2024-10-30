@@ -49,12 +49,40 @@ subjects:
     apiGroup: rbac.authorization.k8s.io
 ```
 
-#### Capsule
+### Capsule
 
-You must add the namespace where the serviceaccounts are deployed to, to the capsuleUsers.
+You must add the namespace where the serviceaccounts are deployed to, to the capsuleUsers. For example:
+
+```yaml
+apiVersion: capsule.clastix.io/v1beta2
+kind: CapsuleConfiguration
+metadata:
+  annotations:
+    meta.helm.sh/release-name: capsule
+    meta.helm.sh/release-namespace: capsule-system
+  creationTimestamp: "2024-10-30T10:03:30Z"
+  generation: 3
+  labels:
+    app.kubernetes.io/instance: capsule
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: capsule
+    app.kubernetes.io/version: 0.7.0-rc.1
+    helm.sh/chart: capsule-0.7.0-rc.1
+    helm.toolkit.fluxcd.io/name: capsule
+    helm.toolkit.fluxcd.io/namespace: flux-system
+  name: default
+  resourceVersion: "12231"
+  uid: 6a57e09e-57e4-4958-9331-70f56ec848bf
+spec:
+  # The default installation namespace
+  userGroups:
+  - system:serviceaccounts:capsule-argo-addon
+  # Add other namespaces (etc..)
+  - system:serviceaccounts:privileged-service-accounts
+```
 
 ## Helm
 
-Currently we support installation via Helm-Chart click the badge or [here] to view instructions and possible values on the chart.
+[Artifact Hub](https://artifacthub.io/packages/helm/capsule-argo-addon/capsule-argo-addon)
 
-
+Currently we support installation via Helm-Chart click the badge or [here](https://artifacthub.io/packages/helm/capsule-argo-addon/capsule-argo-addon) to view instructions and possible values on the chart.

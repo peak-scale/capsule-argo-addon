@@ -15,29 +15,13 @@ spec:
     structured:
       spec:
         permitOnlyProjectScopedClusters: false
-        destinations:
-          - name: "my-structure"
-            namespace: "sad-namespace"
-        clusterResourceWhitelist:
-          - group: "dao"
-            kind: "meow"
-    template: |
-      meta:
-        labels:
-            hello: "baka"
-        annotations:
-          some-annotation: "value"
-      spec:
-        description: {{ $.Config.Argo.Namespace | quote }}
-        destinations:
-          - name: "my-cluster"
-            namespace: "my-namespace"
         clusterResourceWhitelist:
           - group: "*"
             kind: "*"
         namespaceResourceWhitelist:
           - group: "*"
-            kind: "ConfigMap"
+            kind: "*"
+    template: |
         sourceNamespaces:
         - {{ $.Config.Argo.Namespace | quote }}
         {{- range $_, $value := $.Tenant.Namespaces }}

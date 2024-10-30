@@ -146,7 +146,7 @@ K3S_CLUSTER ?= "capsule-argo-addon"
 e2e: e2e-build e2e-exec e2e-destroy
 
 e2e-build: kind
-	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0} 
+	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./hack/e2e-kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0} 
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
@@ -156,8 +156,6 @@ e2e-destroy: kind
 	$(KIND) delete cluster --name $(K3S_CLUSTER)
 
 e2e-install: e2e-install-distro e2e-install-addon
-
-e2e-install-distro: e2e-install-argocd e2e-install-certmanager e2e-install-capsule
 
 .PHONY: e2e-install
 e2e-install-addon: e2e-load-image
@@ -175,17 +173,10 @@ e2e-install-addon: e2e-load-image
 		capsule-argo-addon \
 		./charts/capsule-argo-addon
 
-e2e-install-argocd:
-	helm repo add argo https://argoproj.github.io/argo-helm || true
-	helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace -f ./hack/values/argo-cd.yaml
-
-e2e-install-capsule:
-	helm repo add projectcapsule https://projectcapsule.github.io/charts/ || true
-	helm upgrade --install capsule projectcapsule/capsule --version 0.7.1 --namespace capsule-system --create-namespace
-
-e2e-install-certmanager:
-	helm repo add jetstack https://charts.jetstack.io || true
-	helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set crds.enabled=true
+e2e-install-distro:
+	@flux install
+	@kubectl kustomize e2e/objects/distro/ | kubectl apply -f -
+	@$(MAKE) wait-for-helmreleases
 
 .PHONY: e2e-load-image
 e2e-load-image: ko-build-all
@@ -200,6 +191,12 @@ dev-kubeconf-user:
 		&& mv alice-*.kubeconfig alice.kubeconfig \
 		&& KUBECONFIG=alice.kubeconfig kubectl config set clusters.kind-$(K3S_CLUSTER).server https://127.0.0.1:9001 \
 		&& KUBECONFIG=alice.kubeconfig kubectl config set clusters.kind-$(K3S_CLUSTER).certificate-authority-data $$(cat root-ca.pem | base64 |tr -d '\n') 
+
+wait-for-helmreleases:
+	@ echo "Waiting for all HelmReleases to have observedGeneration >= 0..."
+	@while [ "$$(kubectl get helmrelease -A -o jsonpath='{range .items[?(@.status.observedGeneration<0)]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | wc -l)" -ne 0 ]; do \
+	  sleep 5; \
+	done
 
 ####################
 # -- Tools
