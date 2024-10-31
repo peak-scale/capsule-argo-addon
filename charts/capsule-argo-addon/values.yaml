@@ -66,6 +66,9 @@ rbac:
   # -- Enable bootstraping of RBAC resources
   enabled: true
 
+nameOverride: ""
+fullnameOverride: ""
+
 # Deploy a dedicated Capsule-Proxy for argocd
 proxy:
   enabled: true
@@ -88,7 +91,6 @@ proxy:
     enabled: true
     targetCPUUtilizationPercentage: 75
 
-
 # Plugin Configuration
 config:
   # -- Create Plugin Configuration
@@ -108,31 +110,37 @@ args:
 # -- Amount of replicas
 replicaCount: 1
 image:
+  # -- Set the image registry
   registry: ghcr.io
+  # -- Set the image repository
   repository: peak-scale/capsule-argo-addon
+  # -- Set the image pull policy.
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+  # -- Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
+# -- Configuration for `imagePullSecrets` so that you can use a private images registry.
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Specifies whether a service account should be created.
   create: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the service account.
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
+   # -- The name of the service account to use.
   name: ""
 
+# -- Annotations to add
 podAnnotations: {}
 
+# -- Set the securityContext
 podSecurityContext:
   seccompProfile:
     type: RuntimeDefault
 
+# -- Set the securityContext for the container
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
@@ -154,10 +162,7 @@ readinessProbe:
     path: /readyz
     port: 10080
 
-service:
-  type: ClusterIP
-  port: 80
-
+# -- Set the resource requests/limits
 resources:
   limits:
     cpu: 200m

@@ -14,8 +14,6 @@ Without these the addon won't work.
 
 ### Capsule-Proxy
 
-> In the current state it's not recommended to use the proxy (default settings). Because the performance takes a huge hit. We are adding features and improvements to make this functional in the future.
-
 The [capsule-proxy](https://artifacthub.io/packages/helm/projectcapsule/capsule-proxy) is used to allow serviceaccounts to just see what they should see within the boundaries of your tenant. It is optional to use the proxy and it can be disabled via the [configuration](./config.md).
 
 If you plan to use the capsule-proxy, we recommend installing a dedicated capsule-proxy instance for the addon, because Argo puts a lot of pressure on the proxy.

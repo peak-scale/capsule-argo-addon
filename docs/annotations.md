@@ -4,14 +4,17 @@ You can define annotations on tenant basis to influence the behavior for tenants
 
 ## `argo.addons.projectcapsule.dev/name`
 
-By default the approject's name is the same as the tenant name. If you want to change the approject name, you can set the `argo.addons.projectcapsule.dev/name` annotation to the desired name.
+By default the appproject's name is the same as the tenant name. If you want to change the appproject name, you can set the `argo.addons.projectcapsule.dev/name` annotation to the desired name.
+
+## `argo.addons.projectcapsule.dev/force`
+
+For this tenant overwrite any other resources which may already be present. If resources are already present whey won't be overwritten until this is specified for the affected tenant or for all tenants via [configuration](config.md). This is `false` by default.
 
 ## `argo.addons.projectcapsule.dev/service-account-namespace`
 
-By default the service account used for the capsule proxy is created in the same namespace as the approject. If you want to change the namespace, you can set the `argo.addons.projectcapsule.dev/service-account-namespace` annotation to the desired namespace. This is useful if you have different tenants with different privileges on the cluster. Since you can [bind service accounts as capsule-users only via group (namespace)](https://projectcapsule.dev/docs/tenants/permissions/#group-scope) you can use different namespaces to seperate different ServiceAccount privileges.
+By default the service account used for the capsule proxy is created in the same namespace as the appproject. If you want to change the namespace, you can set the `argo.addons.projectcapsule.dev/service-account-namespace` annotation to the desired namespace. This is useful if you have different tenants with different privileges on the cluster. Since you can [bind service accounts as capsule-users only via group (namespace)](https://projectcapsule.dev/docs/tenants/permissions/#group-scope) you can use different namespaces to seperate different ServiceAccount privileges.
 
 > This is only relevant if the proxy or registration is enabled
-
 
 ## `argo.addons.projectcapsule.dev/register-proxy`
 
@@ -19,7 +22,7 @@ By default, if the proxy integration is enabled, for each tenant a dedicated arg
 
 ## `argo.addons.projectcapsule.dev/read-only`
 
-By default, if a [subject] is promoted as [appproject owner] they can update project properties like adding [SyncWIndows](https://argo-cd.readthedocs.io/en/stable/user-guide/sync_windows/) or [Roles](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-roles). 
+By default, if a [subject] is promoted as [appproject owner] they can update project properties like adding [SyncWIndows](https://argo-cd.readthedocs.io/en/stable/user-guide/sync_windows/) or [Roles](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/#project-roles).
 
 If you want to prevent this behavior, you can set the `argo.addons.projectcapsule.dev/read-only` annotation to `true`. This overwrites any changes not made by [translators](./translators.md).
 

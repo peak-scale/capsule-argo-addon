@@ -7,7 +7,7 @@ To translate permissions the Operator looks at Capsule Tenant with ther [Tenant 
 
 ## Configuration
 
-See the following Topics for insights for the configuration of Translators. [View the API Spec](../reference.md)
+See the following Topics for insights for the configuration of Translators. [View the API Spec](./reference.md)
 
 ### Tenant Selection
 
@@ -15,7 +15,7 @@ Each Translator selects it's tenants via [Selector](https://kubernetes.io/docs/c
 
 A tenant must be selected by at least one Translator, to create an Argo Project. If a tenant is not selected by any Translator, the operator will not consider it. 
 
-**Note**: If a tenant gets unselected from Translators into a state where it's no longer selected by any Translator, it will be garbage collected. Meaning the Approject and other assets will be deleted. This behavior can be influenced with [per-tenant Annotations](../annotations.md).
+**Note**: If a tenant gets unselected from Translators into a state where it's no longer selected by any Translator, it will be garbage collected. Meaning the Appproject and other assets will be deleted. This behavior can be influenced with [per-tenant Annotations](./annotations.md).
 
 Simple Example to select specific Tenants:
 
@@ -240,7 +240,7 @@ kubectl explain argotranslator.spec.settings.structured
 
 #### Templated
 
-You can use [Sprig Template](../templating.md) to express the project settings. Templated Specs are **merged over** [structured](#structured) fields.
+You can use [Sprig Template](./templating.md) to express the project settings. Templated Specs are **merged over** [structured](#structured) fields.
 
 ```yaml
 ---

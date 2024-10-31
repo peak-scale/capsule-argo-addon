@@ -28,7 +28,7 @@ The controller is then started with the name of the configuration:
 capsule-argo-addon -setting-name "default"
 ```
 
-[View the Reference for all possible options](../reference.md)
+[View the Reference for all possible options](./reference.md)
 
 ## Controller-Options
 
