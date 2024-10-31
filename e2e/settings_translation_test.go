@@ -788,8 +788,7 @@ var _ = Describe("Translation Test", func() {
 						Namespace: "selected,namespaces",
 					},
 					{
-						Server: "https://capsule-argo-addon-proxy.capsule-argo-addon.svc:9001",
-						// argoaddon.Spec.ProxyServiceString(solar),
+						Server:    argoaddon.Spec.ProxyServiceString(solar),
 						Name:      solar.Name,
 						Namespace: "*",
 					},
