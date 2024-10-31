@@ -67,17 +67,19 @@ func (i *TenancyController) reconcileArgoProject(
 	}
 
 	// Collect Service-Account
-	token, err := i.reconcileArgoServiceAccount(ctx, log, tenant)
+	token, err := i.reconcileArgoServiceAccount(ctx, log, tenant, translators)
 	if err != nil {
 		return err
 	}
 
 	// Reconcile Argo Cluster
-	err = i.reconcileArgoCluster(ctx, log, tenant, token)
+	err = i.reconcileArgoCluster(ctx, log, tenant, token, translators)
 	if err != nil {
 		return err
 	}
-	proxyService := i.Settings.Get().ProxyServiceString(tenant)
+
+	// Get Destination
+	destination := i.GetClusterDestination(tenant)
 
 	// Lifecycle Approject (If marked for deletion remove finalizers)
 	if !appProject.ObjectMeta.DeletionTimestamp.IsZero() || !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -158,13 +160,13 @@ func (i *TenancyController) reconcileArgoProject(
 		for _, translator := range translators {
 			// Get Approject Config with templating
 			translatorCfg, err := translator.Spec.ProjectSettings.GetConfig(
-				tpl.ConfigContext(proxyService, translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
+				tpl.ConfigContext(destination, translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
 			if err != nil {
 				return err
 			}
 
 			cfg1, cfg2, err := translator.Spec.ProjectSettings.GetConfigs(
-				tpl.ConfigContext(proxyService, translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
+				tpl.ConfigContext(destination, translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
 			if err != nil {
 				return err
 			}
@@ -247,32 +249,49 @@ func (i *TenancyController) reconcileArgoProject(
 			}
 		}
 
-		// Register the Tenant as a Destination
-		proxyDestination := argocdv1alpha1.ApplicationDestination{
-			Name:      tenant.Name,
-			Server:    proxyService,
-			Namespace: "*",
+		// Process ServiceAccount (Impersonation)
+		impersonation := argocdv1alpha1.ApplicationDestinationServiceAccount{
+			Server:                destination,
+			DefaultServiceAccount: i.Settings.Get().DestinationServiceAccount(tenant),
 		}
 
 		switch {
 		// Add the proxy destination when the proxy is enabled and there are translators
-		case i.Settings.Get().Proxy.Enabled && len(translators) > 0:
+		case i.Settings.Get().Argo.DestinationServiceAccounts && len(translators) > 0:
+			if !argo.ProjectHasServiceAccount(appProject, impersonation) {
+				log.V(5).Info("adding serviceaccount", "appproject", appProject.Name, "account", impersonation)
+				appProject.Spec.DestinationServiceAccounts = append(appProject.Spec.DestinationServiceAccounts, impersonation)
+			}
+		// Remove the proxy destination
+		default:
+			if argo.ProjectHasServiceAccount(appProject, impersonation) {
+				log.V(5).Info("removing serviceaccount", "appproject", appProject.Name, "account", impersonation)
+				argo.RemoveProjectServiceaccount(appProject, impersonation)
+			}
+		}
+
+		// Destination to be processed
+		proxyDestination := argocdv1alpha1.ApplicationDestination{
+			Name:   tenant.Name,
+			Server: destination,
+		}
+
+		switch {
+		// Add the proxy destination when the proxy is enabled and there are translators
+		case i.provisionProxyService() && len(translators) > 0:
+			log.V(5).Info("adding proxy destination", "appproject", appProject.Name)
 			if !argo.ProjectHasDestination(appProject, proxyDestination) {
-				log.V(5).Info("adding proxy destination", "appproject", appProject.Name)
 				appProject.Spec.Destinations = append(appProject.Spec.Destinations, proxyDestination)
 			}
 		// Remove the proxy destination
 		default:
-			if argo.ProjectHasDestination(appProject, proxyDestination) {
-				log.V(5).Info("removing proxy destination", "appproject", appProject.Name)
-				argo.RemoveProjectDestination(appProject, proxyDestination)
-			}
+			log.V(5).Info("removing proxy destination", "appproject", appProject.Name)
+			argo.RemoveProjectDestination(appProject, proxyDestination)
 		}
-
-		// Couple oder Decouple the AppProject
 
 		// Check if tenant is being deleted (Remove owner reference)
 		log.V(5).Info("ensuring ownerreference", "appproject", appProject.Name)
+
 		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), appProject, tenant)
 	})
 	if err != nil {
@@ -285,7 +304,14 @@ func (i *TenancyController) reconcileArgoProject(
 		return err
 	}
 
-	log.V(5).Info("reflected argo permissions", "appproject", appProject.Name, "configmap", i.Settings.Get().Argo.RBACConfigMap, "namespace", i.Settings.Get().Argo.Namespace, "key", argo.ArgoPolicyName(tenant))
+	log.V(5).Info(
+		"reflected argo permissions",
+		"appproject", appProject.Name,
+		"configmap", i.Settings.Get().Argo.RBACConfigMap,
+		"namespace", i.Settings.Get().Argo.Namespace,
+		"key", argo.ArgoPolicyName(tenant),
+	)
+
 	return nil
 }
 
@@ -360,7 +386,7 @@ func (i *TenancyController) reflectArgoCSV(
 	log.V(10).Info("extracted roles for tenant", "tenant", tenant.Name, "roles", roles)
 
 	// Add Default Policies for App-Project
-	for _, dlts := range argo.DefaultPolicies(tenant, i.provisionProxyService(tenant)) {
+	for _, dlts := range argo.DefaultPolicies(tenant, i.GetClusterDestination(tenant)) {
 		sb.WriteString(dlts)
 	}
 

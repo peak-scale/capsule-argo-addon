@@ -10,6 +10,9 @@ issues:
     - path: "api/*"
       linters:
         - lll
+    - path: "e2e/*"
+      linters:
+        - "*"
     - path: "internal/*"
       linters:
         - dupl

@@ -256,7 +256,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			Expect(ok).To(BeTrue(), "RBAC CSV entry for solar is missing in ConfigMap")
 
 			// Define Which Lines we are expecting in the CSV
-			expectedLines := append(argo.DefaultPolicies(solar, true), []string{
+			expectedLines := append(argo.DefaultPolicies(solar, argoaddon.Spec.Argo.Destination), []string{
 				argo.PolicyString(argo.TenantPolicy(solar, "viewer"),
 					solar.Name,
 					addonsv1alpha1.ArgocdPolicyDefinition{
@@ -398,7 +398,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			Expect(ok).To(BeTrue(), "RBAC CSV entry for oil is missing in ConfigMap")
 
 			// Define Which Lines we are expecting in the CSV
-			expectedLines := append(argo.DefaultPolicies(oil, true), []string{
+			expectedLines := append(argo.DefaultPolicies(oil, argoaddon.Spec.Argo.Destination), []string{
 				argo.PolicyString(argo.TenantPolicy(oil, "viewer"),
 					oil.Name,
 					addonsv1alpha1.ArgocdPolicyDefinition{

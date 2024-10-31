@@ -12,7 +12,7 @@ We have chosen a very loose implementation which makes use of so called "Transla
 
 ![Argo Capsule Addon Overview](docs/images/addon-overview.svg)
 
-By design the Addon is designed to work with the capsule-proxy. Meaning each Appproject gets it's own declarative and project scoped cluster. Which is finally a dedicated ServiceAccount, who is promoted as owner on the corresponding tenant.
+By design the Addon is designed to work with the capsule-proxy, but it also works without it. We have yet to discover the performance with the capsule-proxy in place vs without it. Each Tenant is translated into a dedicated Appproject. Each Appproject gets it's own declarative and project scoped cluster. Which is finally also a dedicated ServiceAccount, who is promoted as owner on the corresponding tenant.
 
 The project's goal is to create a very generic experience for administrators. We know of different companies which already have implemented such an operator for argocd. This is our attempt to reconcile all development into one project.
 

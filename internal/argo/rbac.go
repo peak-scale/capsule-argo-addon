@@ -52,7 +52,7 @@ func BindingString(subject v1.Subject, role string) string {
 }
 
 // Adds Default Policies (So Users can have basic interractions with the project)
-func DefaultPolicies(tenant *capsulev1beta2.Tenant, clusterPermission bool) (result []string) {
+func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result []string) {
 	// Read-Only Policy
 	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
@@ -70,20 +70,12 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, clusterPermission bool) (res
 			Verb:     "allow",
 		}))
 
-	if clusterPermission {
+	if destination != "" {
 		result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
-			tenant.Name,
+			destination,
 			addonsv1alpha1.ArgocdPolicyDefinition{
 				Resource: "clusters",
 				Action:   []string{"get"},
-				Verb:     "allow",
-				Path:     "*",
-			}))
-		result = append(result, PolicyString(DefaultPolicyOwner(tenant),
-			tenant.Name,
-			addonsv1alpha1.ArgocdPolicyDefinition{
-				Resource: "clusters",
-				Action:   []string{"update"},
 				Verb:     "allow",
 				Path:     "*",
 			}))

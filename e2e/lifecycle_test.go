@@ -106,10 +106,58 @@ var _ = Describe("lifecycle Appproject", func() {
 			}).Should(Succeed())
 		}
 	})
+
 	JustAfterEach(func() {
 		Expect(CleanTenants(e2eSelector("e2e_lifecycle"))).ToNot(HaveOccurred())
 		Expect(CleanTranslators(e2eSelector("e2e_lifecycle"))).ToNot(HaveOccurred())
 		Expect(CleanAppProjects(e2eSelector("e2e_lifecycle"), "argocd")).ToNot(HaveOccurred())
+
+		// Delete loose items
+		expectedResources := []struct {
+			object    client.Object
+			desc      string
+			name      string
+			namespace string
+		}{
+			{
+				object:    &argocdv1alpha1.AppProject{},
+				desc:      "AppProject",
+				name:      meta.TenantProjectName(solar),
+				namespace: argoaddon.Spec.Argo.Namespace,
+			},
+			{
+				object:    &corev1.Secret{},
+				desc:      "Cluster Secret",
+				name:      solar.Name,
+				namespace: argoaddon.Spec.Argo.Namespace,
+			},
+			{
+				object:    &corev1.Service{},
+				desc:      "Service",
+				name:      solar.Name,
+				namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
+			},
+			{
+				object:    &corev1.ServiceAccount{},
+				desc:      "ServiceAccount",
+				name:      solar.Name,
+				namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
+			},
+		}
+
+		for _, res := range expectedResources {
+			By("Deleting " + res.desc)
+
+			// First, attempt to get the resource to ensure it exists before deletion
+			err := k8sClient.Get(context.Background(), client.ObjectKey{Name: res.name, Namespace: res.namespace}, res.object)
+			if err != nil {
+				continue
+			}
+
+			// Attempt to delete the resource
+			err = k8sClient.Delete(context.Background(), res.object)
+			Expect(err).To(Succeed(), "Expected to delete %s", res.desc)
+		}
 
 		// Restore Configuration
 		Eventually(func() error {
@@ -125,9 +173,17 @@ var _ = Describe("lifecycle Appproject", func() {
 
 	It("Test lifecycle Settings (with Force)", func() {
 		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
+			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = true
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
+			argoaddon.Spec.Argo.DestinationServiceAccounts = false
+
+			// Attempt to update the argoaddon object in Kubernetes
+			err := k8sClient.Update(context.Background(), argoaddon)
+			if err != nil {
+				fmt.Printf("Error updating argoaddon: %v\n", err)
+			}
+			Expect(err).To(Succeed(), "Failed to update argoaddon")
 		})
 
 		By("Check existence resources", func() {
@@ -200,7 +256,7 @@ var _ = Describe("lifecycle Appproject", func() {
 			accountResource := &corev1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      solar.Name,
-					Namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
+					Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
 				},
 			}
 			Expect(k8sClient.Create(context.Background(), accountResource)).To(Succeed())
@@ -208,7 +264,7 @@ var _ = Describe("lifecycle Appproject", func() {
 			tokenResource := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      accountResource.Name,
-					Namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
+					Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
 					Annotations: map[string]string{
 						"kubernetes.io/service-account.name": accountResource.Name,
 					},
@@ -256,7 +312,7 @@ var _ = Describe("lifecycle Appproject", func() {
 						object:    &corev1.ServiceAccount{},
 						desc:      "ServiceAccount",
 						name:      solar.Name,
-						namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
+						namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
 					},
 				}
 
@@ -275,6 +331,33 @@ var _ = Describe("lifecycle Appproject", func() {
 					}
 				}
 			})
+		})
+
+		By("Verify serviceaccount was added as tenant owner", func() {
+			tnt := &capsulev1beta2.Tenant{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
+
+			// Expected Owners
+			owners := []capsulev1beta2.OwnerSpec{
+				{
+					Name: "alice",
+					Kind: capsulev1beta2.GroupOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+				{
+					Name: "system:serviceaccount:" + argoaddon.Spec.Argo.ServiceAccountNamespace + ":" + solar.Name,
+					Kind: capsulev1beta2.ServiceAccountOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+			}
+
+			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
 		})
 
 		By("Verify approject was adopted (finalizers)", func() {
@@ -324,7 +407,7 @@ var _ = Describe("lifecycle Appproject", func() {
 				},
 				{
 					object: &corev1.ServiceAccount{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace},
+					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace},
 					desc:   "ServiceAccount",
 				},
 			}
@@ -348,9 +431,17 @@ var _ = Describe("lifecycle Appproject", func() {
 
 	It("Test lifecycle Settings (without Force)", func() {
 		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
+			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = false
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
+			argoaddon.Spec.Argo.DestinationServiceAccounts = false
+
+			// Attempt to update the argoaddon object in Kubernetes
+			err := k8sClient.Update(context.Background(), argoaddon)
+			if err != nil {
+				fmt.Printf("Error updating argoaddon: %v\n", err)
+			}
+			Expect(err).To(Succeed(), "Failed to update argoaddon")
 		})
 
 		By("precreate solar resources", func() {
@@ -397,13 +488,41 @@ var _ = Describe("lifecycle Appproject", func() {
 			Expect(condition.Type).To(Equal(meta.NotReadyCondition), "Expected tenant condition type to be NotReady")
 			Expect(condition.Reason).To(Equal(meta.ObjectAlreadyExistsReason), "Expected tenant condition reason to be ObjectAlreadyExists")
 		})
+
+		By("Verify serviceaccount was not added as tenant owner", func() {
+			tnt := &capsulev1beta2.Tenant{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
+
+			// Expected Owners
+			owners := []capsulev1beta2.OwnerSpec{
+				{
+					Name: "alice",
+					Kind: capsulev1beta2.GroupOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+			}
+
+			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should not have serviceaccount as owner")
+		})
+
 	})
 
 	It("Test lifecycle Settings (Force Annotation)", func() {
 		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
+			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = false
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
+			argoaddon.Spec.Argo.DestinationServiceAccounts = false
+
+			// Attempt to update the argoaddon object in Kubernetes
+			err := k8sClient.Update(context.Background(), argoaddon)
+			if err != nil {
+				fmt.Printf("Error updating argoaddon: %v\n", err)
+			}
+			Expect(err).To(Succeed(), "Failed to update argoaddon")
 		})
 
 		By("precreate solar resources", func() {
@@ -481,7 +600,7 @@ var _ = Describe("lifecycle Appproject", func() {
 					object:    &corev1.ServiceAccount{},
 					desc:      "ServiceAccount",
 					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
+					namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
 				},
 			}
 
@@ -519,9 +638,50 @@ var _ = Describe("lifecycle Appproject", func() {
 			Expect(condition.Type).To(Equal(meta.ReadyCondition), "Expected tenant condition type to be Ready")
 			Expect(condition.Reason).To(Equal(meta.SucceededReason), "Expected tenant condition reason to be Succeeded")
 		})
+
+		By("Verify serviceaccount was added as tenant owner", func() {
+			tnt := &capsulev1beta2.Tenant{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
+
+			// Expected Owners
+			owners := []capsulev1beta2.OwnerSpec{
+				{
+					Name: "alice",
+					Kind: capsulev1beta2.GroupOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+				{
+					Name: "system:serviceaccount:" + argoaddon.Spec.Argo.ServiceAccountNamespace + ":" + solar.Name,
+					Kind: capsulev1beta2.ServiceAccountOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+			}
+
+			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
+		})
 	})
 
 	It("Test lifecycle Settings (Decouple)", func() {
+		By("set corresponding settings", func() {
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
+			argoaddon.Spec.Proxy.Enabled = true
+			argoaddon.Spec.Force = false
+			argoaddon.Spec.Argo.DestinationServiceAccounts = false
+
+			// Attempt to update the argoaddon object in Kubernetes
+			err := k8sClient.Update(context.Background(), argoaddon)
+			if err != nil {
+				fmt.Printf("Error updating argoaddon: %v\n", err)
+			}
+			Expect(err).To(Succeed(), "Failed to update argoaddon")
+		})
+
 		By("create tenant solar", func() {
 			solar.SetAnnotations(map[string]string{
 				meta.AnnotationProjectDecouple: "true",
@@ -562,7 +722,7 @@ var _ = Describe("lifecycle Appproject", func() {
 					object:    &corev1.ServiceAccount{},
 					desc:      "ServiceAccount",
 					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
+					namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
 				},
 			}
 
@@ -615,7 +775,7 @@ var _ = Describe("lifecycle Appproject", func() {
 					object:    &corev1.ServiceAccount{},
 					desc:      "ServiceAccount",
 					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
+					namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
 				},
 			}
 
@@ -639,55 +799,6 @@ var _ = Describe("lifecycle Appproject", func() {
 						}
 					}
 				}
-			}
-		})
-
-		By("lifecycle decoupled resources", func() {
-			expectedResources := []struct {
-				object    client.Object
-				desc      string
-				name      string
-				namespace string
-			}{
-				{
-					object:    &argocdv1alpha1.AppProject{},
-					desc:      "AppProject",
-					name:      meta.TenantProjectName(solar),
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Secret{},
-					desc:      "Cluster Secret",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
-				},
-				{
-					object:    &corev1.ServiceAccount{},
-					desc:      "ServiceAccount",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.ServiceAccountNamespace,
-				},
-			}
-
-			for _, res := range expectedResources {
-				By("Deleting " + res.desc)
-
-				// First, attempt to get the resource to ensure it exists before deletion
-				err := k8sClient.Get(context.Background(), client.ObjectKey{Name: res.name, Namespace: res.namespace}, res.object)
-				if err != nil {
-					fmt.Printf("Warning: %s not found and may have already been deleted\n", res.desc)
-					continue
-				}
-
-				// Attempt to delete the resource
-				err = k8sClient.Delete(context.Background(), res.object)
-				Expect(err).To(Succeed(), "Expected to delete %s", res.desc)
 			}
 		})
 	})

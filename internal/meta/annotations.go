@@ -23,8 +23,12 @@ const (
 	AnnotationForce = "argo.addons.projectcapsule.dev/force"
 
 	// Annotation on Tenant
+	// Annotation to control if a ServiceAccount should be registered as destination
+	AnnotationDestinationRegister = "argo.addons.projectcapsule.dev/register-dest"
+
+	// Annotation on Tenant
 	// Annotation to control the proxy registration
-	AnnotationProxyRegister = "argo.addons.projectcapsule.dev/register-proxy"
+	AnnotationUseProxy = "argo.addons.projectcapsule.dev/use-proxy"
 
 	// Annotation on Tenant
 	// Decouple Ownerreference from the origin tenant, to avoid deletion of the appproject
@@ -50,8 +54,8 @@ func TenantServiceAccountNamespace(tenant *capsulev1beta2.Tenant) string {
 	return tenant.Annotations[AnnotationServiceAccountNamespace]
 }
 
-func TenantProxyRegister(tenant *capsulev1beta2.Tenant) bool {
-	return ProccessBoolean(tenant.Annotations[AnnotationProxyRegister], true)
+func TenantRegisterDestination(tenant *capsulev1beta2.Tenant) bool {
+	return ProccessBoolean(tenant.Annotations[AnnotationDestinationRegister], false)
 }
 
 func TenantDecoupleProject(tenant *capsulev1beta2.Tenant) bool {

@@ -144,6 +144,7 @@ func main() {
 		Scheme:   mgr.GetScheme(),
 		Metrics:  metricsRecorder,
 		Settings: store,
+		Rest:     mgr.GetConfig(),
 	}).SetupWithManager(ctx, mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Tenant")
 		os.Exit(1)

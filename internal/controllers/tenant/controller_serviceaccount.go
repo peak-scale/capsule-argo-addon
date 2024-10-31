@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -22,16 +23,12 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
+	translators []*v1alpha1.ArgoTranslator,
 ) (token string, err error) {
 
 	// Get Required default values
 	serviceAccount := tenant.Name
-	namespace := i.Settings.Get().Proxy.ServiceAccountNamespace
-
-	// Verify if ServiceAccount-Namespace is declared on tenant-basis
-	if ns := meta.TenantServiceAccountNamespace(tenant); ns != "" {
-		namespace = ns
-	}
+	namespace := i.Settings.Get().ServiceAccountNamespace(tenant)
 
 	log.V(7).Info("reconciling serviceaccount", "serviceaccount", serviceAccount, "namespace", namespace)
 
@@ -90,18 +87,34 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		}
 	}
 
-	// Remove ServiceAccount if not enabled
-	if !i.provisionProxyService(tenant) {
-		log.V(7).Info("removing serviceaccount as owner", "serviceaccount", serviceAccount, "namespace", namespace)
-		if err := i.removeServiceAccountOwner(ctx, log, tenant, namespace, serviceAccount); err != nil {
+	// Remove when umatched
+	if len(translators) == 0 {
+		if k8serrors.IsNotFound(err) {
+			return "", nil
+		}
+
+		// Remove Serviceaccount from Tenant
+		if err := i.removeServiceAccountOwner(ctx, log, tenant, accountResource.Namespace, accountResource.Name); err != nil {
+			log.Error(err, "failed to remove serviceaccount")
 			return "", err
 		}
 
-		log.V(7).Info("lifecycling serviceaccount", "serviceaccount", serviceAccount, "namespace", namespace)
-		err := i.Client.Delete(ctx, accountResource)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return "", fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
+		if !meta.TenantDecoupleProject(tenant) {
+			if err := i.Client.Delete(ctx, accountResource); err != nil {
+				return "", err
+			}
+
+			return "", nil
+		} else {
+			log.V(5).Info(
+				"decoupling serviceaccount",
+				"serviceaccount", accountResource.Name,
+				"namespace", accountResource.Namespace)
+			if err := i.DecoupleTenant(accountResource, tenant); err != nil {
+				return "", err
+			}
 		}
+
 		return "", nil
 	}
 
@@ -117,7 +130,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant)
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error while applying serviceaccount: %s", err)
 	}
 
 	// Add ServiceAccount to Tenant-Spec

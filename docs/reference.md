@@ -41,10 +41,10 @@ ArgoAddonSpec defines the desired state of ArgoAddon
 
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
+| **[argo](#argoaddonspecargo)** | object | ArgoCD configuration | true |
 | **force** | boolean | When force is enabled, approjects which already exist with the same name as a tenant will be adopted
 and overwritten. When disabled the approjects will not be changed or adopted.
 This is true for any other resource as well<br/><i>Default</i>: false<br/> | true |
-| **[argo](#argoaddonspecargo)** | object | ArgoCD configuration<br/><i>Default</i>: map[namespace:argocd rbacConfigMap:argocd-rbac-cm]<br/> | false |
 | **[proxy](#argoaddonspecproxy)** | object | Capsule-Proxy configuration for the controller<br/><i>Default</i>: map[]<br/> | false |
 
 
@@ -56,8 +56,16 @@ ArgoCD configuration
 
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
-| **namespace** | string | Namespace where the ArgoCD instance is running | false |
-| **rbacConfigMap** | string | Name of the ArgoCD rbac configmap (required for the controller) | false |
+| **serviceAccountNamespace** | string | Default Namespace to create ServiceAccounts used by arog-cd
+The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
+It's best to have a dedicated namespace for these serviceaccounts | true |
+| **defaultNamespace** | string |  | false |
+| **destination** | string | If you are not using the capsule-proxy integration this destination is registered
+for each appproject.<br/><i>Default</i>: https://kubernetes.default.svc<br/> | false |
+| **destinationServiceAccounts** | boolean | This is a feature which will be released with argocd +v2.13.0
+If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha<br/><i>Default</i>: false<br/> | false |
+| **namespace** | string | Namespace where the ArgoCD instance is running<br/><i>Default</i>: argocd<br/> | false |
+| **rbacConfigMap** | string | Name of the ArgoCD rbac configmap (required for the controller)<br/><i>Default</i>: argocd-rbac-cm<br/> | false |
 
 
 ### ArgoAddon.spec.proxy
@@ -68,10 +76,9 @@ Capsule-Proxy configuration for the controller
 
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
-| **enabled** | boolean | Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
-on the argo appproject.<br/><i>Default</i>: true<br/> | false |
-| **serviceAccountNamespace** | string | Default Namespace to create ServiceAccounts in for proxy access.
-Can be overwritten on tenant-basis | false |
+| **enabled** | boolean | Enable the capsule-proxy integration.
+This automatically creates services for tenants and registers them as destination
+on the argo appproject.<br/><i>Default</i>: false<br/> | false |
 | **serviceName** | string | Name of the capsule-proxy service<br/><i>Default</i>: capsule-proxy<br/> | false |
 | **serviceNamespace** | string |  Namespace where the capsule-proxy service is running<br/><i>Default</i>: capsule-system<br/> | false |
 | **servicePort** | integer | Port of the capsule-proxy service<br/><i>Format</i>: int32<br/><i>Default</i>: 9001<br/> | false |
@@ -97,10 +104,10 @@ Last applied valid configuration
 
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
+| **[argo](#argoaddonstatusloadedargo)** | object | ArgoCD configuration | true |
 | **force** | boolean | When force is enabled, approjects which already exist with the same name as a tenant will be adopted
 and overwritten. When disabled the approjects will not be changed or adopted.
 This is true for any other resource as well<br/><i>Default</i>: false<br/> | true |
-| **[argo](#argoaddonstatusloadedargo)** | object | ArgoCD configuration<br/><i>Default</i>: map[namespace:argocd rbacConfigMap:argocd-rbac-cm]<br/> | false |
 | **[proxy](#argoaddonstatusloadedproxy)** | object | Capsule-Proxy configuration for the controller<br/><i>Default</i>: map[]<br/> | false |
 
 
@@ -112,8 +119,16 @@ ArgoCD configuration
 
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
-| **namespace** | string | Namespace where the ArgoCD instance is running | false |
-| **rbacConfigMap** | string | Name of the ArgoCD rbac configmap (required for the controller) | false |
+| **serviceAccountNamespace** | string | Default Namespace to create ServiceAccounts used by arog-cd
+The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
+It's best to have a dedicated namespace for these serviceaccounts | true |
+| **defaultNamespace** | string |  | false |
+| **destination** | string | If you are not using the capsule-proxy integration this destination is registered
+for each appproject.<br/><i>Default</i>: https://kubernetes.default.svc<br/> | false |
+| **destinationServiceAccounts** | boolean | This is a feature which will be released with argocd +v2.13.0
+If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha<br/><i>Default</i>: false<br/> | false |
+| **namespace** | string | Namespace where the ArgoCD instance is running<br/><i>Default</i>: argocd<br/> | false |
+| **rbacConfigMap** | string | Name of the ArgoCD rbac configmap (required for the controller)<br/><i>Default</i>: argocd-rbac-cm<br/> | false |
 
 
 ### ArgoAddon.status.loaded.proxy
@@ -124,10 +139,9 @@ Capsule-Proxy configuration for the controller
 
 | **Name** | **Type** | **Description** | **Required** |
 | :---- | :---- | :----------- | :-------- |
-| **enabled** | boolean | Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
-on the argo appproject.<br/><i>Default</i>: true<br/> | false |
-| **serviceAccountNamespace** | string | Default Namespace to create ServiceAccounts in for proxy access.
-Can be overwritten on tenant-basis | false |
+| **enabled** | boolean | Enable the capsule-proxy integration.
+This automatically creates services for tenants and registers them as destination
+on the argo appproject.<br/><i>Default</i>: false<br/> | false |
 | **serviceName** | string | Name of the capsule-proxy service<br/><i>Default</i>: capsule-proxy<br/> | false |
 | **serviceNamespace** | string |  Namespace where the capsule-proxy service is running<br/><i>Default</i>: capsule-system<br/> | false |
 | **servicePort** | integer | Port of the capsule-proxy service<br/><i>Format</i>: int32<br/><i>Default</i>: 9001<br/> | false |
@@ -277,6 +291,7 @@ Application Project Spec (Upstream ArgoCD)
 | **[clusterResourceBlacklist](#argotranslatorspecsettingsstructuredspecclusterresourceblacklistindex)** | []object | ClusterResourceBlacklist contains list of blacklisted cluster level resources | false |
 | **[clusterResourceWhitelist](#argotranslatorspecsettingsstructuredspecclusterresourcewhitelistindex)** | []object | ClusterResourceWhitelist contains list of whitelisted cluster level resources | false |
 | **description** | string | Description contains optional project description | false |
+| **[destinationServiceAccounts](#argotranslatorspecsettingsstructuredspecdestinationserviceaccountsindex)** | []object | DestinationServiceAccounts holds information about the service accounts to be impersonated for the application sync operation for each destination. | false |
 | **[destinations](#argotranslatorspecsettingsstructuredspecdestinationsindex)** | []object | Destinations contains list of destinations available for deployment | false |
 | **[namespaceResourceBlacklist](#argotranslatorspecsettingsstructuredspecnamespaceresourceblacklistindex)** | []object | NamespaceResourceBlacklist contains list of blacklisted namespace level resources | false |
 | **[namespaceResourceWhitelist](#argotranslatorspecsettingsstructuredspecnamespaceresourcewhitelistindex)** | []object | NamespaceResourceWhitelist contains list of whitelisted namespace level resources | false |
@@ -313,6 +328,19 @@ concepts during lookup stages without having partially valid types
 | :---- | :---- | :----------- | :-------- |
 | **group** | string |  | true |
 | **kind** | string |  | true |
+
+
+### ArgoTranslator.spec.settings.structured.spec.destinationServiceAccounts[index]
+
+
+
+ApplicationDestinationServiceAccount holds information about the service account to be impersonated for the application sync operation.
+
+| **Name** | **Type** | **Description** | **Required** |
+| :---- | :---- | :----------- | :-------- |
+| **defaultServiceAccount** | string | DefaultServiceAccount to be used for impersonation during the sync operation | true |
+| **server** | string | Server specifies the URL of the target cluster's Kubernetes control plane API. | true |
+| **namespace** | string | Namespace specifies the target namespace for the application's resources. | false |
 
 
 ### ArgoTranslator.spec.settings.structured.spec.destinations[index]

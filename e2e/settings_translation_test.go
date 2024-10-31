@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	capsuleapi "github.com/projectcapsule/capsule/pkg/api"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -184,6 +185,9 @@ var _ = Describe("Translation Test", func() {
 								Kind:  "Pods",
 							},
 						},
+						DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+							{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
+						},
 					},
 				},
 			},
@@ -233,11 +237,9 @@ var _ = Describe("Translation Test", func() {
 						Name:      "custom-server",
 						Namespace: "selected,namespaces",
 					},
-					{
-						Server:    argoaddon.Spec.ProxyServiceString(solar),
-						Name:      solar.Name,
-						Namespace: "*",
-					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
 				},
 				SourceNamespaces: []string{
 					"somewhere",
@@ -315,14 +317,13 @@ var _ = Describe("Translation Test", func() {
 						Namespace: "selected,namespaces",
 					},
 					{
-						Server:    argoaddon.Spec.ProxyServiceString(solar),
-						Name:      solar.Name,
-						Namespace: "*",
-					},
-					{
 						Name:      "some-other-server",
 						Namespace: "tenant-*",
 					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
 					"somewhere",
@@ -425,11 +426,6 @@ var _ = Describe("Translation Test", func() {
 				PermitOnlyProjectScopedClusters: false,
 				Destinations: []argocdv1alpha1.ApplicationDestination{
 					{
-						Server:    argoaddon.Spec.ProxyServiceString(solar),
-						Name:      solar.Name,
-						Namespace: "*",
-					},
-					{
 						Name:      "some-other-server",
 						Namespace: "tenant-*",
 					},
@@ -448,6 +444,10 @@ var _ = Describe("Translation Test", func() {
 						Group: "*",
 						Kind:  "Pods",
 					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 			}
 
@@ -556,14 +556,13 @@ var _ = Describe("Translation Test", func() {
 				},
 				Destinations: []argocdv1alpha1.ApplicationDestination{
 					{
-						Server:    argoaddon.Spec.ProxyServiceString(solar),
-						Name:      solar.Name,
-						Namespace: "*",
-					},
-					{
 						Name:      "some-other-server",
 						Namespace: "tenant-*",
 					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
 					"a-second-place",
@@ -629,20 +628,77 @@ var _ = Describe("Translation Test", func() {
 			Expect(k8sClient.Delete(context.TODO(), translator2)).ToNot(HaveOccurred())
 		})
 
-		By("ensuring appproject is lifecycled (deleted)", func() {
-			// Approject should be deleted
-			approject := &argocdv1alpha1.AppProject{}
-			err := k8sClient.Get(context.Background(), client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace}, approject)
-			Expect(k8serrors.IsNotFound(err)).To(BeTrue(), "Expected a 'not found' error, but got a different error or the resource exists")
+		By("ensure tenant assets are removed", func() {
+			// Assets which should be absent
+			expectedResources := []struct {
+				object client.Object
+				key    client.ObjectKey
+				desc   string
+			}{
+				{
+					object: &argocdv1alpha1.AppProject{},
+					key:    client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace},
+					desc:   "AppProject",
+				},
+				{
+					object: &corev1.Secret{},
+					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.Namespace},
+					desc:   "Cluster Secret",
+				},
+				{
+					object: &corev1.Service{},
+					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace},
+					desc:   "Service",
+				},
+				{
+					object: &corev1.ServiceAccount{},
+					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace},
+					desc:   "ServiceAccount",
+				},
+			}
+
+			// Iterate through each resource to check it is no longer present
+			for _, res := range expectedResources {
+				By("Verifying " + res.desc + " resource is no longer present")
+				err := k8sClient.Get(context.Background(), res.key, res.object)
+				Expect(k8serrors.IsNotFound(err)).To(BeTrue(), "%s should not be found", res.desc)
+			}
 
 			// Tenant should no longer contain finalizer
-
 			tnt := &capsulev1beta2.Tenant{}
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).ToNot(HaveOccurred())
 
 			// Finalizer should not contain the translator finalizer
 			Expect(meta.ContainsTranslatorFinalizer(tnt)).To(BeFalse(), "AppProject should contain translator finalizer")
 		})
+
+		By("Verify serviceaccount was removed as tenant owner", func() {
+			tnt := &capsulev1beta2.Tenant{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
+
+			// Expected Owners
+			owners := []capsulev1beta2.OwnerSpec{
+				{
+					Name: "alice",
+					Kind: capsulev1beta2.GroupOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+				{
+					Name: "solar-users",
+					Kind: capsulev1beta2.GroupOwner,
+					ClusterRoles: []string{
+						"admin",
+						"capsule-namespace-deleter",
+					},
+				},
+			}
+
+			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
+		})
+
 	})
 
 	It("Respect Read-Only", func() {
@@ -668,11 +724,6 @@ var _ = Describe("Translation Test", func() {
 						Name:      "custom-server",
 						Namespace: "selected,namespaces",
 					},
-					{
-						Server:    argoaddon.Spec.ProxyServiceString(solar),
-						Name:      solar.Name,
-						Namespace: "*",
-					},
 				},
 				SourceNamespaces: []string{
 					"somewhere",
@@ -682,6 +733,9 @@ var _ = Describe("Translation Test", func() {
 						Group: "*",
 						Kind:  "ConfigMap",
 					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
 				},
 			}
 
@@ -787,11 +841,6 @@ var _ = Describe("Translation Test", func() {
 						Name:      "custom-server",
 						Namespace: "selected,namespaces",
 					},
-					{
-						Server:    argoaddon.Spec.ProxyServiceString(solar),
-						Name:      solar.Name,
-						Namespace: "*",
-					},
 				},
 				SourceNamespaces: []string{
 					"somewhere",
@@ -801,6 +850,9 @@ var _ = Describe("Translation Test", func() {
 						Group: "*",
 						Kind:  "ConfigMap",
 					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
 				},
 			}
 

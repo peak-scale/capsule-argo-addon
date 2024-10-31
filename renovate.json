@@ -1,11 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "baseBranches": ["dev"],
+  "baseBranches": ["main"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
   "flux": {
     "fileMatch": ["^.*\\flux.yaml$"]
-  }
+  },
+  "packageRules": [
+    {
+      "commitMessagePrefix": "feat(deps)"
+    }
+  ]
 }
