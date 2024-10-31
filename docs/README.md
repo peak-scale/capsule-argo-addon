@@ -6,7 +6,7 @@ See the following topics for more information on how to use this addon:
 - [Config](config.md)
 - [Translators](translators.md)
 - [Annotations](annotations.md)
-- [Examples](examples.md)
+- [Examples](examples/)
 - [Monitoring](monitoring.md)
 - [API Reference](reference.md)
 - [Development](development.md)
