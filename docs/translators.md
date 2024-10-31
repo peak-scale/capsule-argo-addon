@@ -183,8 +183,105 @@ p, caa:role:wind:owner,clusters,*,<appproject-name>/*,allow
 
 ### Project Settings
 
+Often you have your own set of Argo Project-Settings, which you would like to pass over to the tenants. This is also possible with translators. You can [view here](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/) to see all the possible fields for appprojects or explain it for your kubernetes cluster:
 
+```shell
+kubectl explain appproject.spec
+```
 
+What's important
+
+- A Translator only manages the appproject specification itself defines. That means if a translator is deleted, it removes it's part from all relevant appprojects
+- Multiple translators having project settings are merged together
+- By default Users with `Owner` privileges can edit appproject settings. They are merged with all the translator specifications.
+- If multiple translator match, Non-Slice fields are overwritten, there's not yet a concrete priority implemented. 
+
+#### Structured
+
+Structured gives you the possibility to configure appproject specification and additional metadata.
+
+```yaml
+---
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoTranslator
+metadata:
+    name: default-onboarding
+spec:
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/type
+        operator: In
+        values:
+          - dev
+          - prod
+
+  settings:
+    structured:
+      meta:
+        labels:
+          "company.infra.team/managed-by": "platform"
+        finalizers:
+        - "custom-company/finalizer"
+      spec:
+        permitOnlyProjectScopedClusters: false
+        clusterResourceWhitelist:
+          - group: "*"
+            kind: "*"
+        namespaceResourceWhitelist:
+          - group: "*"
+            kind: "*"
+```
+
+Explain the API:
+
+```shell
+kubectl explain argotranslator.spec.settings.structured
+```
+
+#### Templated
+
+You can use [Sprig Template](../templating.md) to express the project settings. Templated Specs are **merged over** [structured](#structured) fields.
+
+```yaml
+---
+apiVersion: addons.projectcapsule.dev/v1alpha1
+kind: ArgoTranslator
+metadata:
+    name: example-template
+spec:
+  selector:
+    matchExpressions:
+      - key: app.kubernetes.io/type
+        operator: In
+        values:
+          - dev
+          - prod
+  settings:
+    template: |
+      meta:
+        labels:
+          here-go-extra-label: "meow"
+      spec:
+        description: "Managed Argo Project (Replicated {{ $.Tenant.Name }}"
+        {{- if $.Tenant.Object.Spec.cordoned }}
+        syncWindows:
+        - applications:
+          - '*'
+          duration: 1m
+          kind: deny
+          schedule: '* * * * *'
+          timeZone: UTC
+        {{- end }}
+
+        {{/* Allow Argo namespace, because the ui can just create in that namespace */}}
+        sourceNamespaces:
+        - {{ $.Config.Argo.Namespace | quote }}
+
+        {{/* Allow all other namespaces which are currently managed by the tenant */}}
+        {{- range $_, $value := $.Tenant.Namespaces }}
+        - {{ $value | quote }}
+        {{- end }}
+```
 
 ## Examples
 
@@ -200,6 +297,8 @@ NAME                 AGE   TENANTS   STATUS
 default-onboarding   90m   1         Ready
 dev-onboarding       90m   1         Ready
 ```
+
+This Status is also reflected in [metrics](./monitoring.md)
 
 Here we can see both of the argotranslators are marked with the `Status` set to `Ready`. This means all the tenants they are translating did have any errors. If this is false, there is something wrong with at least one tenant from the translator. You can see in more detail, what each's tenant's status is:
 
