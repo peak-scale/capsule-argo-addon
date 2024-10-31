@@ -80,34 +80,25 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | config.name | string | `"default"` | Plugin Configuration Name |
 | config.spec | object | `{}` | Config Specification |
 | fullnameOverride | string | `""` |  |
-| image.pullPolicy | string | `"IfNotPresent"` |  |
-| image.registry | string | `"ghcr.io"` |  |
-| image.repository | string | `"peak-scale/capsule-argo-addon"` |  |
-| image.tag | string | `""` |  |
-| imagePullSecrets | list | `[]` |  |
+| image.pullPolicy | string | `"IfNotPresent"` | Set the image pull policy. |
+| image.registry | string | `"ghcr.io"` | Set the image registry |
+| image.repository | string | `"peak-scale/capsule-argo-addon"` | Set the image repository |
+| image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
+| imagePullSecrets | list | `[]` | Configuration for `imagePullSecrets` so that you can use a private images registry. |
 | livenessProbe | object | `{"httpGet":{"path":"/healthz","port":10080}}` | Configure the liveness probe using Deployment probe spec |
 | nameOverride | string | `""` |  |
 | nodeSelector | object | `{}` | Set the node selector |
-| podAnnotations | object | `{}` |  |
-| podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| podAnnotations | object | `{}` | Annotations to add |
+| podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | Set the securityContext |
 | priorityClassName | string | `""` | Set the priority class name of the Capsule pod |
 | rbac.enabled | bool | `true` | Enable bootstraping of RBAC resources |
 | readinessProbe | object | `{"httpGet":{"path":"/readyz","port":10080}}` | Configure the readiness probe using Deployment probe spec |
 | replicaCount | int | `1` | Amount of replicas |
-| resources.limits.cpu | string | `"200m"` |  |
-| resources.limits.memory | string | `"128Mi"` |  |
-| resources.requests.cpu | string | `"100m"` |  |
-| resources.requests.memory | string | `"128Mi"` |  |
-| securityContext.allowPrivilegeEscalation | bool | `false` |  |
-| securityContext.capabilities.drop[0] | string | `"ALL"` |  |
-| securityContext.readOnlyRootFilesystem | bool | `true` |  |
-| securityContext.runAsNonRoot | bool | `true` |  |
-| securityContext.runAsUser | int | `1000` |  |
-| service.port | int | `80` |  |
-| service.type | string | `"ClusterIP"` |  |
-| serviceAccount.annotations | object | `{}` |  |
-| serviceAccount.create | bool | `true` |  |
-| serviceAccount.name | string | `""` |  |
+| resources | object | `{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | Set the resource requests/limits |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":1000}` | Set the securityContext for the container |
+| serviceAccount.annotations | object | `{}` | Annotations to add to the service account. |
+| serviceAccount.create | bool | `true` | Specifies whether a service account should be created. |
+| serviceAccount.name | string | `""` | The name of the service account to use. |
 | tolerations | list | `[]` | Set list of tolerations |
 | topologySpreadConstraints | list | `[]` | Set topology spread constraints |
 

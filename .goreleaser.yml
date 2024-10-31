@@ -38,7 +38,6 @@ release:
 
     [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
 
-
 checksum:
   name_template: 'checksums.txt'
 changelog:
@@ -53,23 +52,23 @@ changelog:
     - Merge remote-tracking branch
     - Merge branch
   groups:
-    - title: Dependency updates
-      regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
-      order: 300
-    - title: 'New Features'
-      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
-      order: 100
-    - title: 'Bug fixes'
-      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
-      order: 200
-    - title: 'Documentation updates'
-      regexp: ^.*?doc(\([[:word:]]+\))??!?:.+$
-      order: 400
-    - title: 'Build process updates'
-      regexp: ^.*?build(\([[:word:]]+\))??!?:.+$
-      order: 400
-    - title: Other work
-      order: 9999
+  - title: Dependency updates
+    regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
+    order: 300
+  - title: 'New Features'
+    regexp: '^.*?feat(\([[:word:]]+\))?!?:.+$|^feat:.+$'
+    order: 100
+  - title: 'Bug fixes'
+    regexp: '^.*?fix(\([[:word:]]+\))?!?:.+$|^fix:.+$'
+    order: 200
+  - title: 'Documentation updates'
+    regexp: '^.*?doc(\([[:word:]]+\))?!?:.+$|^doc:.+$'
+    order: 400
+  - title: 'Build process updates'
+    regexp: '^.*?build(\([[:word:]]+\))?!?:.+$|^build:.+$'
+    order: 400
+  - title: Other work
+    order: 9999
 sboms:
   - artifacts: archive
 signs:
