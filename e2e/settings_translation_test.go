@@ -679,7 +679,7 @@ var _ = Describe("Translation Test", func() {
 			// Expected Owners
 			owners := []capsulev1beta2.OwnerSpec{
 				{
-					Name: "alice",
+					Name: "solar-users",
 					Kind: capsulev1beta2.GroupOwner,
 					ClusterRoles: []string{
 						"admin",
@@ -687,7 +687,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				{
-					Name: "solar-users",
+					Name: "alice",
 					Kind: capsulev1beta2.GroupOwner,
 					ClusterRoles: []string{
 						"admin",

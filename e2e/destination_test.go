@@ -1,3 +1,4 @@
+// nolint
 package e2e_test
 
 import (
