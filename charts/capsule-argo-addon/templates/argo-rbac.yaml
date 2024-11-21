@@ -4,9 +4,9 @@ kind: ClusterRole
 metadata:
   name: {{ include "helm.fullname" . }}-rbac-list
 rules:
-  - apiGroups: ["*"]          # Allows access to all API groups
-    resources: ["*"]          # Allows access to all resources within these API groups
-    verbs: ["list", "watch"]           # Only allows the 'list' action
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["list", "watch", "get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

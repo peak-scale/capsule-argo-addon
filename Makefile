@@ -146,7 +146,7 @@ K3S_CLUSTER ?= "capsule-argo-addon"
 e2e: e2e-build e2e-exec e2e-destroy
 
 e2e-build: kind
-	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./hack/e2e-kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0} 
+	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0} 
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
@@ -167,6 +167,7 @@ e2e-install-addon: e2e-load-image
 		--create-namespace \
 		--set 'image.pullPolicy=Never' \
 		--set "image.tag=$(VERSION)" \
+		--set proxy.enabled=true \
 		--set proxy.crds.install=true \
         --set certManager.certificate.dnsNames={localhost} \
 		--set certManager.certificate.ipAdresses={127.0.0.1} \

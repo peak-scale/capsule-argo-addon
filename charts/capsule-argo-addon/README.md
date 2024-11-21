@@ -64,7 +64,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | proxy.autoscaling.enabled | bool | `true` | Specifies whether an hpa for capsule-proxy should be created. |
 | proxy.autoscaling.targetCPUUtilizationPercentage | int | `75` |  |
 | proxy.certManager | object | `{"generateCertificates":false}` | Get Certificate from cert-manager from Capsule-Proxy |
-| proxy.enabled | bool | `true` |  |
+| proxy.enabled | bool | `false` |  |
 | proxy.options | object | `{"clientConnectionBurst":100,"clientConnectionQPS":50,"extraArgs":["--feature-gates=ProxyClusterScoped=true","--feature-gates=ProxyAllNamespaced=true"],"logLevel":"10"}` | Enable Required FeatureGates |
 | proxy.options.clientConnectionBurst | int | `100` | Burst to use for interacting with kubernetes API Server. |
 | proxy.options.clientConnectionQPS | int | `50` | QPS to use for interacting with Kubernetes API Server. |
@@ -78,7 +78,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | args.logLevel | int | `4` | Log Level |
 | config.create | bool | `true` | Create Plugin Configuration |
 | config.name | string | `"default"` | Plugin Configuration Name |
-| config.spec | object | `{}` | Config Specification |
+| config.spec | object | `{"argo":{"destination":"https://kubernetes.default.svc","destinationServiceAccounts":true,"namespace":"argocd","rbacConfigMap":"argocd-rbac-cm"}}` | Config Specification |
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` | Set the image pull policy. |
 | image.registry | string | `"ghcr.io"` | Set the image registry |

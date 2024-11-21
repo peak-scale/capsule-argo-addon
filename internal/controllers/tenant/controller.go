@@ -1,3 +1,6 @@
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
+
 package tenant
 
 import (
@@ -16,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -40,6 +44,7 @@ type TenancyController struct {
 	Log      logr.Logger
 	Settings *stores.ConfigStore
 	requeue  chan event.GenericEvent
+	Rest     *rest.Config
 }
 
 func (i *TenancyController) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
@@ -92,7 +97,7 @@ func (i *TenancyController) SetupWithManager(ctx context.Context, mgr ctrl.Manag
 		// Whenever a translator is updated, we need to reconcile all tenants
 		Watches(&configv1alpha1.ArgoTranslator{}, i.TenantRequeueHandler()).
 		// Reconcile When Configuration Changes
-		WatchesRawSource(&source.Channel{Source: i.requeue}, i.TenantRequeueHandler()).
+		WatchesRawSource(source.Channel(i.requeue, i.TenantRequeueHandler())).
 		Complete(i)
 }
 
@@ -131,7 +136,6 @@ func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	log.V(5).Info("reconciling addons")
 	translators, err := i.reconcile(ctx, log, origin)
 	if err != nil {
 		log.Error(err, "reconcile error")

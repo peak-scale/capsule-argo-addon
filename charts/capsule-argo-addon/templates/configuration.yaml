@@ -20,12 +20,11 @@ spec:
 
 {{/* Configuration based on defaults */}}
 {{- define "config.defaults" -}}
-  {{ if .Values.proxy.enabled }}
+argo:
+  serviceAccountNamespace: {{ $.Release.Namespace }}
 proxy:
-  enabled: true
-  serviceName: {{ printf "%s-proxy" (include "capsule-proxy.fullname" .) }}
+  enabled: {{ .Values.proxy.enabled }}
+  serviceName: {{ printf "%s-proxy" (include "helm.fullname" .) }}
   serviceNamespace: {{ $.Release.Namespace }}
   servicePort: 9001
-  serviceAccountNamespace: {{ $.Release.Namespace }}
-  {{- end }}
 {{- end -}}

@@ -40,18 +40,37 @@ spec:
             description: ArgoAddonSpec defines the desired state of ArgoAddon
             properties:
               argo:
-                default:
-                  namespace: argocd
-                  rbacConfigMap: argocd-rbac-cm
                 description: ArgoCD configuration
                 properties:
+                  destination:
+                    default: https://kubernetes.default.svc
+                    description: |-
+                      If you are not using the capsule-proxy integration this destination is registered
+                      for each appproject.
+                    type: string
+                  destinationServiceAccounts:
+                    default: false
+                    description: |-
+                      This is a feature which will be released with argocd +v2.13.0
+                      If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha
+                    type: boolean
                   namespace:
+                    default: argocd
                     description: Namespace where the ArgoCD instance is running
                     type: string
                   rbacConfigMap:
+                    default: argocd-rbac-cm
                     description: Name of the ArgoCD rbac configmap (required for the
                       controller)
                     type: string
+                  serviceAccountNamespace:
+                    description: |-
+                      Default Namespace to create ServiceAccounts used by arog-cd
+                      The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
+                      It's best to have a dedicated namespace for these serviceaccounts
+                    type: string
+                required:
+                - serviceAccountNamespace
                 type: object
               force:
                 default: false
@@ -65,16 +84,12 @@ spec:
                 description: Capsule-Proxy configuration for the controller
                 properties:
                   enabled:
-                    default: true
+                    default: false
                     description: |-
-                      Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+                      Enable the capsule-proxy integration.
+                      This automatically creates services for tenants and registers them as destination
                       on the argo appproject.
                     type: boolean
-                  serviceAccountNamespace:
-                    description: |-
-                      Default Namespace to create ServiceAccounts in for proxy access.
-                      Can be overwritten on tenant-basis
-                    type: string
                   serviceName:
                     default: capsule-proxy
                     description: Name of the capsule-proxy service
@@ -94,6 +109,7 @@ spec:
                     type: boolean
                 type: object
             required:
+            - argo
             - force
             type: object
           status:
@@ -103,18 +119,37 @@ spec:
                 description: Last applied valid configuration
                 properties:
                   argo:
-                    default:
-                      namespace: argocd
-                      rbacConfigMap: argocd-rbac-cm
                     description: ArgoCD configuration
                     properties:
+                      destination:
+                        default: https://kubernetes.default.svc
+                        description: |-
+                          If you are not using the capsule-proxy integration this destination is registered
+                          for each appproject.
+                        type: string
+                      destinationServiceAccounts:
+                        default: false
+                        description: |-
+                          This is a feature which will be released with argocd +v2.13.0
+                          If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha
+                        type: boolean
                       namespace:
+                        default: argocd
                         description: Namespace where the ArgoCD instance is running
                         type: string
                       rbacConfigMap:
+                        default: argocd-rbac-cm
                         description: Name of the ArgoCD rbac configmap (required for
                           the controller)
                         type: string
+                      serviceAccountNamespace:
+                        description: |-
+                          Default Namespace to create ServiceAccounts used by arog-cd
+                          The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
+                          It's best to have a dedicated namespace for these serviceaccounts
+                        type: string
+                    required:
+                    - serviceAccountNamespace
                     type: object
                   force:
                     default: false
@@ -128,16 +163,12 @@ spec:
                     description: Capsule-Proxy configuration for the controller
                     properties:
                       enabled:
-                        default: true
+                        default: false
                         description: |-
-                          Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+                          Enable the capsule-proxy integration.
+                          This automatically creates services for tenants and registers them as destination
                           on the argo appproject.
                         type: boolean
-                      serviceAccountNamespace:
-                        description: |-
-                          Default Namespace to create ServiceAccounts in for proxy access.
-                          Can be overwritten on tenant-basis
-                        type: string
                       serviceName:
                         default: capsule-proxy
                         description: Name of the capsule-proxy service
@@ -158,6 +189,7 @@ spec:
                         type: boolean
                     type: object
                 required:
+                - argo
                 - force
                 type: object
             type: object

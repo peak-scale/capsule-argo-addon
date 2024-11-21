@@ -71,7 +71,7 @@ fullnameOverride: ""
 
 # Deploy a dedicated Capsule-Proxy for argocd
 proxy:
-  enabled: true
+  enabled: false
   # -- Enable Required FeatureGates
   options:
     # -- QPS to use for interacting with Kubernetes API Server.
@@ -98,7 +98,13 @@ config:
   # -- Plugin Configuration Name
   name: default
   # -- Config Specification
-  spec: {}
+  spec:
+    argo:
+      destination: https://kubernetes.default.svc
+      destinationServiceAccounts: true
+      namespace: argocd
+      rbacConfigMap: argocd-rbac-cm
+
 
 # Arguments for the controller
 args:

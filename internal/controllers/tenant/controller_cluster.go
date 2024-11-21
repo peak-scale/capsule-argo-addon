@@ -1,3 +1,6 @@
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
+
 package tenant
 
 import (
@@ -6,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -23,8 +27,10 @@ func (i *TenancyController) reconcileArgoCluster(
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
 	token string,
-) error {
-
+	translators []*v1alpha1.ArgoTranslator,
+) (
+	err error,
+) {
 	// Initialize Secret
 	serverSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -35,7 +41,7 @@ func (i *TenancyController) reconcileArgoCluster(
 	}
 
 	// Get Cluster-Secret
-	err := i.Client.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
+	err = i.Client.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -43,7 +49,10 @@ func (i *TenancyController) reconcileArgoCluster(
 	log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
 
 	// Handle the Proxy-Service for the tenant
-	cluster, _ := i.proxyService(ctx, log, tenant)
+	if err := i.proxyService(ctx, log, tenant); err != nil {
+		return fmt.Errorf("failed to reconcile destination service: %w", err)
+
+	}
 
 	// Decouple Object
 	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -68,6 +77,30 @@ func (i *TenancyController) reconcileArgoCluster(
 		}
 	}
 
+	// Remove when umatched
+	if len(translators) == 0 {
+		// Approject is already absent
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+
+		log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
+
+		// Delete the AppProject when it's not decoupled
+		if !meta.TenantDecoupleProject(tenant) {
+			return i.Client.Delete(ctx, serverSecret)
+		} else {
+			log.V(5).Info(
+				"decoupling serviceaccount",
+				"secret", tenant.Name,
+				"namespace", i.Settings.Get().Argo.Namespace,
+			)
+			if err := i.DecoupleTenant(serverSecret, tenant); err != nil {
+				return err
+			}
+		}
+	}
+
 	// Handle Force, if an object already exists with the same name
 	if !meta.HasTenantOwnerReference(serverSecret, tenant) {
 		if !i.ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
@@ -80,16 +113,11 @@ func (i *TenancyController) reconcileArgoCluster(
 		}
 	}
 
-	// No token was given, retry
-	if token == "" {
-		return nil
-	}
-
 	// Remove Cluster-Secret if not enabled. Token is deleted cascading via OwnerReference
-	if !i.provisionProxyService(tenant) {
+	if !i.registerCluster(tenant) || token == "" {
 		err := i.Client.Delete(ctx, serverSecret)
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return fmt.Errorf("failed to lifecycle serviceaccount: %w", err)
+			return fmt.Errorf("failed to lifecycle destination: %w", err)
 		}
 		return nil
 	}
@@ -116,7 +144,7 @@ func (i *TenancyController) reconcileArgoCluster(
 		serverSecret.StringData = map[string]string{
 			"name":    tenant.Name,
 			"project": tenant.Name,
-			"server":  cluster,
+			"server":  i.GetClusterDestination(tenant),
 			"config":  string(jsonData),
 		}
 
@@ -134,7 +162,7 @@ func (i *TenancyController) proxyService(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
-) (url string, err error) {
+) (err error) {
 	// Create a dedicated service for the tenant
 	replicatedName := tenant.Name
 	service := &corev1.Service{
@@ -152,7 +180,7 @@ func (i *TenancyController) proxyService(
 	// Get Cluster-Secret
 	err = i.Client.Get(ctx, client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && !k8serrors.IsNotFound(err) {
-		return "", err
+		return err
 	}
 
 	// Decouple Object
@@ -171,10 +199,10 @@ func (i *TenancyController) proxyService(
 					return i.DecoupleTenant(service, tenant)
 				})
 			if err != nil {
-				return "", err
+				return err
 			}
 
-			return "", nil
+			return nil
 		}
 	}
 
@@ -182,25 +210,19 @@ func (i *TenancyController) proxyService(
 		if !i.ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info("proxy already present, not overriding", "service", service.Name, "namespace", service.Namespace)
 
-			return "", ccaerrrors.NewObjectAlreadyExistsError(service)
+			return ccaerrrors.NewObjectAlreadyExistsError(service)
 		}
 	}
 
 	// Validate if Proxy is enabled, lifeycle the service if not
-	if !i.provisionProxyService(tenant) {
+	if !i.provisionProxyService() {
 		log.V(7).Info("lifecycling proxy service")
 		err := i.Client.Delete(ctx, service)
 		if err != nil && !k8serrors.IsNotFound(err) {
-			return "", fmt.Errorf("failed to lifecycle service: %w", err)
+			return fmt.Errorf("failed to lifecycle service: %w", err)
 		}
 
-		// Return proxy service url
-		//if !i.Settings.Get().Proxy.Enabled {
-		//	return i.proxyServiceName(tenant)
-		//}
-
-		return "", nil
-
+		return nil
 	}
 
 	// Get Referenced Error
@@ -210,7 +232,10 @@ func (i *TenancyController) proxyService(
 		Name:      i.Settings.Get().Proxy.CapsuleProxyServiceName,
 	}, proxySvc)
 	if err != nil {
-		return "", fmt.Errorf("failed to resolve proxy service: %w", err)
+		return fmt.Errorf("failed to resolve proxy service %s/%s: %w",
+			i.Settings.Get().Proxy.CapsuleProxyServiceNamespace,
+			i.Settings.Get().Proxy.CapsuleProxyServiceName,
+			err)
 	}
 
 	// Replicate a proxy service for the tenant
@@ -222,11 +247,11 @@ func (i *TenancyController) proxyService(
 		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), service, tenant)
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	i.Log.V(5).Info("Proxy Service created", "name", tenant.Name)
 
 	// Returns the proxy service url
-	return i.Settings.Get().ProxyServiceString(tenant), nil
+	return nil
 }

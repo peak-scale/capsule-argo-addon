@@ -1,4 +1,5 @@
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon) 
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_shield&issueType=license)
 
 > This addon is currently in public beta and under active development. Please report any issues you encounter. Using it in production is not recommended as it may lead to unexpected behaviors.
 
@@ -12,7 +13,7 @@ We have chosen a very loose implementation which makes use of so called "Transla
 
 ![Argo Capsule Addon Overview](docs/images/addon-overview.svg)
 
-By design the Addon is designed to work with the capsule-proxy. Meaning each Appproject gets it's own declarative and project scoped cluster. Which is finally a dedicated ServiceAccount, who is promoted as owner on the corresponding tenant.
+By design the Addon is designed to work with the capsule-proxy, but it also works without it. We have yet to discover the performance with the capsule-proxy in place vs without it. Each Tenant is translated into a dedicated Appproject. Each Appproject gets it's own declarative and project scoped cluster. Which is finally also a dedicated ServiceAccount, who is promoted as owner on the corresponding tenant.
 
 The project's goal is to create a very generic experience for administrators. We know of different companies which already have implemented such an operator for argocd. This is our attempt to reconcile all development into one project.
 

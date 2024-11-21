@@ -1,3 +1,6 @@
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
+
 package argo
 
 import (
@@ -55,25 +58,10 @@ func TestDefaultPolicies(t *testing.T) {
 		},
 	}
 
-	expectedResult := "p, role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
-		"p, role:test-tenant:owner,projects,update,test-tenant,allow\n" +
-		"p, role:test-tenant:read-only,clusters,get,test-tenant/*,allow\n" +
-		"p, role:test-tenant:owner,clusters,update,test-tenant/*,allow\n"
+	expectedResult := "p, caa:role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
+		"p, caa:role:test-tenant:owner,projects,update,test-tenant,allow\n" +
+		"p, caa:role:test-tenant:read-only,clusters,get,https://custom-cluster,allow\n"
 
-	result := DefaultPolicies(tenant, true)
-	assert.Equal(t, expectedResult, result, "DefaultPolicies should return correct default policies")
-}
-
-func TestDefaultPoliciesNoProxy(t *testing.T) {
-	tenant := &capsulev1beta2.Tenant{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-tenant",
-		},
-	}
-
-	expectedResult := "p, role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
-		"p, role:test-tenant:owner,projects,update,test-tenant,allow\n"
-
-	result := DefaultPolicies(tenant, false)
+	result := DefaultPolicies(tenant, "https://custom-cluster")
 	assert.Equal(t, expectedResult, result, "DefaultPolicies should return correct default policies")
 }

@@ -20,9 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ArgoAddonSpec defines the desired state of ArgoAddon
 type ArgoAddonSpec struct {
 	// When force is enabled, approjects which already exist with the same name as a tenant will be adopted
@@ -36,8 +33,7 @@ type ArgoAddonSpec struct {
 	Proxy ControllerCapsuleProxyConfig `json:"proxy,omitempty"`
 
 	// ArgoCD configuration
-	// +kubebuilder:default={namespace: argocd, rbacConfigMap: argocd-rbac-cm}
-	Argo ControllerArgoCDConfig `json:"argo,omitempty"`
+	Argo ControllerArgoCDConfig `json:"argo"`
 
 	// Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used.
 	// +optional
@@ -45,10 +41,40 @@ type ArgoAddonSpec struct {
 }
 
 // Controller Configuration for ArgoCD
+type ControllerArgoCDConfig struct {
+	// Namespace where the ArgoCD instance is running
+	// +kubebuilder:default=argocd
+	Namespace string `json:"namespace,omitempty"`
+
+	// Name of the ArgoCD rbac configmap (required for the controller)
+	// +kubebuilder:default=argocd-rbac-cm
+	RBACConfigMap string `json:"rbacConfigMap,omitempty"`
+
+	// If you are not using the capsule-proxy integration this destination is registered
+	// for each appproject.
+	// +kubebuilder:default="https://kubernetes.default.svc"
+	Destination string `json:"destination,omitempty"`
+
+	// +optional
+	//DefaultServerNamespace string `json:"defaultNamespace,omitempty"`
+
+	// This is a feature which will be released with argocd +v2.13.0
+	// If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha
+	// +kubebuilder:default=false
+	DestinationServiceAccounts bool `json:"destinationServiceAccounts,omitempty"`
+
+	// Default Namespace to create ServiceAccounts used by arog-cd
+	// The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
+	// It's best to have a dedicated namespace for these serviceaccounts
+	ServiceAccountNamespace string `json:"serviceAccountNamespace"`
+}
+
+// Controller Configuration for ArgoCD
 type ControllerCapsuleProxyConfig struct {
-	// Enable the capsule-proxy integration. This automatically creates ServiceAccounts for tenants and registers them as destination
+	// Enable the capsule-proxy integration.
+	// This automatically creates services for tenants and registers them as destination
 	// on the argo appproject.
-	// +kubebuilder:default=true
+	// +kubebuilder:default=false
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Name of the capsule-proxy service
@@ -66,19 +92,6 @@ type ControllerCapsuleProxyConfig struct {
 	// Port of the capsule-proxy service
 	// +kubebuilder:default=true
 	CapsuleProxyTLS bool `json:"tls,omitempty"`
-
-	// Default Namespace to create ServiceAccounts in for proxy access.
-	// Can be overwritten on tenant-basis
-	ServiceAccountNamespace string `json:"serviceAccountNamespace,omitempty"`
-}
-
-// Controller Configuration for ArgoCD
-type ControllerArgoCDConfig struct {
-	// Namespace where the ArgoCD instance is running
-	Namespace string `json:"namespace,omitempty"`
-
-	// Name of the ArgoCD rbac configmap (required for the controller)
-	RBACConfigMap string `json:"rbacConfigMap,omitempty"`
 }
 
 //+kubebuilder:object:root=true
