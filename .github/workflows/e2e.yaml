@@ -40,7 +40,7 @@ jobs:
         with:
           skipClusterCreation: true
           version: v0.14.0
-      - uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v3
+      - uses: azure/setup-helm@5119fcb9089d432beecbf79bb2c7915207344b78 # v3
         with:
           version: v3.14.2
       - uses: fluxcd/flux2/action@5350425cdcd5fa015337e09fa502153c0275bd4b
