@@ -7,6 +7,7 @@
   "branchConcurrentLimit": 0,
   "mode": "full",
   "commitMessageLowerCase": "auto",
+  "semanticCommits": "enabled",
   "flux": {
     "fileMatch": ["^.*\\flux.yaml$"]
   },
