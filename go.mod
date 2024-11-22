@@ -16,9 +16,9 @@ require (
 	github.com/prometheus/client_golang v1.20.3
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.31.0
-	k8s.io/apimachinery v0.31.0
-	k8s.io/client-go v0.31.0
+	k8s.io/api v0.31.3
+	k8s.io/apimachinery v0.31.3
+	k8s.io/client-go v0.31.3
 	k8s.io/kubectl v0.31.2
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 	sigs.k8s.io/controller-runtime v0.19.0
@@ -46,7 +46,7 @@ replace (
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.31.0
 	k8s.io/code-generator => k8s.io/code-generator v0.31.0
 	k8s.io/component-base => k8s.io/component-base v0.31.0
-	k8s.io/component-helpers => k8s.io/component-helpers v0.31.0
+	k8s.io/component-helpers => k8s.io/component-helpers v0.31.3
 	k8s.io/controller-manager => k8s.io/controller-manager v0.31.0
 	k8s.io/cri-api => k8s.io/cri-api v0.31.0
 	k8s.io/cri-client => k8s.io/cri-client v0.31.0
