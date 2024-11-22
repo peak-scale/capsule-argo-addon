@@ -6,13 +6,14 @@
   "prConcurrentLimit": 0,
   "branchConcurrentLimit": 0,
   "mode": "full",
+  "commitMessageLowerCase": "auto",
   "flux": {
     "fileMatch": ["^.*\\flux.yaml$"]
   },
   "packageRules": [
     {
       "matchPackageNames": ["*"],
-      "commitMessagePrefix": "feat(deps)"
+      "commitMessagePrefix": "feat(deps):"
     }
   ]
 }
