@@ -20,7 +20,7 @@
     {
       "matchManagers": ["gomod"],
       "groupName": "all-go-updates",
-      "updateTypes": ["minor", "patch"]
+      "updateTypes": ["major", "minor", "patch"]
     }
   ]
 }
