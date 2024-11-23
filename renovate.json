@@ -15,17 +15,12 @@
     {
       "matchManagers": ["github-actions", "flux"],
       "groupName": "all-ci-updates",
-      "updateTypes": ["minor", "patch"],
-      "commitMessagePrefix": "ci(deps):"
+      "updateTypes": ["major", "minor", "patch"]
     },
     {
       "matchManagers": ["gomod"],
       "groupName": "all-go-updates",
       "updateTypes": ["minor", "patch"]
-    },
-    {
-      "matchPackageNames": ["*"],
-      "commitMessagePrefix": "chore(deps):"
     }
   ]
 }
