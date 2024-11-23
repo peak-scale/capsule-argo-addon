@@ -6,7 +6,6 @@
 # Capsule ❤️ Argo
 
 ![Argo Capsule Addon](docs/images/capsule-argo.png)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_shield)
 
 This addon is designed for kubernetes administrators, to automatically translate their existing Capsule Tenants into Argo Appprojects. This addon adds new capabilities to the Capsule project, by allowing the administrator to create a new tenant in Capsule, and automatically create a new Argo Appproject for that tenant. This addon is designed to be used in conjunction with the Capsule project, and is not intended to be used as a standalone project.
 
