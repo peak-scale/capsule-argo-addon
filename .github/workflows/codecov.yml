@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Check secret
         id: checksecret
         uses: peak-scale/github-actions/exists@38322faabccd75abfa581c435e367d446b6d2c3b # v0.1.0
@@ -29,7 +29,7 @@ jobs:
           make integration-test
       - name: Upload coverage reports to Codecov
         if: steps.checksecret.outputs.result == 'true'
-        uses: codecov/codecov-action@d168679d447a7d9f9917d4b26caf2cfbf080cfb4 # v5.0.6
+        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
         with:
           files: ./test/integration/cover.out
         env:
