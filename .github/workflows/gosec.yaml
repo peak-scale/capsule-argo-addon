@@ -20,7 +20,7 @@ jobs:
       GO111MODULE: on
     steps:
       - name: Checkout Source
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
         with:
           go-version-file: 'go.mod'
@@ -29,6 +29,6 @@ jobs:
         with:
           args:  '-no-fail -fmt sarif -out gosec.sarif ./...'
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@c4fb451437765abf5018c6fbf22cce1a7da1e5cc
+        uses: github/codeql-action/upload-sarif@3d3d628990a5f99229dd9fa1821cc5a4f31b613b
         with:
           sarif_file: gosec.sarif
