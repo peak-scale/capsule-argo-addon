@@ -13,13 +13,13 @@
   },
   "packageRules": [
     {
-      "matchPackagePatterns": ["^github-actions$", "^flux$"], 
+      "matchDatasources": ["github-tags", "github-runners"], 
       "groupName": "all-github-actions-updates",
       "updateTypes": ["minor", "patch"],
       "commitMessagePrefix": "ci(deps):"
     },
     {
-      "matchPackagePatterns": ["^gomod$"], 
+      "matchDatasources": ["go"], 
       "groupName": "all-go-updates",
       "updateTypes": ["minor", "patch"],
       "commitMessagePrefix": "chore(deps):"
