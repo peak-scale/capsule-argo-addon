@@ -9,7 +9,7 @@
   "commitMessageLowerCase": "auto",
   "semanticCommits": "enabled",
   "flux": {
-    "fileMatch": ["**/flux.yaml"]
+    "fileMatch": ["^.*flux\\.yaml$"]
   },
   "packageRules": [
     {
