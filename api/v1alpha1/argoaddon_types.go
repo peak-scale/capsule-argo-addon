@@ -22,11 +22,22 @@ import (
 
 // ArgoAddonSpec defines the desired state of ArgoAddon
 type ArgoAddonSpec struct {
-	// When force is enabled, approjects which already exist with the same name as a tenant will be adopted
-	// and overwritten. When disabled the approjects will not be changed or adopted.
-	// This is true for any other resource as well
+	// When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
+	// and overwritten. When disabled the appprojects will not be changed or adopted.
+	// This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.
 	//+kubebuilder:default=false
 	Force bool `json:"force"`
+
+	// When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
+	// This can also be set on a per-tenant basis via annotations.
+	//+kubebuilder:default=false
+	Decouple bool `json:"decouple"`
+
+	// All appprojects, which are collected by this controller, are set into ready-only mode
+	// That means only properties from matching translators are respected. Any changes from users are
+	// overwritten. This can also be set on a per-tenant basis via annotations.
+	//+kubebuilder:default=false
+	ReadOnly bool `json:"readonly"`
 
 	// Capsule-Proxy configuration for the controller
 	//+kubebuilder:default={}

@@ -5,6 +5,7 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
@@ -226,6 +227,10 @@ func (i *TenancyController) reconcile(
 		log.V(5).Info("updating translator conditions", "translator", selected.Name)
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tenant.DeepCopy(), func() error {
+				// Get latest revision
+				if err := i.Client.Get(ctx, client.ObjectKeyFromObject(selected), selected); err != nil {
+					return fmt.Errorf("failed to get the latest version of translator: %w", err)
+				}
 
 				if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
 					selected.RemoveTenantCondition(tenant.Name)
@@ -258,6 +263,11 @@ func (i *TenancyController) reconcile(
 	// Lifecycle from unmatched tenants
 	for _, unmatched := range unmatchedTranslators {
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+			// Get latest revision
+			if err := i.Client.Get(ctx, client.ObjectKeyFromObject(unmatched), unmatched); err != nil {
+				return fmt.Errorf("failed to get the latest version of translator: %w", err)
+			}
+
 			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tenant.DeepCopy(), func() error {
 				unmatched.RemoveTenantCondition(tenant.Name)
 
@@ -375,7 +385,7 @@ func (i *TenancyController) lifecycle(ctx context.Context, log logr.Logger, tena
 
 func (i *TenancyController) lifecycleArgo(ctx context.Context, tenant *capsulev1beta2.Tenant) (err error) {
 	// Update existing configmap with new csv
-	if !meta.TenantDecoupleProject(tenant) {
+	if !i.Settings.Get().DecoupleTenant(tenant) {
 
 		configmap := &corev1.ConfigMap{}
 		err := i.Client.Get(ctx, client.ObjectKey{

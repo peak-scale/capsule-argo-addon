@@ -35,7 +35,7 @@ func TestAddDynamicTenantOwnerReference(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	err := AddDynamicTenantOwnerReference(ctx, scheme, obj, tenant)
+	err := AddDynamicTenantOwnerReference(ctx, scheme, obj, tenant, false)
 	assert.NoError(t, err)
 
 	// Verify the owner reference was added

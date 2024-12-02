@@ -56,7 +56,7 @@ func (i *TenancyController) reconcileArgoCluster(
 
 	// Decouple Object
 	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		if meta.TenantDecoupleProject(tenant) && !k8serrors.IsNotFound(err) {
+		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
 			_, err := controllerutil.CreateOrPatch(
 				ctx,
 				i.Client,
@@ -87,7 +87,7 @@ func (i *TenancyController) reconcileArgoCluster(
 		log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
 
 		// Delete the AppProject when it's not decoupled
-		if !meta.TenantDecoupleProject(tenant) {
+		if !i.Settings.Get().DecoupleTenant(tenant) {
 			return i.Client.Delete(ctx, serverSecret)
 		} else {
 			log.V(5).Info(
@@ -103,7 +103,7 @@ func (i *TenancyController) reconcileArgoCluster(
 
 	// Handle Force, if an object already exists with the same name
 	if !meta.HasTenantOwnerReference(serverSecret, tenant) {
-		if !i.ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
+		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info(
 				"cluster secret already present, not overriding",
 				"secret", tenant.Name,
@@ -114,7 +114,7 @@ func (i *TenancyController) reconcileArgoCluster(
 	}
 
 	// Remove Cluster-Secret if not enabled. Token is deleted cascading via OwnerReference
-	if !i.registerCluster(tenant) || token == "" {
+	if !i.Settings.Get().RegisterCluster(tenant) || token == "" {
 		err := i.Client.Delete(ctx, serverSecret)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return fmt.Errorf("failed to lifecycle destination: %w", err)
@@ -144,11 +144,11 @@ func (i *TenancyController) reconcileArgoCluster(
 		serverSecret.StringData = map[string]string{
 			"name":    tenant.Name,
 			"project": tenant.Name,
-			"server":  i.GetClusterDestination(tenant),
+			"server":  i.Settings.Get().GetClusterDestination(tenant),
 			"config":  string(jsonData),
 		}
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), serverSecret, tenant)
+		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), serverSecret, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func (i *TenancyController) proxyService(
 
 	// Decouple Object
 	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		if meta.TenantDecoupleProject(tenant) && !k8serrors.IsNotFound(err) {
+		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
 			_, err := controllerutil.CreateOrPatch(
 				ctx,
 				i.Client,
@@ -207,7 +207,8 @@ func (i *TenancyController) proxyService(
 	}
 
 	if !meta.HasTenantOwnerReference(service, tenant) {
-		if !i.ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
+		i.Settings.Get().ForceTenant(tenant)
+		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info("proxy already present, not overriding", "service", service.Name, "namespace", service.Namespace)
 
 			return ccaerrrors.NewObjectAlreadyExistsError(service)
@@ -215,7 +216,7 @@ func (i *TenancyController) proxyService(
 	}
 
 	// Validate if Proxy is enabled, lifeycle the service if not
-	if !i.provisionProxyService() {
+	if !i.Settings.Get().ProvisionProxyService() {
 		log.V(7).Info("lifecycling proxy service")
 		err := i.Client.Delete(ctx, service)
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -244,7 +245,7 @@ func (i *TenancyController) proxyService(
 		service.Spec.Ports = proxySvc.Spec.Ports
 		service.Spec.Selector = proxySvc.Spec.Selector
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), service, tenant)
+		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), service, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
 		return err

@@ -61,8 +61,8 @@ func (i *TenancyController) reconcileArgoProject(
 
 	// Don't Force, When project already exists
 	// Check this before bootstraping any dependencies
-	if !meta.HasTenantOwnerReference(appProject, tenant) {
-		if !i.ForceTenant(tenant) && !k8serrors.IsNotFound(gerr) {
+	if !meta.HasTenantOwnerReference(appProject, tenant) || len(meta.GetTranslatingFinalizers(appProject)) == 0 {
+		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(gerr) {
 			log.V(1).Info("appproject already present, not overriding", "appproject", appProject.Name)
 
 			return ccaerrrors.NewObjectAlreadyExistsError(appProject)
@@ -82,7 +82,7 @@ func (i *TenancyController) reconcileArgoProject(
 	}
 
 	// Get Destination
-	destination := i.GetClusterDestination(tenant)
+	destination := i.Settings.Get().GetClusterDestination(tenant)
 
 	// Lifecycle Approject (If marked for deletion remove finalizers)
 	if !appProject.ObjectMeta.DeletionTimestamp.IsZero() || !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -114,7 +114,7 @@ func (i *TenancyController) reconcileArgoProject(
 			// Handle when the tenant is being deleted but the AppProject is decoupled
 			// In this case we remove the owner reference and the tenant tracking label so the Appproject can still exist
 			if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-				if meta.TenantDecoupleProject(tenant) {
+				if i.Settings.Get().DecoupleTenant(tenant) {
 					log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
 					if err := i.DecoupleTenant(appProject, tenant); err != nil {
 						return err
@@ -131,15 +131,15 @@ func (i *TenancyController) reconcileArgoProject(
 		return nil
 	}
 
-	// Lifecycle Approject (If no translators are present, remove the Approject)
+	// Lifecycle Approject (If no translators are present, remove the Appproject)
 	if len(translators) == 0 {
-		// Approject is already absent
+		// Appproject is already absent
 		if k8serrors.IsNotFound(gerr) {
 			return nil
 		}
 
 		// Delete the AppProject when it's not decoupled
-		if !meta.TenantDecoupleProject(tenant) {
+		if !i.Settings.Get().DecoupleTenant(tenant) {
 			return i.Client.Delete(ctx, appProject)
 		} else {
 			log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
@@ -239,7 +239,7 @@ func (i *TenancyController) reconcileArgoProject(
 		log.V(7).Info("combined translators config", "appproject", appProject.Name, "config", translatedSpec)
 
 		//// Merge the translatedSpec into the appProject.Spec
-		if meta.TenantReadOnly(tenant) {
+		if i.Settings.Get().ReadOnlyTenant(tenant) {
 			log.V(5).Info("overwriting spec", "appproject", appProject.Name)
 			// Overwrite translatedSpec into the appProject.Spec
 			appProject.Spec = *translatedSpec
@@ -281,7 +281,7 @@ func (i *TenancyController) reconcileArgoProject(
 
 		switch {
 		// Add the proxy destination when the proxy is enabled and there are translators
-		case i.provisionProxyService() && len(translators) > 0:
+		case i.Settings.Get().ProvisionProxyService() && len(translators) > 0:
 			log.V(5).Info("adding proxy destination", "appproject", appProject.Name)
 			if !argo.ProjectHasDestination(appProject, proxyDestination) {
 				appProject.Spec.Destinations = append(appProject.Spec.Destinations, proxyDestination)
@@ -295,7 +295,7 @@ func (i *TenancyController) reconcileArgoProject(
 		// Check if tenant is being deleted (Remove owner reference)
 		log.V(5).Info("ensuring ownerreference", "appproject", appProject.Name)
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), appProject, tenant)
+		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), appProject, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
 		return err
@@ -389,7 +389,7 @@ func (i *TenancyController) reflectArgoCSV(
 	log.V(10).Info("extracted roles for tenant", "tenant", tenant.Name, "roles", roles)
 
 	// Add Default Policies for App-Project
-	for _, dlts := range argo.DefaultPolicies(tenant, i.GetClusterDestination(tenant)) {
+	for _, dlts := range argo.DefaultPolicies(tenant, i.Settings.Get().GetClusterDestination(tenant)) {
 		sb.WriteString(dlts)
 	}
 

@@ -89,7 +89,7 @@ proxy:
   autoscaling:
     # -- Specifies whether an hpa for capsule-proxy should be created.
     enabled: true
-    targetCPUUtilizationPercentage: 75
+    targetCPUUtilizationPercentage: 75§s
 
 # Plugin Configuration
 config:
@@ -104,7 +104,6 @@ config:
       destinationServiceAccounts: true
       namespace: argocd
       rbacConfigMap: argocd-rbac-cm
-
 
 # Arguments for the controller
 args:

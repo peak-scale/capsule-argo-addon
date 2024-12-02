@@ -19,6 +19,7 @@ func AddDynamicTenantOwnerReference(
 	schema *runtime.Scheme,
 	obj client.Object,
 	tenant *capsulev1beta2.Tenant,
+	decouple bool,
 ) (err error) {
 	err = controllerutil.SetControllerReference(tenant, obj, schema)
 	if err != nil {
@@ -26,7 +27,7 @@ func AddDynamicTenantOwnerReference(
 		return err
 	}
 
-	if TenantDecoupleProject(tenant) {
+	if decouple {
 		ownerRefs := obj.GetOwnerReferences()
 		// Remove blockOwnerDeletion and controller only if they are currently set
 		needsUpdate := false

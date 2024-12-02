@@ -73,6 +73,15 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result 
 			Verb:     "allow",
 		}))
 
+	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
+		tenant.Name,
+		addonsv1alpha1.ArgocdPolicyDefinition{
+			Resource: "clusters",
+			Action:   []string{"get", "list"},
+			Verb:     "allow",
+			Path:     "*",
+		}))
+
 	if destination != "" {
 		result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 			destination,
