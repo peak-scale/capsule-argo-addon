@@ -207,7 +207,6 @@ func (i *TenancyController) proxyService(
 	}
 
 	if !meta.HasTenantOwnerReference(service, tenant) {
-		i.Settings.Get().ForceTenant(tenant)
 		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info("proxy already present, not overriding", "service", service.Name, "namespace", service.Namespace)
 

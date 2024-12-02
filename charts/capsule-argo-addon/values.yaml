@@ -89,7 +89,7 @@ proxy:
   autoscaling:
     # -- Specifies whether an hpa for capsule-proxy should be created.
     enabled: true
-    targetCPUUtilizationPercentage: 75§s
+    targetCPUUtilizationPercentage: 75
 
 # Plugin Configuration
 config:
