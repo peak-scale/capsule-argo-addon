@@ -43,6 +43,9 @@ spec:
               fieldRef:
                 fieldPath: metadata.namespace
           ports:
+          - name: pprof
+            containerPort: 8082
+            protocol: TCP
           {{- if and $.Values.monitoring.enabled }}
           - name: metrics
             containerPort: 8080
