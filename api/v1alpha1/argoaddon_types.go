@@ -30,7 +30,7 @@ type ArgoAddonSpec struct {
 
 	// When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
 	// This can also be set on a per-tenant basis via annotations.
-	//+kubebuilder:default=false
+	//+kubebuilder:default=true
 	Decouple bool `json:"decouple"`
 
 	// All appprojects, which are collected by this controller, are set into ready-only mode
@@ -40,10 +40,9 @@ type ArgoAddonSpec struct {
 	ReadOnly bool `json:"readonly"`
 
 	// Capsule-Proxy configuration for the controller
-	//+kubebuilder:default={}
-	Proxy ControllerCapsuleProxyConfig `json:"proxy,omitempty"`
+	Proxy ControllerCapsuleProxyConfig `json:"proxy"`
 
-	// ArgoCD configuration
+	// Argo configuration
 	Argo ControllerArgoCDConfig `json:"argo"`
 
 	// Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used.
