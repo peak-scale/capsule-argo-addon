@@ -61,14 +61,6 @@ func TenantRegisterDestination(tenant *capsulev1beta2.Tenant) bool {
 	return ProccessBoolean(tenant.Annotations[AnnotationDestinationRegister], false)
 }
 
-func TenantDecoupleProject(tenant *capsulev1beta2.Tenant) bool {
-	return ProccessBoolean(tenant.GetAnnotations()[AnnotationProjectDecouple], false)
-}
-
-func TenantReadOnly(tenant *capsulev1beta2.Tenant) bool {
-	return ProccessBoolean(tenant.GetAnnotations()[AnnotationProjectReadOnly], false)
-}
-
 func ProccessBoolean(val string, def bool) bool {
 	switch strings.ToLower(val) {
 	case "true", "enable":

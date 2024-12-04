@@ -40,6 +40,8 @@ spec:
 
 #### `>=v2.13.0` (default)
 
+**THIS IS THE RECOMMENDED SETUP (Security + Performance)**
+
 This is the default configuration, this only works if the argo-cd version `>=v2.13.0` is used.
 
 ```yaml
@@ -68,6 +70,8 @@ spec:
 ```
 
 #### `<v2.13.0`
+
+**MIGHT encounter issues with the multiple clusters registered**
 
 ```yaml
 apiVersion: addons.projectcapsule.dev/v1alpha1

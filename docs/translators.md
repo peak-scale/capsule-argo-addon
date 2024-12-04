@@ -159,11 +159,6 @@ This policy allows the users to see the project (kind of necessary). Therefor it
 
 ```csv
 p, caa:role:wind:read-only,projects,get,<appproject-name>,allow
-```
-
-If you have the capsule-proxy integration enabled, there will also be a policy which allows the users to display the clusters within the appproject:
-
-```csv
 p, caa:role:wind:read-only,clusters,get,<appproject-name>/*,allow
 ```
 
@@ -173,12 +168,6 @@ This policy allows users to make changes to the appproject (if you have some sor
 
 ```csv
 p, caa:role:wind:owner,projects,update,<appproject-name>,allow
-```
-
-If you have the capsule-proxy integration enabled, there will also be a policy which allows the users to display the clusters within the appproject:
-
-```csv
-p, caa:role:wind:owner,clusters,*,<appproject-name>/*,allow
 ```
 
 ### Project Settings

@@ -196,7 +196,7 @@ var _ = Describe("Argo Destination Test", func() {
 			// Expected Translation
 			expected := []argocdv1alpha1.ApplicationDestination{
 				{
-					Server: argoaddon.Spec.Argo.Destination,
+					Server: argoaddon.Spec.GetClusterDestination(solar),
 					Name:   solar.Name,
 				},
 			}

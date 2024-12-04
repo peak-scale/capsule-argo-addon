@@ -64,6 +64,13 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result 
 			Action:   []string{"get"},
 			Verb:     "allow",
 		}))
+	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
+		tenant.Name,
+		addonsv1alpha1.ArgocdPolicyDefinition{
+			Resource: "projects",
+			Action:   []string{"list"},
+			Verb:     "allow",
+		}))
 
 	result = append(result, PolicyString(DefaultPolicyOwner(tenant),
 		tenant.Name,
@@ -73,6 +80,24 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result 
 			Verb:     "allow",
 		}))
 
+	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
+		tenant.Name,
+		addonsv1alpha1.ArgocdPolicyDefinition{
+			Resource: "clusters",
+			Action:   []string{"get"},
+			Verb:     "allow",
+			Path:     "*",
+		}))
+	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
+		tenant.Name,
+		addonsv1alpha1.ArgocdPolicyDefinition{
+			Resource: "clusters",
+			Action:   []string{"list"},
+			Verb:     "allow",
+			Path:     "*",
+		}))
+
+	// Allow getting specifc destination
 	if destination != "" {
 		result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 			destination,
@@ -80,7 +105,6 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result 
 				Resource: "clusters",
 				Action:   []string{"get"},
 				Verb:     "allow",
-				Path:     "*",
 			}))
 	}
 

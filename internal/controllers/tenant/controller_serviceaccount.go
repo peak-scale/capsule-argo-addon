@@ -54,7 +54,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 
 	// Decouple Object
 	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		if meta.TenantDecoupleProject(tenant) && !k8serrors.IsNotFound(err) {
+		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
 			_, err := controllerutil.CreateOrPatch(
 				ctx,
 				i.Client,
@@ -64,10 +64,6 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 						"decoupling serviceaccount",
 						"serviceaccount", accountResource.Name,
 						"namespace", accountResource.Namespace)
-
-					if err := i.DecoupleTenant(accountResource, tenant); err != nil {
-						return err
-					}
 
 					return i.DecoupleTenant(accountResource, tenant)
 				})
@@ -80,7 +76,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	}
 
 	if !meta.HasTenantOwnerReference(accountResource, tenant) {
-		if !i.ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
+		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info(
 				"proxy already present, not overriding",
 				"serviceaccount", accountResource.Name,
@@ -102,7 +98,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 			return "", err
 		}
 
-		if !meta.TenantDecoupleProject(tenant) {
+		if !i.Settings.Get().DecoupleTenant(tenant) {
 			if err := i.Client.Delete(ctx, accountResource); err != nil {
 				return "", err
 			}
@@ -130,7 +126,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		}
 		accountResource.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant)
+		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
 		return "", fmt.Errorf("error while applying serviceaccount: %s", err)
@@ -172,7 +168,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		}
 		tokenResource.ObjectMeta.Annotations["kubernetes.io/service-account.name"] = serviceAccount
 
-		if err := meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant); err != nil {
+		if err := meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant)); err != nil {
 			return err
 		}
 
