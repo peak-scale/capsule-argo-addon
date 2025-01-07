@@ -47,7 +47,7 @@ jobs:
           fi
 
       - name: Setup Flux CLI
-        uses: fluxcd/flux2/action@b232bbe00449cf86939499c5ec99b6c9197c83a0
+        uses: fluxcd/flux2/action@16f55bbf228c13b0aa608a297497bf40d2763935
         with:
             version: 'latest'
 
