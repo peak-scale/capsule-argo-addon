@@ -7,6 +7,7 @@ toolchain go1.22.7
 require (
 	dario.cat/mergo v1.0.1
 	github.com/BurntSushi/toml v1.4.0
+	github.com/KimMachineGun/automemlimit v0.7.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/argoproj/argo-cd/v2 v2.13.0-rc5
 	github.com/go-logr/logr v1.4.2
@@ -15,6 +16,7 @@ require (
 	github.com/projectcapsule/capsule v0.6.2
 	github.com/prometheus/client_golang v1.20.3
 	github.com/stretchr/testify v1.9.0
+	go.uber.org/automaxprocs v1.5.3
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.31.0
@@ -156,6 +158,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

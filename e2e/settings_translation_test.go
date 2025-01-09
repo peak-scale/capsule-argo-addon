@@ -1,4 +1,4 @@
-// nolint
+//nolint:all
 package e2e_test
 
 import (
