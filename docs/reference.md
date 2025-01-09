@@ -59,7 +59,6 @@ ArgoCD configuration
 | **serviceAccountNamespace** | string | Default Namespace to create ServiceAccounts used by arog-cd
 The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
 It's best to have a dedicated namespace for these serviceaccounts | true |
-| **defaultNamespace** | string |  | false |
 | **destination** | string | If you are not using the capsule-proxy integration this destination is registered
 for each appproject.<br/><i>Default</i>: https://kubernetes.default.svc<br/> | false |
 | **destinationServiceAccounts** | boolean | This is a feature which will be released with argocd +v2.13.0
@@ -122,7 +121,6 @@ ArgoCD configuration
 | **serviceAccountNamespace** | string | Default Namespace to create ServiceAccounts used by arog-cd
 The namespace must be part of capsuleUsers and have "list", "get" and "watch" privileges for the entire cluster
 It's best to have a dedicated namespace for these serviceaccounts | true |
-| **defaultNamespace** | string |  | false |
 | **destination** | string | If you are not using the capsule-proxy integration this destination is registered
 for each appproject.<br/><i>Default</i>: https://kubernetes.default.svc<br/> | false |
 | **destinationServiceAccounts** | boolean | This is a feature which will be released with argocd +v2.13.0
