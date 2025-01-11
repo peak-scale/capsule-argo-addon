@@ -21,7 +21,7 @@ sources:
   - https://github.com/peak-scale/capsule-argo-addon
 dependencies:
   - name: capsule-proxy
-    version: 0.8.1
+    version: 0.9.0
     repository: "oci://ghcr.io/projectcapsule/charts"
     condition: proxy.enabled
     alias: proxy
