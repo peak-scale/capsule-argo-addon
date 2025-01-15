@@ -29,6 +29,6 @@ jobs:
         with:
           args:  '-no-fail -fmt sarif -out gosec.sarif ./...'
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@1f86f55dce064513e2111b0d4fc7cfb11444c092
+        uses: github/codeql-action/upload-sarif@3b4f4d94c0591488e786754af4206d57afb25431
         with:
           sarif_file: gosec.sarif
