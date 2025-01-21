@@ -38,6 +38,9 @@ spec:
 
 [Argo(CD)](https://artifacthub.io/packages/helm/argo/argo-cd) is recommended to be installed in the [v2.13.0](https://github.com/argoproj/argo-cd/releases/tag/v2.13.0) version. This version adds support for `destinationServiceAccounts`, which makes the appprojects much more secure. Here's how the addon is best configured for the corresponding argo-cd versions
 
+**You must enable `application.sync.impersonation.enabled: "true"` impersonation explicitly in `argocd-cm`, by default it wont be working**. [Read More](https://argo-cd.readthedocs.io/en/stable/proposals/decouple-application-sync-user-using-impersonation/#component-argocd-application-controller)
+
+
 #### `>=v2.13.0` (default)
 
 **THIS IS THE RECOMMENDED SETUP (Security + Performance)**

@@ -50,6 +50,7 @@ spec:
         accounts.bob: apiKey, login
         accounts.guy: apiKey, login
         users.anonymous.enabled: "false"
+        application.sync.impersonation.enabled: "true"
         resource.customizations.ignoreDifferences.Namespace: |
           jqPathExpressions:
           - '.metadata.labels'
