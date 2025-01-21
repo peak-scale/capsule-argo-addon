@@ -1,0 +1,53 @@
+{{- if $.Values.webhooks.enabled }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "helm.fullname" . }}-webhook
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "helm.fullname" . }}-webhook-cert
+webhooks:
+  {{- with .Values.webhooks.applications }}
+    {{- if .enabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    {{- include "helm.webhooks.service" (dict "path" "/mutate/applications" "ctx" $) | nindent 4 }}
+  failurePolicy: {{ .failurePolicy }}
+  name: applications.argo.projectcapsule.dev
+  {{- with .rules }}
+  rules:
+    {{- toYaml .| nindent 4}} 
+  {{- end }}
+  {{- with .namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml .| nindent 4}} 
+  {{- end }}
+  sideEffects: None
+  timeoutSeconds: {{ $.Values.webhooks.mutatingWebhooksTimeoutSeconds }}
+    {{- end }}
+  {{- end }}
+  {{- with .Values.webhooks.applicationsets }}
+    {{- if .enabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    {{- include "helm.webhooks.service" (dict "path" "/mutate/applicationsets" "ctx" $) | nindent 4 }}
+  failurePolicy: {{ .failurePolicy }}
+  name: applicationsets.argo.projectcapsule.dev
+  {{- with .rules }}
+  rules:
+    {{- toYaml .| nindent 4}} 
+  {{- end }}
+  {{- with .namespaceSelector }}
+  namespaceSelector:
+    {{- toYaml .| nindent 4}} 
+  {{- end }}
+  sideEffects: None
+  timeoutSeconds: {{ $.Values.webhooks.mutatingWebhooksTimeoutSeconds }}
+    {{- end }}
+  {{- end }}
+
+
+{{- end }}

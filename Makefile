@@ -167,10 +167,11 @@ e2e-install-addon: e2e-load-image
 		--create-namespace \
 		--set 'image.pullPolicy=Never' \
 		--set "image.tag=$(VERSION)" \
+		--set certManager.certificate.dnsNames={localhost} \
 		--set proxy.enabled=true \
 		--set proxy.crds.install=true \
         --set certManager.certificate.dnsNames={localhost} \
-		--set certManager.certificate.ipAdresses={127.0.0.1} \
+		--set webhooks.enabled=true \
 		capsule-argo-addon \
 		./charts/capsule-argo-addon
 

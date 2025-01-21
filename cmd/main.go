@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
@@ -29,6 +31,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
+	"github.com/peak-scale/capsule-argo-addon/internal/webhooks"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	//+kubebuilder:scaffold:imports
 )
@@ -48,7 +51,7 @@ func init() {
 
 func main() {
 	var metricsAddr string
-	var enableLeaderElection bool
+	var enableLeaderElection, enablePprof, hooks bool
 	var probeAddr string
 	var settingName string
 
@@ -57,6 +60,8 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&settingName, "setting-name", "default", "The setting name to use for this controller instance")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":10080", "The address the probe endpoint binds to.")
+	flag.BoolVar(&enablePprof, "enable-pprof", false, "Enables Pprof endpoint for profiling (not recommend in production)")
+	flag.BoolVar(&hooks, "enable-webhooks", false, "Register Mutating Webhooks to be serving")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -68,7 +73,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	ctrlConfig := ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
@@ -86,10 +91,42 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		LeaderElectionReleaseOnCancel: true,
-	})
+	}
+
+	// Conditional config
+	if hooks {
+		ctrlConfig.WebhookServer = ctrlwebhook.NewServer(ctrlwebhook.Options{
+			Port: 9443,
+		})
+	}
+
+	if enablePprof {
+		ctrlConfig.PprofBindAddress = ":8082"
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrlConfig)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	if hooks {
+		setupLog.Info("registering webhooks")
+
+		mgr.GetWebhookServer().Register("/mutate/applications", &admission.Webhook{
+			Handler: &webhooks.ApplicationWebhook{
+				Decoder: admission.NewDecoder(mgr.GetScheme()),
+				Client:  mgr.GetClient(),
+				Log:     ctrl.Log.WithName("Webhooks").WithName("Applications"),
+			},
+		})
+		mgr.GetWebhookServer().Register("/mutate/applicationsets", &admission.Webhook{
+			Handler: &webhooks.ApplicationSetWebhook{
+				Decoder: admission.NewDecoder(mgr.GetScheme()),
+				Client:  mgr.GetClient(),
+				Log:     ctrl.Log.WithName("Webhooks").WithName("ApplicationSets"),
+			},
+		})
 	}
 
 	//+kubebuilder:scaffold:builder
@@ -100,7 +137,7 @@ func main() {
 	settings := &config.ConfigReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Config"),
+		Log:      ctrl.Log.WithName("Controllers").WithName("Config"),
 		Recorder: mgr.GetEventRecorderFor("config-controller"),
 		Store:    store,
 		Config: config.ReconcilerConfig{
@@ -128,7 +165,7 @@ func main() {
 
 	if err = (&tenant.TenancyController{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Tenant"),
+		Log:      ctrl.Log.WithName("Controllers").WithName("Tenant"),
 		Recorder: mgr.GetEventRecorderFor("tenant-controller"),
 		Scheme:   mgr.GetScheme(),
 		Metrics:  metricsRecorder,
@@ -142,7 +179,7 @@ func main() {
 
 	if err = (&translator.TranslatorController{
 		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("Translator"),
+		Log:      ctrl.Log.WithName("Controllers").WithName("Translator"),
 		Recorder: mgr.GetEventRecorderFor("translator-controller"),
 		Scheme:   mgr.GetScheme(),
 		Settings: store,

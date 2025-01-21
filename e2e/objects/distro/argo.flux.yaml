@@ -40,6 +40,9 @@ spec:
         nodePortHttp: 30080
         type: "NodePort"
     configs:
+      params:
+        "application.namespaces": "*"
+        "applicationsetcontroller.namespaces": "*"
       rbac:
         policy.csv: |
           # Define Policies
@@ -50,6 +53,7 @@ spec:
         accounts.bob: apiKey, login
         accounts.guy: apiKey, login
         users.anonymous.enabled: "false"
+        application.resourceTrackingMethod: "annotation+label"
         resource.customizations.ignoreDifferences.Namespace: |
           jqPathExpressions:
           - '.metadata.labels'

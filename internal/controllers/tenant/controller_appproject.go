@@ -255,6 +255,7 @@ func (i *TenancyController) reconcileArgoProject(
 		// Process ServiceAccount (Impersonation)
 		impersonation := argocdv1alpha1.ApplicationDestinationServiceAccount{
 			Server:                destination,
+			Namespace:             "*",
 			DefaultServiceAccount: i.Settings.Get().DestinationServiceAccount(tenant),
 		}
 
