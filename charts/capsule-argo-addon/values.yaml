@@ -18,8 +18,7 @@ global:
         # -- Set the image tag of the helm chart job
         tag: ""
       # -- Annotations to add to the certgen job.
-      annotations:
-        "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+      annotations: {}
       # -- Set the restartPolicy
       restartPolicy: Never
       # -- Sets the ttl in seconds after a finished certgen job is deleted. Set to -1 to never delete.

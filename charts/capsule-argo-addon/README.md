@@ -31,7 +31,7 @@ The following Values are available for this chart.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | global.jobs.kubectl.affinity | object | `{}` | Set affinity rules |
-| global.jobs.kubectl.annotations | object | `{"helm.sh/hook-delete-policy":"before-hook-creation,hook-succeeded"}` | Annotations to add to the certgen job. |
+| global.jobs.kubectl.annotations | object | `{}` | Annotations to add to the certgen job. |
 | global.jobs.kubectl.image.pullPolicy | string | `"IfNotPresent"` | Set the image pull policy of the helm chart job |
 | global.jobs.kubectl.image.registry | string | `"docker.io"` | Set the image repository of the helm chart job |
 | global.jobs.kubectl.image.repository | string | `"clastix/kubectl"` | Set the image repository of the helm chart job |

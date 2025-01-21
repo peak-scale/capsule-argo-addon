@@ -40,7 +40,7 @@ spec:
             description: ArgoAddonSpec defines the desired state of ArgoAddon
             properties:
               argo:
-                description: ArgoCD configuration
+                description: Argo configuration
                 properties:
                   destination:
                     default: https://kubernetes.default.svc
@@ -72,15 +72,20 @@ spec:
                 required:
                 - serviceAccountNamespace
                 type: object
+              decouple:
+                default: true
+                description: |-
+                  When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
+                  This can also be set on a per-tenant basis via annotations.
+                type: boolean
               force:
                 default: false
                 description: |-
-                  When force is enabled, approjects which already exist with the same name as a tenant will be adopted
-                  and overwritten. When disabled the approjects will not be changed or adopted.
-                  This is true for any other resource as well
+                  When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
+                  and overwritten. When disabled the appprojects will not be changed or adopted.
+                  This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.
                 type: boolean
               proxy:
-                default: {}
                 description: Capsule-Proxy configuration for the controller
                 properties:
                   enabled:
@@ -108,9 +113,19 @@ spec:
                     description: Port of the capsule-proxy service
                     type: boolean
                 type: object
+              readonly:
+                default: false
+                description: |-
+                  All appprojects, which are collected by this controller, are set into ready-only mode
+                  That means only properties from matching translators are respected. Any changes from users are
+                  overwritten. This can also be set on a per-tenant basis via annotations.
+                type: boolean
             required:
             - argo
+            - decouple
             - force
+            - proxy
+            - readonly
             type: object
           status:
             description: ArgoAddonStatus defines the observed state of ArgoAddon
@@ -119,7 +134,7 @@ spec:
                 description: Last applied valid configuration
                 properties:
                   argo:
-                    description: ArgoCD configuration
+                    description: Argo configuration
                     properties:
                       destination:
                         default: https://kubernetes.default.svc
@@ -151,15 +166,20 @@ spec:
                     required:
                     - serviceAccountNamespace
                     type: object
+                  decouple:
+                    default: true
+                    description: |-
+                      When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
+                      This can also be set on a per-tenant basis via annotations.
+                    type: boolean
                   force:
                     default: false
                     description: |-
-                      When force is enabled, approjects which already exist with the same name as a tenant will be adopted
-                      and overwritten. When disabled the approjects will not be changed or adopted.
-                      This is true for any other resource as well
+                      When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
+                      and overwritten. When disabled the appprojects will not be changed or adopted.
+                      This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.
                     type: boolean
                   proxy:
-                    default: {}
                     description: Capsule-Proxy configuration for the controller
                     properties:
                       enabled:
@@ -188,9 +208,19 @@ spec:
                         description: Port of the capsule-proxy service
                         type: boolean
                     type: object
+                  readonly:
+                    default: false
+                    description: |-
+                      All appprojects, which are collected by this controller, are set into ready-only mode
+                      That means only properties from matching translators are respected. Any changes from users are
+                      overwritten. This can also be set on a per-tenant basis via annotations.
+                    type: boolean
                 required:
                 - argo
+                - decouple
                 - force
+                - proxy
+                - readonly
                 type: object
             type: object
         type: object
