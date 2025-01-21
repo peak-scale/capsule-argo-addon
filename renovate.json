@@ -16,11 +16,6 @@
       "matchManagers": ["github-actions", "flux"],
       "groupName": "all-ci-dependencies",
       "updateTypes": ["major", "minor", "patch"]
-    },
-    {
-      "matchManagers": ["gomod"],
-      "groupName": "go-minor-dependencies",
-      "updateTypes": ["minor", "patch"]
     }
   ]
 }
