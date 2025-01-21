@@ -42,7 +42,7 @@ spec:
             - --zap-log-level={{ default 4 .Values.args.logLevel }}
             - --setting-name={{ include "config.name" $}}
             - --enable-webhooks={{ .Values.webhooks.enabled }}
-            - --enable-pprof={{ .Values.webhooks.pprof }}
+            - --enable-pprof={{ .Values.args.pprof }}
           {{- with .Values.args.extraArgs }}
             {{- toYaml . | nindent 12 }}
           {{- end }}

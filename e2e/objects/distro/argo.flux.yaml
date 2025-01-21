@@ -12,6 +12,7 @@ kind: HelmRelease
 metadata:
   name: argocd
 spec:
+  serviceAccountName: kustomize-controller
   interval: 30s
   targetNamespace: argocd
   releaseName: "argocd"
@@ -54,6 +55,7 @@ spec:
         accounts.guy: apiKey, login
         users.anonymous.enabled: "false"
         application.resourceTrackingMethod: "annotation+label"
+        application.sync.impersonation.enabled: "true"
         resource.customizations.ignoreDifferences.Namespace: |
           jqPathExpressions:
           - '.metadata.labels'

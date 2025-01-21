@@ -172,11 +172,12 @@ e2e-install-addon: e2e-load-image
 		--set proxy.crds.install=true \
         --set certManager.certificate.dnsNames={localhost} \
 		--set webhooks.enabled=true \
+		--set args.logLevel=10 \
 		capsule-argo-addon \
 		./charts/capsule-argo-addon
 
 e2e-install-distro:
-	@flux install
+	@kubectl kustomize e2e/objects/flux/ | kubectl apply -f -
 	@kubectl kustomize e2e/objects/distro/ | kubectl apply -f -
 	@$(MAKE) wait-for-helmreleases
 

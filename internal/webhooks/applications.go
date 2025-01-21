@@ -33,10 +33,14 @@ func (mw *ApplicationWebhook) Handle(ctx context.Context, req admission.Request)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	mw.Log.V(7).Info("looking up tenant for namespace", "namespace", app.GetNamespace())
+
 	tntList := capsulev1beta2.TenantList{}
 	if err := mw.Client.List(ctx, &tntList, client.MatchingFields{".status.namespaces": app.GetNamespace()}); err != nil {
 		admission.Errored(http.StatusInternalServerError, err)
 	}
+
+	mw.Log.V(7).Info("retrieved tenants", "tenants", tntList)
 
 	if len(tntList.Items) == 0 {
 		return admission.Allowed("no tenant object")
