@@ -239,7 +239,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 				},
 				SourceNamespaces: []string{
 					"somewhere",
@@ -322,7 +322,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
@@ -446,7 +446,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 			}
@@ -561,7 +561,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
@@ -639,16 +639,6 @@ var _ = Describe("Translation Test", func() {
 					object: &argocdv1alpha1.AppProject{},
 					key:    client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace},
 					desc:   "AppProject",
-				},
-				{
-					object: &corev1.Secret{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.Namespace},
-					desc:   "Cluster Secret",
-				},
-				{
-					object: &corev1.Service{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace},
-					desc:   "Service",
 				},
 				{
 					object: &corev1.ServiceAccount{},
@@ -735,7 +725,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 				},
 			}
 
@@ -852,7 +842,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 				},
 			}
 

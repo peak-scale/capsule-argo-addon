@@ -2,7 +2,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -10,38 +9,7 @@ import (
 
 // Get the Cluster-URL within argo-cd
 func (in *ArgoAddonSpec) GetClusterDestination(tenant *capsulev1beta2.Tenant) (dest string) {
-	dest = in.Argo.Destination
-
-	if in.ProvisionProxyService() {
-		dest = in.ProxyServiceString(tenant)
-	}
-
-	return
-}
-
-// Determines if the proxy service should be registered
-func (in *ArgoAddonSpec) ProvisionProxyService() (provision bool) {
-	provision = false
-
-	// Check if the tenant is registered for the proxy
-	if in.Proxy.Enabled && !in.Argo.DestinationServiceAccounts {
-		provision = true
-	}
-
-	return
-}
-
-// Assign Tenants to the ArgoTranslator
-func (in *ArgoAddonSpec) ProxyServiceString(tenant *capsulev1beta2.Tenant) string {
-	protocol := "https"
-	if !in.Proxy.CapsuleProxyTLS {
-		protocol = "http"
-	}
-
-	// Return Connection String
-	return protocol + "://" + tenant.Name + "." +
-		in.Proxy.CapsuleProxyServiceNamespace + ".svc:" +
-		strconv.Itoa(int(in.Proxy.CapsuleProxyServicePort))
+	return in.Argo.Destination
 }
 
 // Namespace where the serviceaccount will be placed
@@ -84,11 +52,6 @@ func (in *ArgoAddonSpec) RegisterCluster(tenant *capsulev1beta2.Tenant) (provisi
 
 	if val, ok := tenant.Annotations[meta.AnnotationDestinationRegister]; ok {
 		return meta.ProccessBoolean(val, false)
-	}
-
-	// If you use serviceaccounts
-	if in.Proxy.Enabled && !in.Argo.DestinationServiceAccounts {
-		provision = true
 	}
 
 	return

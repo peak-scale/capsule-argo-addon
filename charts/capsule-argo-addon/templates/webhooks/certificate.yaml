@@ -1,0 +1,67 @@
+{{- if $.Values.webhooks.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "helm.fullname" . }}-webhook-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "helm.fullname" . }}-webhook-ca
+spec:
+  isCA: true
+  commonName: {{ include "helm.fullname" . }}-webhook-ca
+  secretName: {{ include "helm.fullname" . }}-webhook-ca
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name:  {{ include "helm.fullname" . }}-webhook-issuer
+    kind: Issuer
+    group: cert-manager.io
+---  
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "helm.fullname" . }}-webhook
+spec:
+  ca:
+    secretName: {{ include "helm.fullname" . }}-webhook-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "helm.fullname" . }}-webhook-cert
+spec:
+  {{- with .Values.webhooks.certificate.fields }}
+    {{ toYaml . | nindent 2 }}
+  {{- end }}
+  dnsNames:
+  {{- range $dns := .Values.webhooks.certificate.dnsNames }}
+  - {{ $dns | quote }}
+  {{- end }}
+  - {{ include "helm.fullname" . }}-webhook-service
+  - {{ include "helm.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc
+  {{- with .Values.webhooks.certificate.ipAddresses }}
+  ipAddresses:
+    {{- range $ip := . }}
+  - {{ $ip }}
+    {{- end }}
+  {{- end }}
+  {{- with .Values.webhooks.certificate.uris }}
+  uris:
+    {{- range $uri := . }}
+  - {{ $uri }}
+    {{- end }}
+  {{- end }}
+  issuerRef:
+    kind: "Issuer"
+    name: {{ include "helm.fullname" . }}-webhook
+  secretName: {{ include "helm.fullname" . }}-webhook-cert
+  subject:
+    organizations:
+      - peakscale.ch
+{{- end }}

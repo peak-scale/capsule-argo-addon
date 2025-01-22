@@ -12,6 +12,7 @@ kind: HelmRelease
 metadata:
   name: capsule
 spec:
+  serviceAccountName: kustomize-controller
   interval: 30s
   targetNamespace: capsule-system
   releaseName: "capsule"
@@ -45,5 +46,6 @@ spec:
     manager:
       options:
         capsuleUserGroups:
+        - "projectcapsule.dev"
         - "system:serviceaccounts:capsule-argo-addon"
         forceTenantPrefix: false

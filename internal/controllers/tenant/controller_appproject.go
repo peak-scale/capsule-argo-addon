@@ -268,29 +268,8 @@ func (i *TenancyController) reconcileArgoProject(
 			}
 		// Remove the proxy destination
 		default:
-			if argo.ProjectHasServiceAccount(appProject, impersonation) {
-				log.V(5).Info("removing serviceaccount", "appproject", appProject.Name, "account", impersonation)
-				argo.RemoveProjectServiceaccount(appProject, impersonation)
-			}
-		}
-
-		// Destination to be processed
-		proxyDestination := argocdv1alpha1.ApplicationDestination{
-			Name:   tenant.Name,
-			Server: destination,
-		}
-
-		switch {
-		// Add the proxy destination when the proxy is enabled and there are translators
-		case i.Settings.Get().ProvisionProxyService() && len(translators) > 0:
-			log.V(5).Info("adding proxy destination", "appproject", appProject.Name)
-			if !argo.ProjectHasDestination(appProject, proxyDestination) {
-				appProject.Spec.Destinations = append(appProject.Spec.Destinations, proxyDestination)
-			}
-		// Remove the proxy destination
-		default:
-			log.V(5).Info("removing proxy destination", "appproject", appProject.Name)
-			argo.RemoveProjectDestination(appProject, proxyDestination)
+			log.V(5).Info("removing serviceaccount", "appproject", appProject.Name, "account", impersonation)
+			argo.RemoveProjectServiceaccount(appProject, impersonation)
 		}
 
 		// Check if tenant is being deleted (Remove owner reference)

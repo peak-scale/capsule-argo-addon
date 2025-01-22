@@ -30,10 +30,6 @@ const (
 	AnnotationDestinationRegister = "argo.addons.projectcapsule.dev/register-dest"
 
 	// Annotation on Tenant
-	// Annotation to control the proxy registration
-	AnnotationUseProxy = "argo.addons.projectcapsule.dev/use-proxy"
-
-	// Annotation on Tenant
 	// Decouple Ownerreference from the origin tenant, to avoid deletion of the appproject
 	AnnotationProjectDecouple = "argo.addons.projectcapsule.dev/decouple"
 

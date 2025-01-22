@@ -28,7 +28,7 @@ var _ = Describe("Argo Destination Test", func() {
 	solar := &capsulev1beta2.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "solar-e2e-dest",
-			Labels:      e2eLabels("e2e_destination"),
+			Labels:      suiteSelector,
 			Annotations: map[string]string{},
 		},
 		Spec: capsulev1beta2.TenantSpec{
@@ -122,177 +122,9 @@ var _ = Describe("Argo Destination Test", func() {
 		}, defaultTimeoutInterval, defaultPollInterval).Should(Succeed())
 	})
 
-	It("Does create capsule-proxy assets", func() {
-		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
-			argoaddon.Spec.Proxy.Enabled = true
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
-		})
-
-		By("create translation", func() {
-			Expect(k8sClient.Create(context.TODO(), translator)).ToNot(HaveOccurred())
-		})
-
-		By("create matching tenant", func() {
-			Expect(k8sClient.Create(context.TODO(), solar)).ToNot(HaveOccurred())
-		})
-
-		By("verify resources are present", func() {
-			expectedResources := []struct {
-				object    client.Object
-				desc      string
-				name      string
-				namespace string
-			}{
-				{
-					object:    &argocdv1alpha1.AppProject{},
-					desc:      "AppProject",
-					name:      meta.TenantProjectName(solar),
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Secret{},
-					desc:      "Cluster Secret",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
-				},
-				{
-					object:    &corev1.ServiceAccount{},
-					desc:      "ServiceAccount",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
-				},
-			}
-
-			for _, res := range expectedResources {
-				By("Verifying " + res.desc + " contains tenant ownerreference")
-				err := k8sClient.Get(context.Background(), client.ObjectKey{Name: res.name, Namespace: res.namespace}, res.object)
-				Expect(err).To(Succeed(), "%s should be present", res.desc)
-			}
-		})
-
-		//By("verify cluster configuration", func() {
-		//	clusterSecret := &corev1.Secret{}
-		//	Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.Namespace}, clusterSecret)).To(Succeed())
-		//
-		//	// Expected Translation
-		//	decodedConfig, err := base64.StdEncoding.DecodeString(string(clusterSecret.Data["project"]))
-		//
-		//	// Compare the Spec
-		//	Expect(approject.Spec.Destinations).To(Equal(expected), "AppProject destinations should match the expected spec")
-		//})
-
-		By("verify project destination", func() {
-			approject := &argocdv1alpha1.AppProject{}
-			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace}, approject)).To(Succeed())
-
-			// Expected Translation
-			expected := []argocdv1alpha1.ApplicationDestination{
-				{
-					Server: argoaddon.Spec.GetClusterDestination(solar),
-					Name:   solar.Name,
-				},
-			}
-
-			// Compare the Spec
-			Expect(approject.Spec.Destinations).To(Equal(expected), "AppProject destinations should match the expected spec")
-		})
-
-	})
-
-	It("Does NOT create capsule-proxy assets", func() {
-		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
-			argoaddon.Spec.Proxy.Enabled = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
-		})
-
-		By("create translation", func() {
-			Expect(k8sClient.Create(context.TODO(), translator)).ToNot(HaveOccurred())
-		})
-
-		By("create matching tenant", func() {
-			Expect(k8sClient.Create(context.TODO(), solar)).ToNot(HaveOccurred())
-		})
-
-		By("verify resources are present", func() {
-			expectedResources := []struct {
-				object    client.Object
-				desc      string
-				name      string
-				namespace string
-			}{
-				{
-					object:    &argocdv1alpha1.AppProject{},
-					desc:      "AppProject",
-					name:      meta.TenantProjectName(solar),
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.ServiceAccount{},
-					desc:      "ServiceAccount",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
-				},
-			}
-
-			for _, res := range expectedResources {
-				By("Verifying " + res.desc + " contains tenant ownerreference")
-				err := k8sClient.Get(context.Background(), client.ObjectKey{Name: res.name, Namespace: res.namespace}, res.object)
-				Expect(err).To(Succeed(), "%s should be present", res.desc)
-			}
-		})
-
-		By("verify resources are absent", func() {
-			expectedResources := []struct {
-				object    client.Object
-				desc      string
-				name      string
-				namespace string
-			}{
-				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
-				},
-				{
-					object:    &corev1.Secret{},
-					desc:      "Cluster Secret",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-			}
-
-			for _, res := range expectedResources {
-				err := k8sClient.Get(context.Background(), client.ObjectKey{Name: res.name, Namespace: res.namespace}, res.object)
-				Expect(err).ToNot(Succeed(), "%s should not be present", res.desc)
-			}
-		})
-
-		By("verify project destination", func() {
-			approject := &argocdv1alpha1.AppProject{}
-			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace}, approject)).To(Succeed())
-
-			// Compare the Spec
-			Expect(len(approject.Spec.Destinations)).To(Equal(0), "AppProject destinations should match the expected spec")
-		})
-
-	})
-
 	It("Verify DestinationServiceAccounts", func() {
 		By("set corresponding settings", func() {
 			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
-			argoaddon.Spec.Proxy.Enabled = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = true
 			argoaddon.Spec.Argo.Destination = "https://custom.server:443"
 			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
 		})
@@ -341,12 +173,6 @@ var _ = Describe("Argo Destination Test", func() {
 				namespace string
 			}{
 				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
-				},
-				{
 					object:    &corev1.Secret{},
 					desc:      "Cluster Secret",
 					name:      solar.Name,
@@ -366,7 +192,7 @@ var _ = Describe("Argo Destination Test", func() {
 
 			// Expected Translation
 			expected := []argocdv1alpha1.ApplicationDestinationServiceAccount{
-				{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+				{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 			}
 
 			// Compare the Spec
@@ -378,4 +204,53 @@ var _ = Describe("Argo Destination Test", func() {
 
 	})
 
+	It("Does Registry cluster (Annotation)", func() {
+		By("create translation", func() {
+			Expect(k8sClient.Create(context.TODO(), translator)).ToNot(HaveOccurred())
+		})
+
+		By("create matching tenant", func() {
+			Eventually(func() error {
+				solar.SetAnnotations(map[string]string{
+					meta.AnnotationDestinationRegister: "true",
+				})
+
+				return k8sClient.Create(context.TODO(), solar)
+			}).Should(Succeed())
+		})
+
+		By("verify resources are present", func() {
+			expectedResources := []struct {
+				object    client.Object
+				desc      string
+				name      string
+				namespace string
+			}{
+				{
+					object:    &argocdv1alpha1.AppProject{},
+					desc:      "AppProject",
+					name:      meta.TenantProjectName(solar),
+					namespace: argoaddon.Spec.Argo.Namespace,
+				},
+				{
+					object:    &corev1.Secret{},
+					desc:      "Cluster Secret",
+					name:      solar.Name,
+					namespace: argoaddon.Spec.Argo.Namespace,
+				},
+				{
+					object:    &corev1.ServiceAccount{},
+					desc:      "ServiceAccount",
+					name:      solar.Name,
+					namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
+				},
+			}
+
+			for _, res := range expectedResources {
+				By("Verifying " + res.desc + " contains tenant ownerreference")
+				err := k8sClient.Get(context.Background(), client.ObjectKey{Name: res.name, Namespace: res.namespace}, res.object)
+				Expect(err).To(Succeed(), "%s should be present", res.desc)
+			}
+		})
+	})
 })

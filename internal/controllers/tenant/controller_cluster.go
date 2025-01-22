@@ -16,7 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -47,12 +46,6 @@ func (i *TenancyController) reconcileArgoCluster(
 	}
 
 	log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
-
-	// Handle the Proxy-Service for the tenant
-	if err := i.proxyService(ctx, log, tenant); err != nil {
-		return fmt.Errorf("failed to reconcile destination service: %w", err)
-
-	}
 
 	// Decouple Object
 	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -154,104 +147,5 @@ func (i *TenancyController) reconcileArgoCluster(
 		return err
 	}
 	log.Info("Argo Server created", "name", tenant.Name)
-	return nil
-}
-
-// Proxy Service for the tenant
-func (i *TenancyController) proxyService(
-	ctx context.Context,
-	log logr.Logger,
-	tenant *capsulev1beta2.Tenant,
-) (err error) {
-	// Create a dedicated service for the tenant
-	replicatedName := tenant.Name
-	service := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      tenant.Name,
-			Namespace: i.Settings.Get().Proxy.CapsuleProxyServiceNamespace,
-		},
-	}
-
-	log.V(7).Info(
-		"reconciling service",
-		"service", replicatedName,
-		"namespace", i.Settings.Get().Proxy.CapsuleProxyServiceNamespace)
-
-	// Get Cluster-Secret
-	err = i.Client.Get(ctx, client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-
-	// Decouple Object
-	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
-			_, err := controllerutil.CreateOrPatch(
-				ctx,
-				i.Client,
-				service,
-				func() error {
-					log.V(5).Info("decoupling server secret", "secret", service.Name)
-					if err := i.DecoupleTenant(service, tenant); err != nil {
-						return err
-					}
-
-					return i.DecoupleTenant(service, tenant)
-				})
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}
-	}
-
-	if !meta.HasTenantOwnerReference(service, tenant) {
-		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
-			log.V(5).Info("proxy already present, not overriding", "service", service.Name, "namespace", service.Namespace)
-
-			return ccaerrrors.NewObjectAlreadyExistsError(service)
-		}
-	}
-
-	// Validate if Proxy is enabled, lifeycle the service if not
-	if !i.Settings.Get().ProvisionProxyService() {
-		log.V(7).Info("lifecycling proxy service")
-		err := i.Client.Delete(ctx, service)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return fmt.Errorf("failed to lifecycle service: %w", err)
-		}
-
-		return nil
-	}
-
-	// Get Referenced Error
-	proxySvc := &corev1.Service{}
-	err = i.Client.Get(ctx, types.NamespacedName{
-		Namespace: i.Settings.Get().Proxy.CapsuleProxyServiceNamespace,
-		Name:      i.Settings.Get().Proxy.CapsuleProxyServiceName,
-	}, proxySvc)
-	if err != nil {
-		return fmt.Errorf("failed to resolve proxy service %s/%s: %w",
-			i.Settings.Get().Proxy.CapsuleProxyServiceNamespace,
-			i.Settings.Get().Proxy.CapsuleProxyServiceName,
-			err)
-	}
-
-	// Replicate a proxy service for the tenant
-	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, service, func() error {
-		service.Labels = meta.TranslatorTrackingLabels(tenant)
-		service.Spec.Ports = proxySvc.Spec.Ports
-		service.Spec.Selector = proxySvc.Spec.Selector
-
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), service, tenant, i.Settings.Get().DecoupleTenant(tenant))
-	})
-	if err != nil {
-		return err
-	}
-
-	i.Log.V(5).Info("Proxy Service created", "name", tenant.Name)
-
-	// Returns the proxy service url
 	return nil
 }

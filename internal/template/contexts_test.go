@@ -46,10 +46,6 @@ config:
 			},
 		},
 	}, &v1alpha1.ArgoAddonSpec{
-		Proxy: v1alpha1.ControllerCapsuleProxyConfig{
-			Enabled:         true,
-			CapsuleProxyTLS: false,
-		},
 		Argo: v1alpha1.ControllerArgoCDConfig{
 			Namespace: "argocd-namespace",
 		},
@@ -142,12 +138,6 @@ func TestRenderContextToMarkdown(t *testing.T) {
 			},
 		},
 	}, &v1alpha1.ArgoAddonSpec{
-		Proxy: v1alpha1.ControllerCapsuleProxyConfig{
-			Enabled:                      true,
-			CapsuleProxyServiceName:      "capsule-proxy",
-			CapsuleProxyServiceNamespace: "capsule-system",
-			CapsuleProxyTLS:              false,
-		},
 		Argo: v1alpha1.ControllerArgoCDConfig{
 			RBACConfigMap: "argocd-rbac-cm",
 			Namespace:     "argocd",

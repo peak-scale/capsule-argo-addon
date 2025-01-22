@@ -126,18 +126,6 @@ var _ = Describe("lifecycle Appproject", func() {
 				namespace: argoaddon.Spec.Argo.Namespace,
 			},
 			{
-				object:    &corev1.Secret{},
-				desc:      "Cluster Secret",
-				name:      solar.Name,
-				namespace: argoaddon.Spec.Argo.Namespace,
-			},
-			{
-				object:    &corev1.Service{},
-				desc:      "Service",
-				name:      solar.Name,
-				namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
-			},
-			{
 				object:    &corev1.ServiceAccount{},
 				desc:      "ServiceAccount",
 				name:      solar.Name,
@@ -174,9 +162,7 @@ var _ = Describe("lifecycle Appproject", func() {
 	It("Test lifecycle Settings (with Force)", func() {
 		By("set corresponding settings", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
-			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = true
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
 
 			// Attempt to update the argoaddon object in Kubernetes
 			err := k8sClient.Update(context.Background(), argoaddon)
@@ -225,33 +211,6 @@ var _ = Describe("lifecycle Appproject", func() {
 
 			Expect(k8sClient.Create(context.Background(), appproject)).To(Succeed())
 
-			// Argo declarative Cluster
-			serverSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      solar.Name,
-					Namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				Type: corev1.SecretTypeOpaque,
-			}
-			Expect(k8sClient.Create(context.Background(), serverSecret)).To(Succeed())
-
-			// Service
-			service := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      solar.Name,
-					Namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
-				},
-				Spec: corev1.ServiceSpec{
-					Ports: []corev1.ServicePort{
-						{
-							Name: "e2e-test",
-							Port: 8080,
-						},
-					},
-				},
-			}
-			Expect(k8sClient.Create(context.Background(), service)).To(Succeed())
-
 			// ServiceAccount (+ Token)
 			accountResource := &corev1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
@@ -295,18 +254,6 @@ var _ = Describe("lifecycle Appproject", func() {
 						desc:      "AppProject",
 						name:      meta.TenantProjectName(solar),
 						namespace: argoaddon.Spec.Argo.Namespace,
-					},
-					{
-						object:    &corev1.Secret{},
-						desc:      "Cluster Secret",
-						name:      solar.Name,
-						namespace: argoaddon.Spec.Argo.Namespace,
-					},
-					{
-						object:    &corev1.Service{},
-						desc:      "Service",
-						name:      solar.Name,
-						namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
 					},
 					{
 						object:    &corev1.ServiceAccount{},
@@ -396,16 +343,6 @@ var _ = Describe("lifecycle Appproject", func() {
 					desc:   "AppProject",
 				},
 				{
-					object: &corev1.Secret{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.Namespace},
-					desc:   "Cluster Secret",
-				},
-				{
-					object: &corev1.Service{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace},
-					desc:   "Service",
-				},
-				{
 					object: &corev1.ServiceAccount{},
 					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace},
 					desc:   "ServiceAccount",
@@ -432,9 +369,7 @@ var _ = Describe("lifecycle Appproject", func() {
 	It("Test lifecycle Settings (without Force)", func() {
 		By("set corresponding settings", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
-			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
 
 			// Attempt to update the argoaddon object in Kubernetes
 			err := k8sClient.Update(context.Background(), argoaddon)
@@ -513,9 +448,7 @@ var _ = Describe("lifecycle Appproject", func() {
 	It("Test lifecycle Settings (Force Annotation)", func() {
 		By("set corresponding settings", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
-			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
 
 			// Attempt to update the argoaddon object in Kubernetes
 			err := k8sClient.Update(context.Background(), argoaddon)
@@ -583,18 +516,6 @@ var _ = Describe("lifecycle Appproject", func() {
 					desc:      "AppProject",
 					name:      meta.TenantProjectName(solar),
 					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Secret{},
-					desc:      "Cluster Secret",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
 				},
 				{
 					object:    &corev1.ServiceAccount{},
@@ -670,9 +591,7 @@ var _ = Describe("lifecycle Appproject", func() {
 	It("Test lifecycle Settings (Decouple)", func() {
 		By("set corresponding settings", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)).To(Succeed())
-			argoaddon.Spec.Proxy.Enabled = true
 			argoaddon.Spec.Force = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
 
 			// Attempt to update the argoaddon object in Kubernetes
 			err := k8sClient.Update(context.Background(), argoaddon)
@@ -705,18 +624,6 @@ var _ = Describe("lifecycle Appproject", func() {
 					desc:      "AppProject",
 					name:      meta.TenantProjectName(solar),
 					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Secret{},
-					desc:      "Cluster Secret",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
 				},
 				{
 					object:    &corev1.ServiceAccount{},
@@ -758,18 +665,6 @@ var _ = Describe("lifecycle Appproject", func() {
 					desc:      "AppProject",
 					name:      meta.TenantProjectName(solar),
 					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Secret{},
-					desc:      "Cluster Secret",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Argo.Namespace,
-				},
-				{
-					object:    &corev1.Service{},
-					desc:      "Service",
-					name:      solar.Name,
-					namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace,
 				},
 				{
 					object:    &corev1.ServiceAccount{},

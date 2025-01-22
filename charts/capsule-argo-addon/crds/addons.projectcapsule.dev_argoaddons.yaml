@@ -49,7 +49,7 @@ spec:
                       for each appproject.
                     type: string
                   destinationServiceAccounts:
-                    default: false
+                    default: true
                     description: |-
                       This is a feature which will be released with argocd +v2.13.0
                       If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha
@@ -73,7 +73,7 @@ spec:
                 - serviceAccountNamespace
                 type: object
               decouple:
-                default: true
+                default: false
                 description: |-
                   When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
                   This can also be set on a per-tenant basis via annotations.
@@ -85,34 +85,6 @@ spec:
                   and overwritten. When disabled the appprojects will not be changed or adopted.
                   This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.
                 type: boolean
-              proxy:
-                description: Capsule-Proxy configuration for the controller
-                properties:
-                  enabled:
-                    default: false
-                    description: |-
-                      Enable the capsule-proxy integration.
-                      This automatically creates services for tenants and registers them as destination
-                      on the argo appproject.
-                    type: boolean
-                  serviceName:
-                    default: capsule-proxy
-                    description: Name of the capsule-proxy service
-                    type: string
-                  serviceNamespace:
-                    default: capsule-system
-                    description: ' Namespace where the capsule-proxy service is running'
-                    type: string
-                  servicePort:
-                    default: 9001
-                    description: Port of the capsule-proxy service
-                    format: int32
-                    type: integer
-                  tls:
-                    default: true
-                    description: Port of the capsule-proxy service
-                    type: boolean
-                type: object
               readonly:
                 default: false
                 description: |-
@@ -124,7 +96,6 @@ spec:
             - argo
             - decouple
             - force
-            - proxy
             - readonly
             type: object
           status:
@@ -143,7 +114,7 @@ spec:
                           for each appproject.
                         type: string
                       destinationServiceAccounts:
-                        default: false
+                        default: true
                         description: |-
                           This is a feature which will be released with argocd +v2.13.0
                           If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha
@@ -167,7 +138,7 @@ spec:
                     - serviceAccountNamespace
                     type: object
                   decouple:
-                    default: true
+                    default: false
                     description: |-
                       When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
                       This can also be set on a per-tenant basis via annotations.
@@ -179,35 +150,6 @@ spec:
                       and overwritten. When disabled the appprojects will not be changed or adopted.
                       This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.
                     type: boolean
-                  proxy:
-                    description: Capsule-Proxy configuration for the controller
-                    properties:
-                      enabled:
-                        default: false
-                        description: |-
-                          Enable the capsule-proxy integration.
-                          This automatically creates services for tenants and registers them as destination
-                          on the argo appproject.
-                        type: boolean
-                      serviceName:
-                        default: capsule-proxy
-                        description: Name of the capsule-proxy service
-                        type: string
-                      serviceNamespace:
-                        default: capsule-system
-                        description: ' Namespace where the capsule-proxy service is
-                          running'
-                        type: string
-                      servicePort:
-                        default: 9001
-                        description: Port of the capsule-proxy service
-                        format: int32
-                        type: integer
-                      tls:
-                        default: true
-                        description: Port of the capsule-proxy service
-                        type: boolean
-                    type: object
                   readonly:
                     default: false
                     description: |-
@@ -219,7 +161,6 @@ spec:
                 - argo
                 - decouple
                 - force
-                - proxy
                 - readonly
                 type: object
             type: object

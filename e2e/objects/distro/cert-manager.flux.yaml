@@ -13,6 +13,7 @@ kind: HelmRelease
 metadata:
   name: cert-manager
 spec:
+  serviceAccountName: kustomize-controller
   interval: 30s
   releaseName: "cert-manager"
   targetNamespace: "cert-manager"

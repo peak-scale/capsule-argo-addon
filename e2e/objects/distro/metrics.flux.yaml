@@ -12,6 +12,7 @@ kind: HelmRelease
 metadata:
   name: metrics-server
 spec:
+  serviceAccountName: kustomize-controller
   interval: 1m
   releaseName: "metrics-server"
   targetNamespace: "kube-system"

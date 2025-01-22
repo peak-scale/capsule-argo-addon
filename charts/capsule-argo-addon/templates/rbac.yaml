@@ -42,6 +42,7 @@ rules:
     - capsule.clastix.io
   resources:
     - tenants
+    - tenants/status
   verbs:
     - "*"
 - apiGroups:
