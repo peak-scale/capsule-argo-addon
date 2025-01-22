@@ -217,6 +217,13 @@ var _ = Describe("Translation Test", func() {
 	})
 
 	It("Does correctly translate", func() {
+		By("set corresponding settings", func() {
+			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
+			argoaddon.Spec.Proxy.Enabled = false
+			argoaddon.Spec.Argo.DestinationServiceAccounts = false
+			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
+		})
+
 		By("create single translation", func() {
 			Expect(k8sClient.Create(context.TODO(), translator1)).ToNot(HaveOccurred())
 		})
@@ -702,6 +709,13 @@ var _ = Describe("Translation Test", func() {
 	})
 
 	It("Respect Read-Only", func() {
+		By("set corresponding settings", func() {
+			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
+			argoaddon.Spec.Proxy.Enabled = false
+			argoaddon.Spec.Argo.DestinationServiceAccounts = false
+			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
+		})
+
 		By("create single translation", func() {
 			Expect(k8sClient.Create(context.TODO(), translator1)).ToNot(HaveOccurred())
 		})

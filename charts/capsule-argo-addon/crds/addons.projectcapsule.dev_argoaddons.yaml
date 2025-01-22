@@ -73,7 +73,7 @@ spec:
                 - serviceAccountNamespace
                 type: object
               decouple:
-                default: true
+                default: false
                 description: |-
                   When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
                   This can also be set on a per-tenant basis via annotations.
@@ -167,7 +167,7 @@ spec:
                     - serviceAccountNamespace
                     type: object
                   decouple:
-                    default: true
+                    default: false
                     description: |-
                       When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
                       This can also be set on a per-tenant basis via annotations.

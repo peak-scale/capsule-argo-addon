@@ -55,6 +55,31 @@ The following Values are available for this chart.
 | crds.keep | bool | `false` | Keep the annotations if deleted |
 | crds.labels | object | `{}` | Extra Labels for CRDs |
 
+### Webhook Parameters
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| webhooks.applications.enabled | bool | `true` | Enable webhook for applications |
+| webhooks.applications.failurePolicy | string | `"Ignore"` | Ignore failures from the webhook |
+| webhooks.applications.namespaceSelector | object | `{"matchExpressions":[{"key":"capsule.clastix.io/tenant","operator":"Exists"}]}` | Selects only namespaced items which are within a tenant |
+| webhooks.applications.rules | list | `[{"apiGroups":["argoproj.io"],"apiVersions":["*"],"operations":["CREATE","UPDATE"],"resources":["applications"],"scope":"Namespaced"}]` | Rules for which Objects and Actions this webhook should be called |
+| webhooks.applications.timeoutSeconds | string | `"3s"` | Timeout in seconds for mutating webhooks |
+| webhooks.applicationsets.enabled | bool | `true` | Enable webhook for applicationsets |
+| webhooks.applicationsets.failurePolicy | string | `"Ignore"` | Ignore failures from the webhook |
+| webhooks.applicationsets.namespaceSelector | object | `{"matchExpressions":[{"key":"capsule.clastix.io/tenant","operator":"Exists"}]}` | Selects only namespaced items which are within a tenant |
+| webhooks.applicationsets.rules | list | `[{"apiGroups":["argoproj.io"],"apiVersions":["*"],"operations":["CREATE","UPDATE"],"resources":["applicationsets"],"scope":"Namespaced"}]` | Rules for which Objects and Actions this webhook should be called |
+| webhooks.applicationsets.timeoutSeconds | string | `"3s"` | Timeout in seconds for mutating webhooks |
+| webhooks.certificate.dnsNames | list | `[]` | Additional DNS Names to include in certificate |
+| webhooks.certificate.fields | object | `{"privateKey":{"rotationPolicy":"Always"}}` | Additional fields to include in certificate |
+| webhooks.certificate.ipAddresses | list | `[]` | Additional IP Addresses to include in certificate |
+| webhooks.certificate.uris | list | `[]` | Additional URIs to include in certificate |
+| webhooks.enabled | bool | `false` | Enable the usage of mutating and validating webhooks |
+| webhooks.service.caBundle | string | `""` | CABundle for the webhook service |
+| webhooks.service.name | string | `""` | Custom service name for the webhook service |
+| webhooks.service.namespace | string | `""` | Custom service namespace for the webhook service |
+| webhooks.service.port | string | `nil` | Custom service port for the webhook service |
+| webhooks.service.url | string | `""` | The URL where the capsule webhook services are running (Overwrites cluster scoped service definition) |
+
 ###  Capsule-Proxy
 
 Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectcapsule/capsule-proxy) with the addon.
@@ -76,6 +101,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | affinity | object | `{}` | Set affinity rules |
 | args.extraArgs | list | `[]` | A list of extra arguments to add to the capsule-argo-addon |
 | args.logLevel | int | `4` | Log Level |
+| args.pprof | bool | `false` | Enable Profiling |
 | config.create | bool | `true` | Create Plugin Configuration |
 | config.name | string | `"default"` | Plugin Configuration Name |
 | config.spec | object | `{"argo":{"destination":"https://kubernetes.default.svc","destinationServiceAccounts":true,"namespace":"argocd","rbacConfigMap":"argocd-rbac-cm"}}` | Config Specification |

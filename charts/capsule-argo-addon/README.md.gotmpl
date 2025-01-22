@@ -47,6 +47,16 @@ The following Values are available for this chart.
   {{- end }}
 {{- end }}
 
+### Webhook Parameters
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+{{- range .Values }}
+  {{- if hasPrefix "webhooks." .Key }}
+| {{ .Key }} | {{ .Type }} | {{ if .Default }}{{ .Default }}{{ else }}{{ .AutoDefault }}{{ end }} | {{ if .Description }}{{ .Description }}{{ else }}{{ .AutoDescription }}{{ end }} |
+  {{- end }}
+{{- end }}
+
 ###  Capsule-Proxy
 
 Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectcapsule/capsule-proxy) with the addon.
@@ -65,7 +75,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 {{- range .Values }}
-  {{- if not (or (hasPrefix "monitoring" .Key) (hasPrefix "proxy" .Key) (hasPrefix "global" .Key) (hasPrefix "crds" .Key) (hasPrefix "serviceMonitor" .Key))  }}
+  {{- if not (or (hasPrefix "webhooks" .Key) (hasPrefix "monitoring" .Key) (hasPrefix "proxy" .Key) (hasPrefix "global" .Key) (hasPrefix "crds" .Key) (hasPrefix "serviceMonitor" .Key))  }}
 | {{ .Key }} | {{ .Type }} | {{ if .Default }}{{ .Default }}{{ else }}{{ .AutoDefault }}{{ end }} | {{ if .Description }}{{ .Description }}{{ else }}{{ .AutoDescription }}{{ end }} |
   {{- end }}
 {{- end }}

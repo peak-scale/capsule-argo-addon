@@ -27,12 +27,10 @@ type ArgoAddonSpec struct {
 	// This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.
 	//+kubebuilder:default=false
 	Force bool `json:"force"`
-
 	// When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
 	// This can also be set on a per-tenant basis via annotations.
-	//+kubebuilder:default=true
+	//+kubebuilder:default=false
 	Decouple bool `json:"decouple"`
-
 	// All appprojects, which are collected by this controller, are set into ready-only mode
 	// That means only properties from matching translators are respected. Any changes from users are
 	// overwritten. This can also be set on a per-tenant basis via annotations.

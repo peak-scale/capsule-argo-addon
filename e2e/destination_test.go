@@ -28,7 +28,7 @@ var _ = Describe("Argo Destination Test", func() {
 	solar := &capsulev1beta2.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "solar-e2e-dest",
-			Labels:      e2eLabels("e2e_destination"),
+			Labels:      suiteSelector,
 			Annotations: map[string]string{},
 		},
 		Spec: capsulev1beta2.TenantSpec{
@@ -366,7 +366,7 @@ var _ = Describe("Argo Destination Test", func() {
 
 			// Expected Translation
 			expected := []argocdv1alpha1.ApplicationDestinationServiceAccount{
-				{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+				{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 			}
 
 			// Compare the Spec
