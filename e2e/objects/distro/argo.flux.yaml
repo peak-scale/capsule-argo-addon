@@ -42,6 +42,7 @@ spec:
         type: "NodePort"
     configs:
       params:
+        "applicationsetcontroller.allowed.scm.providers": "https://github.com/,https://gitlab.com/"
         "application.namespaces": "*"
         "applicationsetcontroller.namespaces": "*"
       rbac:

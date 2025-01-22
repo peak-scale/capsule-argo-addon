@@ -36,16 +36,11 @@ spec:
 
 ### ArgoCD
 
-[Argo(CD)](https://artifacthub.io/packages/helm/argo/argo-cd) is recommended to be installed in the [v2.13.0](https://github.com/argoproj/argo-cd/releases/tag/v2.13.0) version. This version adds support for `destinationServiceAccounts`, which makes the appprojects much more secure. Here's how the addon is best configured for the corresponding argo-cd versions
+[Argo(CD)](https://artifacthub.io/packages/helm/argo/argo-cd) is required to be installed in the [v2.13.0](https://github.com/argoproj/argo-cd/releases/tag/v2.13.0) version or above. This version adds support for `destinationServiceAccounts`, which makes the appprojects much more secure. [See our Manifest](../e2e/objects/distro/argo.flux.yaml)
 
 **You must enable `application.sync.impersonation.enabled: "true"` impersonation explicitly in `argocd-cm`, by default it wont be working**. [Read More](https://argo-cd.readthedocs.io/en/stable/proposals/decouple-application-sync-user-using-impersonation/#component-argocd-application-controller)
 
-
-#### `>=v2.13.0` (default)
-
-**THIS IS THE RECOMMENDED SETUP (Security + Performance)**
-
-This is the default configuration, this only works if the argo-cd version `>=v2.13.0` is used.
+This is the default configuration, you may need to adjust if argocd is running in a different namespace.
 
 ```yaml
 apiVersion: addons.projectcapsule.dev/v1alpha1
@@ -60,44 +55,9 @@ spec:
   argo:
     # This should point to the in-cluster api-endpoint
     destination: https://kubernetes.default.svc
-    # Enables the usage of destination serviceaccounts
-    destinationServiceAccounts: true
-
     # Defaults
     namespace: argocd
     rbacConfigMap: argocd-rbac-cm
-
-  # Disable the proxy
-  proxy:
-    enabled: false
-```
-
-#### `<v2.13.0`
-
-**MIGHT encounter issues with the multiple clusters registered**
-
-```yaml
-apiVersion: addons.projectcapsule.dev/v1alpha1
-kind: ArgoAddon
-metadata:
-  name: default
-spec:
-  # Specify as needed
-  force: false
-
-  # Configure argo
-  argo:
-    # This should point to the in-cluster api-endpoint
-    destination: https://kubernetes.default.svc
-    destinationServiceAccounts: false
-
-    # Defaults
-    namespace: argocd
-    rbacConfigMap: argocd-rbac-cm
-
-  # Disable the proxy
-  proxy:
-    enabled: true
 ```
 
 ## Capsule
@@ -162,13 +122,3 @@ spec:
 [Artifact Hub](https://artifacthub.io/packages/helm/capsule-argo-addon/capsule-argo-addon)
 
 Currently we support installation via Helm-Chart click the badge or [here](https://artifacthub.io/packages/helm/capsule-argo-addon/capsule-argo-addon) to view instructions and possible values on the chart.
-
-### Capsule-Proxy
-
-> No longer needed with Argo 2.13.0.
-
-The [capsule-proxy](https://artifacthub.io/packages/helm/projectcapsule/capsule-proxy) is used to allow serviceaccounts to just see what they should see within the boundaries of your tenant. It is optional to use the proxy and it can be disabled via the [configuration](./config.md).
-
-If you plan to use the capsule-proxy, we recommend installing a dedicated capsule-proxy instance for the addon, because Argo puts a lot of pressure on the proxy.
-
-With the [Helm Chart](#helm) a dedicated capsule-proxy is already installed (exclusive CRDs) by when enabling the integration. Adjust this according to your needs and your setups.

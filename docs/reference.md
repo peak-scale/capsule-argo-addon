@@ -43,7 +43,7 @@ ArgoAddonSpec defines the desired state of ArgoAddon
 | :---- | :---- | :----------- | :-------- |
 | **[argo](#argoaddonspecargo)** | object | Argo configuration | true |
 | **decouple** | boolean | When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
-This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: true<br/> | true |
+This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
 | **force** | boolean | When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
 and overwritten. When disabled the appprojects will not be changed or adopted.
 This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
@@ -110,7 +110,7 @@ Last applied valid configuration
 | :---- | :---- | :----------- | :-------- |
 | **[argo](#argoaddonstatusloadedargo)** | object | Argo configuration | true |
 | **decouple** | boolean | When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
-This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: true<br/> | true |
+This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
 | **force** | boolean | When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
 and overwritten. When disabled the appprojects will not be changed or adopted.
 This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |

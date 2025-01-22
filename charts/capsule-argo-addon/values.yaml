@@ -100,7 +100,6 @@ config:
   spec:
     argo:
       destination: https://kubernetes.default.svc
-      destinationServiceAccounts: true
       namespace: argocd
       rbacConfigMap: argocd-rbac-cm
 

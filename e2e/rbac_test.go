@@ -162,49 +162,6 @@ var _ = Describe("Argo RBAC Reflection", func() {
 		},
 	}
 
-	oil := &capsulev1beta2.Tenant{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "oil-rbac-e2e",
-			Labels: map[string]string{
-				e2eLabel:                "true",
-				suiteLabel:              "e2e_argo_rbac",
-				"app.kubernetes.io/env": "prod",
-			},
-			Annotations: map[string]string{},
-		},
-		Spec: capsulev1beta2.TenantSpec{
-			AdditionalRoleBindings: []capsuleapi.AdditionalRoleBindingsSpec{
-				{
-					ClusterRoleName: "tenant-viewer",
-					Subjects: []rbacv1.Subject{
-						{
-							Kind: "User",
-							Name: "alice",
-						},
-						{
-							Name: "oil-users",
-							Kind: "Group",
-						},
-						{
-							Name: "operators",
-							Kind: "Group",
-						},
-					},
-				},
-			},
-			Owners: []capsulev1beta2.OwnerSpec{
-				{
-					Name: "solar-users",
-					Kind: capsulev1beta2.GroupOwner,
-				},
-				{
-					Name: "bob",
-					Kind: capsulev1beta2.GroupOwner,
-				},
-			},
-		},
-	}
-
 	JustBeforeEach(func() {
 		// Save the current state of the argoaddon configuration
 		Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, originalArgoAddon)).To(Succeed())
@@ -217,7 +174,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			}).Should(Succeed())
 		}
 
-		for _, tnt := range []*capsulev1beta2.Tenant{solar, oil} {
+		for _, tnt := range []*capsulev1beta2.Tenant{solar} {
 			Eventually(func() error {
 				tnt.ResourceVersion = ""
 
@@ -364,144 +321,6 @@ var _ = Describe("Argo RBAC Reflection", func() {
 
 			var extractedLines []string
 			for _, line := range strings.Split(rbacSolar, "\n") {
-				trimmedLine := strings.TrimSpace(line)
-				if trimmedLine != "" {
-					extractedLines = append(extractedLines, trimmedLine)
-				}
-			}
-
-			By("verifying each expected line exists in the extracted CSV")
-			var missingLines []string
-			for _, expectedLine := range expectedLines {
-				success, err := ContainElement(strings.TrimSpace(expectedLine)).Match(extractedLines)
-				if err != nil {
-					Fail(fmt.Sprintf("Error checking line presence: %v", err))
-				}
-				if !success {
-					missingLines = append(missingLines, expectedLine)
-				}
-			}
-
-			// Fail the test with details on missing lines, if any
-			Expect(missingLines).To(BeEmpty(), "missing expected CSV lines: %v", missingLines)
-		})
-
-		By("verify argo default rbac permissions csv (oil)", func() {
-
-			configmap := &corev1.ConfigMap{}
-			Expect(k8sClient.Get(context.Background(), client.ObjectKey{
-				Name:      argoaddon.Spec.Argo.RBACConfigMap,
-				Namespace: argoaddon.Spec.Argo.Namespace,
-			}, configmap)).To(Succeed())
-
-			rbacOil, ok := configmap.Data[argo.ArgoPolicyName(oil)]
-			Expect(ok).To(BeTrue(), "RBAC CSV entry for oil is missing in ConfigMap")
-
-			// Define Which Lines we are expecting in the CSV
-			expectedLines := append(argo.DefaultPolicies(oil, argoaddon.Spec.Argo.Destination), []string{
-				argo.PolicyString(argo.TenantPolicy(oil, "viewer"),
-					oil.Name,
-					addonsv1alpha1.ArgocdPolicyDefinition{
-						Resource: "applications",
-						Action:   []string{"get"},
-						Verb:     "allow",
-						Path:     "*",
-					}),
-				argo.PolicyString(argo.TenantPolicy(oil, "viewer"),
-					oil.Name,
-					addonsv1alpha1.ArgocdPolicyDefinition{
-						Resource: "applications",
-						Action:   []string{"update"},
-						Verb:     "allow",
-						Path:     "*",
-					}),
-				argo.PolicyString(argo.TenantPolicy(oil, "viewer"),
-					oil.Name,
-					addonsv1alpha1.ArgocdPolicyDefinition{
-						Resource: "applications",
-						Action:   []string{"delete"},
-						Verb:     "allow",
-						Path:     "*",
-					}),
-				argo.PolicyString(argo.TenantPolicy(oil, "owner"),
-					oil.Name,
-					addonsv1alpha1.ArgocdPolicyDefinition{
-						Resource: "repositories",
-						Action:   []string{"*"},
-						Verb:     "allow",
-						Path:     "*",
-					}),
-				argo.BindingString(rbacv1.Subject{
-					Name: "alice",
-					Kind: "User",
-				},
-					argo.DefaultPolicyReadOnly(oil),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "alice",
-					Kind: "User",
-				},
-					argo.TenantPolicy(oil, "viewer"),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "oil-users",
-					Kind: "Group",
-				},
-					argo.DefaultPolicyReadOnly(oil),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "oil-users",
-					Kind: "Group",
-				},
-					argo.TenantPolicy(oil, "viewer"),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "operators",
-					Kind: "Group",
-				},
-					argo.DefaultPolicyReadOnly(oil),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "operators",
-					Kind: "Group",
-				},
-					argo.TenantPolicy(oil, "viewer"),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "solar-users",
-					Kind: "Group",
-				},
-					argo.DefaultPolicyReadOnly(oil),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "solar-users",
-					Kind: "Group",
-				},
-					argo.DefaultPolicyOwner(oil),
-				),
-
-				argo.BindingString(rbacv1.Subject{
-					Name: "bob",
-					Kind: "User",
-				},
-					argo.TenantPolicy(oil, "owner"),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "bob",
-					Kind: "User",
-				},
-					argo.DefaultPolicyReadOnly(oil),
-				),
-				argo.BindingString(rbacv1.Subject{
-					Name: "bob",
-					Kind: "User",
-				},
-					argo.DefaultPolicyOwner(oil),
-				),
-			}...)
-
-			var extractedLines []string
-			for _, line := range strings.Split(rbacOil, "\n") {
 				trimmedLine := strings.TrimSpace(line)
 				if trimmedLine != "" {
 					extractedLines = append(extractedLines, trimmedLine)

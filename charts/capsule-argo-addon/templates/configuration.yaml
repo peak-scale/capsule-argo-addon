@@ -22,9 +22,4 @@ spec:
 {{- define "config.defaults" -}}
 argo:
   serviceAccountNamespace: {{ $.Release.Namespace }}
-proxy:
-  enabled: {{ .Values.proxy.enabled }}
-  serviceName: {{ printf "%s-proxy" (include "helm.fullname" .) }}
-  serviceNamespace: {{ $.Release.Namespace }}
-  servicePort: 9001
 {{- end -}}

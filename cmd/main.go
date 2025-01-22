@@ -137,7 +137,12 @@ func main() {
 	}
 
 	for _, fieldIndex := range indexers {
-		if err = mgr.GetFieldIndexer().IndexField(ctx, fieldIndex.Object(), fieldIndex.Field(), fieldIndex.Func()); err != nil {
+		if err = mgr.GetFieldIndexer().IndexField(
+			ctx,
+			fieldIndex.Object(),
+			fieldIndex.Field(),
+			fieldIndex.Func(),
+		); err != nil {
 			setupLog.Error(err, "cannot create new Field Indexer")
 			os.Exit(1)
 		}

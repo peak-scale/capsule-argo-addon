@@ -38,7 +38,7 @@ type ArgoAddonSpec struct {
 	ReadOnly bool `json:"readonly"`
 
 	// Capsule-Proxy configuration for the controller
-	Proxy ControllerCapsuleProxyConfig `json:"proxy"`
+	//Proxy ControllerCapsuleProxyConfig `json:"proxy"`
 
 	// Argo configuration
 	Argo ControllerArgoCDConfig `json:"argo"`
@@ -63,12 +63,9 @@ type ControllerArgoCDConfig struct {
 	// +kubebuilder:default="https://kubernetes.default.svc"
 	Destination string `json:"destination,omitempty"`
 
-	// +optional
-	//DefaultServerNamespace string `json:"defaultNamespace,omitempty"`
-
 	// This is a feature which will be released with argocd +v2.13.0
 	// If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha
-	// +kubebuilder:default=false
+	// +kubebuilder:default=true
 	DestinationServiceAccounts bool `json:"destinationServiceAccounts,omitempty"`
 
 	// Default Namespace to create ServiceAccounts used by arog-cd

@@ -217,13 +217,6 @@ var _ = Describe("Translation Test", func() {
 	})
 
 	It("Does correctly translate", func() {
-		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
-			argoaddon.Spec.Proxy.Enabled = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
-		})
-
 		By("create single translation", func() {
 			Expect(k8sClient.Create(context.TODO(), translator1)).ToNot(HaveOccurred())
 		})
@@ -246,7 +239,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 				},
 				SourceNamespaces: []string{
 					"somewhere",
@@ -329,7 +322,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
@@ -453,7 +446,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 			}
@@ -568,7 +561,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
@@ -648,16 +641,6 @@ var _ = Describe("Translation Test", func() {
 					desc:   "AppProject",
 				},
 				{
-					object: &corev1.Secret{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.Namespace},
-					desc:   "Cluster Secret",
-				},
-				{
-					object: &corev1.Service{},
-					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Proxy.CapsuleProxyServiceNamespace},
-					desc:   "Service",
-				},
-				{
 					object: &corev1.ServiceAccount{},
 					key:    client.ObjectKey{Name: solar.Name, Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace},
 					desc:   "ServiceAccount",
@@ -709,13 +692,6 @@ var _ = Describe("Translation Test", func() {
 	})
 
 	It("Respect Read-Only", func() {
-		By("set corresponding settings", func() {
-			_ = k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, argoaddon)
-			argoaddon.Spec.Proxy.Enabled = false
-			argoaddon.Spec.Argo.DestinationServiceAccounts = false
-			Expect(k8sClient.Update(context.Background(), argoaddon)).To(Succeed())
-		})
-
 		By("create single translation", func() {
 			Expect(k8sClient.Create(context.TODO(), translator1)).ToNot(HaveOccurred())
 		})
@@ -749,7 +725,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 				},
 			}
 
@@ -866,7 +842,7 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
-					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
 				},
 			}
 
