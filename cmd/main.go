@@ -13,6 +13,8 @@ import (
 	_ "go.uber.org/automaxprocs"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	capsuleindexer "github.com/projectcapsule/capsule/pkg/indexer"
+	tntindex "github.com/projectcapsule/capsule/pkg/indexer/tenant"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -127,6 +129,18 @@ func main() {
 				Log:     ctrl.Log.WithName("Webhooks").WithName("ApplicationSets"),
 			},
 		})
+	}
+
+	// Indexer
+	indexers := []capsuleindexer.CustomIndexer{
+		&tntindex.NamespacesReference{Obj: &capsulev1beta2.Tenant{}},
+	}
+
+	for _, fieldIndex := range indexers {
+		if err = mgr.GetFieldIndexer().IndexField(ctx, fieldIndex.Object(), fieldIndex.Field(), fieldIndex.Func()); err != nil {
+			setupLog.Error(err, "cannot create new Field Indexer")
+			os.Exit(1)
+		}
 	}
 
 	//+kubebuilder:scaffold:builder

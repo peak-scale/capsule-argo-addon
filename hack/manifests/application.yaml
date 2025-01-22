@@ -3,7 +3,6 @@ kind: Application
 metadata:
   name: guestbook
 spec:
-  project: solar
   source:
     repoURL: https://github.com/argoproj/argocd-example-apps.git
     targetRevision: HEAD

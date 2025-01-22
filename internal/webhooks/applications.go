@@ -7,8 +7,10 @@ import (
 
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -46,19 +48,24 @@ func (mw *ApplicationWebhook) Handle(ctx context.Context, req admission.Request)
 		return admission.Allowed("no tenant object")
 	}
 
-	tenant := tntList.Items[0].Name
+	tenant := tntList.Items[0]
 
-	mw.Log.V(7).Info("matching tenant", "name", tenant)
+	mw.Log.V(7).Info("matching tenant", "name", tenant.Name)
+
+	// Only if Tenant is translated
+	if !controllerutil.ContainsFinalizer(&tenant, meta.ControllerFinalizer) {
+		return admission.Allowed("tenant not translated")
+	}
 
 	// Add the label if not present
-	if app.Spec.Project == tenant {
+	if app.Spec.Project == tenant.Name {
 		mw.Log.V(7).Info("project already set to tenant")
 
 		return admission.Allowed("tenant already set correctly")
 	}
 
 	// Overwrite Project
-	app.Spec.Project = tenant
+	app.Spec.Project = tenant.Name
 
 	// Marshal the object back to JSON
 	marshaledObj, err := json.Marshal(app)
