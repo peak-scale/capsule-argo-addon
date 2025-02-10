@@ -13,7 +13,7 @@ See the following Topics for insights for the configuration of Translators. [Vie
 
 Each Translator selects it's tenants via [Selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/). Setting no selector results in no tenants being selected (not all tenants).
 
-A tenant must be selected by at least one Translator, to create an Argo Project. If a tenant is not selected by any Translator, the operator will not consider it. 
+A tenant must be selected by at least one Translator, to create an Argo Project. If a tenant is not selected by any Translator, the operator will not consider it.
 
 **Note**: If a tenant gets unselected from Translators into a state where it's no longer selected by any Translator, it will be garbage collected. Meaning the Appproject and other assets will be deleted. This behavior can be influenced with [per-tenant Annotations](./annotations.md).
 
@@ -46,7 +46,7 @@ Let's first take a like at a simple Role Translation:
 # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
 name: "viewer"
 
-# All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below. 
+# All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below.
 clusterRoles:
   - "tenant-viewer"
 
@@ -118,7 +118,7 @@ spec:
     # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
   - name: "viewer"
 
-    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below. 
+    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below.
     clusterRoles:
       - "tenant-viewer"
 
@@ -139,9 +139,9 @@ spec:
     owner: true
 
     # Policies for argo which are bound to all subjects with the clusterRole "admin".
-    policies:  
+    policies:
     - resource: applications
-      action: 
+      action:
       - "action//Pod/maintenance-off"
       - "get"
       - "sync"
@@ -183,7 +183,7 @@ What's important
 - A Translator only manages the appproject specification itself defines. That means if a translator is deleted, it removes it's part from all relevant appprojects
 - Multiple translators having project settings are merged together
 - By default Users with `Owner` privileges can edit appproject settings. They are merged with all the translator specifications.
-- If multiple translator match, Non-Slice fields are overwritten, there's not yet a concrete priority implemented. 
+- If multiple translator match, Non-Slice fields are overwritten, there's not yet a concrete priority implemented.
 
 #### Structured
 

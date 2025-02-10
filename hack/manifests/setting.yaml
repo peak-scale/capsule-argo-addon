@@ -39,7 +39,7 @@ spec:
     # Allows the users to make changes to the appproject (just update verb)
     owner: true
     # Additional policies for the mapped entities. Allows to interact with
-    policies:  
+    policies:
     - resource: applications
       action: ["*"]
     - resource: repositories

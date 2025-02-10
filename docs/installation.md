@@ -75,7 +75,7 @@ rules:
     verbs: ["list", "watch", "get"]
 ```
 
-This `ClusterRole` is deployed as part of the helm chart, you need to manually bind them to custom 
+This `ClusterRole` is deployed as part of the helm chart, you need to manually bind them to custom
 
 ```yaml
 ---
@@ -89,11 +89,11 @@ roleRef:
   kind: ClusterRole
   name: list-all-resources     # The ClusterRole to bind
 subjects:
-  # Grants permissions to all serviceaccounts in the namespace 'capsule-argo-addon' 
+  # Grants permissions to all serviceaccounts in the namespace 'capsule-argo-addon'
   - kind: Group
     name: system:serviceaccounts:capsule-argo-addon
     apiGroup: rbac.authorization.k8s.io
-  # Grants permissions to all serviceaccounts in the namespace 'privileged-service-accounts' 
+  # Grants permissions to all serviceaccounts in the namespace 'privileged-service-accounts'
   - kind: Group
     name: system:serviceaccounts:privileged-service-accounts
     apiGroup: rbac.authorization.k8s.io

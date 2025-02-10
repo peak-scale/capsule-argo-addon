@@ -18,11 +18,11 @@ webhooks:
   name: applications.argo.projectcapsule.dev
   {{- with .rules }}
   rules:
-    {{- toYaml .| nindent 4}} 
+    {{- toYaml .| nindent 4}}
   {{- end }}
   {{- with .namespaceSelector }}
   namespaceSelector:
-    {{- toYaml .| nindent 4}} 
+    {{- toYaml .| nindent 4}}
   {{- end }}
   sideEffects: None
   timeoutSeconds: {{ $.Values.webhooks.mutatingWebhooksTimeoutSeconds }}
@@ -38,11 +38,11 @@ webhooks:
   name: applicationsets.argo.projectcapsule.dev
   {{- with .rules }}
   rules:
-    {{- toYaml .| nindent 4}} 
+    {{- toYaml .| nindent 4}}
   {{- end }}
   {{- with .namespaceSelector }}
   namespaceSelector:
-    {{- toYaml .| nindent 4}} 
+    {{- toYaml .| nindent 4}}
   {{- end }}
   sideEffects: None
   timeoutSeconds: {{ $.Values.webhooks.mutatingWebhooksTimeoutSeconds }}

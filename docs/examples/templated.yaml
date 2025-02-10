@@ -49,13 +49,13 @@ spec:
         {{- range $_, $value := $.Tenant.Namespaces }}
         - {{ $value | quote }}
         {{- end }}
-    
+
   roles:
 
     # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
   - name: "viewer"
 
-    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below. 
+    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below.
     clusterRoles:
       - "tenant-viewer"
 
@@ -76,9 +76,9 @@ spec:
     owner: true
 
     # Policies for argo which are bound to all subjects with the clusterRole "admin".
-    policies:  
+    policies:
     - resource: applications
-      action: 
+      action:
       - "action//Pod/maintenance-off"
       - "get"
       - "sync"

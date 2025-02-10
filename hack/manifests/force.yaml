@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/type: dev
   annotations:
-    argo.addons.projectcapsule.dev/decouple: "true"  
+    argo.addons.projectcapsule.dev/decouple: "true"
     #argo.addons.projectcapsule.dev/force: "false"
 spec:
   owners:
@@ -20,10 +20,9 @@ metadata:
   labels:
     app.kubernetes.io/type: dev
   annotations:
-    argo.addons.projectcapsule.dev/decouple: "false"  
+    argo.addons.projectcapsule.dev/decouple: "false"
     argo.addons.projectcapsule.dev/force: "false"
 spec:
   owners:
   - name: solar-users
     kind: Group
-

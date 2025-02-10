@@ -162,7 +162,7 @@ K3S_CLUSTER ?= "capsule-argo-addon"
 e2e: e2e-build e2e-exec e2e-destroy
 
 e2e-build: kind
-	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0} 
+	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0}
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
@@ -201,7 +201,7 @@ e2e-install-distro:
 e2e-load-image: ko-build-all
 	kind load docker-image --name $(K3S_CLUSTER) $(FULL_IMG):$(VERSION)
 
-dev-kubeconf-user: 
+dev-kubeconf-user:
 	@mkdir -p hack/kubeconfs || true
 	@cd hack/kubeconfs \
 	    && $(KUBECTL) get secret capsule-argocd-addon-proxy -n capsule-argocd-addon -o jsonpath='{.data.ca\.crt}' | base64 -d > root-ca.pem \
@@ -209,7 +209,7 @@ dev-kubeconf-user:
 		&& curl -s https://raw.githubusercontent.com/projectcapsule/capsule/main/hack/create-user.sh | bash -s -- alice projectcapsule.dev \
 		&& mv alice-*.kubeconfig alice.kubeconfig \
 		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).server https://127.0.0.1:9001 \
-		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).certificate-authority-data $$(cat root-ca.pem | base64 |tr -d '\n') 
+		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).certificate-authority-data $$(cat root-ca.pem | base64 |tr -d '\n')
 
 wait-for-helmreleases:
 	@ echo "Waiting for all HelmReleases to have observedGeneration >= 0..."
@@ -281,8 +281,9 @@ $(LOCALBIN):
 # -- Helm Plugins
 ####################
 
+HELM_SCHEMA_VERSION   := ""
 helm-plugin-schema:
-	$(HELM) plugin install https://github.com/losisin/helm-values-schema-json.git || true
+	@$(HELM) plugin install https://github.com/losisin/helm-values-schema-json.git --version $(HELM_SCHEMA_VERSION) || true
 
 HELM_DOCS         := $(LOCALBIN)/helm-docs
 HELM_DOCS_VERSION := v1.14.1
@@ -295,47 +296,47 @@ helm-doc:
 # -- Tools
 ####################
 CONTROLLER_GEN         := $(LOCALBIN)/controller-gen
-CONTROLLER_GEN_VERSION := v0.16.3
-CONTROLLER_GEN_LOOKUP  := github.com/kubernetes-sigs/controller-tools
+CONTROLLER_GEN_VERSION ?= v0.17.1
+CONTROLLER_GEN_LOOKUP  := kubernetes-sigs/controller-tools
 controller-gen:
 	@test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_GEN_VERSION) || \
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION))
 
-GINKGO     := $(LOCALBIN)/ginkgo
+GINKGO := $(LOCALBIN)/ginkgo
 ginkgo:
 	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo)
 
 CT         := $(LOCALBIN)/ct
-CT_VERSION := v3.11.0
-CT_LOOKUP  := github.com/helm/chart-testing
+CT_VERSION := v3.12.0
+CT_LOOKUP  := helm/chart-testing
 ct:
 	@test -s $(CT) && $(CT) version | grep -q $(CT_VERSION) || \
-	$(call go-install-tool,$(CT),$(CT_LOOKUP)/v3/ct@$(CT_VERSION))
+	$(call go-install-tool,$(CT),github.com/$(CT_LOOKUP)/v3/ct@$(CT_VERSION))
 
 KIND         := $(LOCALBIN)/kind
-KIND_VERSION := v0.17.0
-KIND_LOOKUP  := github.com/kubernetes-sigs/kind
+KIND_VERSION := v0.26.0
+KIND_LOOKUP  := kubernetes-sigs/kind
 kind:
 	@test -s $(KIND) && $(KIND) --version | grep -q $(KIND_VERSION) || \
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION))
 
 KO           := $(LOCALBIN)/ko
-KO_VERSION   := v0.14.1
-KO_LOOKUP  := github.com/google/ko
+KO_VERSION   := v0.17.1
+KO_LOOKUP    := google/ko
 ko:
 	@test -s $(KO) && $(KO) -h | grep -q $(KO_VERSION) || \
-	$(call go-install-tool,$(KO),$(KIND_LOOKUP)@$(KO_VERSION))
+	$(call go-install-tool,$(KO),github.com/$(KO_LOOKUP)@$(KO_VERSION))
 
 GOLANGCI_LINT          := $(LOCALBIN)/golangci-lint
 GOLANGCI_LINT_VERSION  := v1.63.4
-GOLANGCI_LINT_LOOKUP   := github.com/golangci/golangci-lint
-golangci-lint:
+GOLANGCI_LINT_LOOKUP   := golangci/golangci-lint
+golangci-lint: ## Download golangci-lint locally if necessary.
 	@test -s $(GOLANGCI_LINT) && $(GOLANGCI_LINT) -h | grep -q $(GOLANGCI_LINT_VERSION) || \
-	$(call go-install-tool,$(GOLANGCI_LINT),$(GOLANGCI_LINT_LOOKUP)/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/$(GOLANGCI_LINT_LOOKUP)/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
 
 APIDOCS_GEN         := $(LOCALBIN)/crdoc
-APIDOCS_GEN_VERSION := v0.6.2
-APIDOCS_GEN_LOOKUP := github.com/fybrik/crdoc
+APIDOCS_GEN_VERSION := v0.6.4
+APIDOCS_GEN_LOOKUP  := fybrik/crdoc
 apidocs-gen: ## Download crdoc locally if necessary.
 	@test -s $(APIDOCS_GEN) && $(APIDOCS_GEN) --version | grep -q $(APIDOCS_GEN_VERSION) || \
 	$(call go-install-tool,$(APIDOCS_GEN),fybrik.io/crdoc@$(APIDOCS_GEN_VERSION))

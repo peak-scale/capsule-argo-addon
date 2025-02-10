@@ -1,4 +1,4 @@
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon) 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_shield&issueType=license)
 
 

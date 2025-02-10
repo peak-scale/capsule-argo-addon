@@ -3,9 +3,16 @@ ignore:
   - config/
   - charts/*/templates/
   - charts/**/templates/
+  - docs/**
+  - hack/**
 rules:
   truthy:
     level: warning
+    allowed-values:
+    - "true"
+    - "false"
+    - "on"
+    - "off"
     check-keys: false
   braces:
     min-spaces-inside: 0
