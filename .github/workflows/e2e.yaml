@@ -3,7 +3,8 @@ permissions: {}
 
 on:
   pull_request:
-    branches: [ "*" ]
+    branches:
+      - "*"
     paths:
       - '.github/workflows/e2e.yml'
       - 'api/**'
