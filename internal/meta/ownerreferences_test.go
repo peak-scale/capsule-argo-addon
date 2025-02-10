@@ -4,7 +4,6 @@
 package meta
 
 import (
-	"context"
 	"testing"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -34,8 +33,7 @@ func TestAddDynamicTenantOwnerReference(t *testing.T) {
 		},
 	}
 
-	ctx := context.TODO()
-	err := AddDynamicTenantOwnerReference(ctx, scheme, obj, tenant, false)
+	err := AddDynamicTenantOwnerReference(scheme, obj, tenant, false)
 	assert.NoError(t, err)
 
 	// Verify the owner reference was added

@@ -34,7 +34,7 @@ import (
 
 // Creates or updates the ArgoCD Application Project for the tenant
 //
-//nolint:gocyclo
+//nolint:gocyclo,gocognit,cyclop,maintidx
 func (i *TenancyController) reconcileArgoProject(
 	ctx context.Context,
 	log logr.Logger,
@@ -42,7 +42,6 @@ func (i *TenancyController) reconcileArgoProject(
 	translators []*v1alpha1.ArgoTranslator,
 	unmatchedTranslators map[string]*configv1alpha1.ArgoTranslator,
 ) (err error) {
-
 	// Initialize AppProject
 	appProject := &argocdv1alpha1.AppProject{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,11 +84,11 @@ func (i *TenancyController) reconcileArgoProject(
 	destination := i.Settings.Get().GetClusterDestination(tenant)
 
 	// Lifecycle Approject (If marked for deletion remove finalizers)
+	//nolint:nestif
 	if !appProject.ObjectMeta.DeletionTimestamp.IsZero() || !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
 		log.V(5).Info("removing finalizers for approject", "appproject", appProject.Name)
 
 		_, err = controllerutil.CreateOrPatch(ctx, i.Client, appProject, func() error {
-
 			// Remove unmatched Translators based on finalizers
 			presentTranslators := meta.GetTranslatingFinalizers(appProject)
 			for _, translatorName := range presentTranslators {
@@ -97,9 +96,10 @@ func (i *TenancyController) reconcileArgoProject(
 					log.V(7).Info("removing translator config", "appproject", appProject.Name, "translator", translatorName)
 
 					// Call RemoveTranslatorForTenant with the actual translator object
-					err := translatorctl.RemoveTranslatorForTenant(ctx, i.Client, log, translator, tenant, appProject, i.Settings)
+					err := translatorctl.RemoveTranslatorForTenant(log, translator, tenant, appProject, i.Settings)
 					if err != nil {
 						log.Error(err, "failed to remove translator", "translator", translatorName)
+
 						return err
 					}
 				} else {
@@ -116,6 +116,7 @@ func (i *TenancyController) reconcileArgoProject(
 			if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
 				if i.Settings.Get().DecoupleTenant(tenant) {
 					log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
+
 					if err := i.DecoupleTenant(appProject, tenant); err != nil {
 						return err
 					}
@@ -141,11 +142,12 @@ func (i *TenancyController) reconcileArgoProject(
 		// Delete the AppProject when it's not decoupled
 		if !i.Settings.Get().DecoupleTenant(tenant) {
 			return i.Client.Delete(ctx, appProject)
-		} else {
-			log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
-			if err := i.DecoupleTenant(appProject, tenant); err != nil {
-				return err
-			}
+		}
+
+		log.V(5).Info("decoupling appproject", "appproject", appProject.Name)
+
+		if err := i.DecoupleTenant(appProject, tenant); err != nil {
+			return err
 		}
 	}
 
@@ -160,19 +162,21 @@ func (i *TenancyController) reconcileArgoProject(
 
 		appliedTranslatorsSet := make(map[string]struct{})
 		translatedSpec := &argocdv1alpha1.AppProjectSpec{}
+
 		for _, translator := range translators {
 			// Get Approject Config with templating
 			translatorCfg, err := translator.Spec.ProjectSettings.GetConfig(
-				tpl.ConfigContext(destination, translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
+				tpl.ConfigContext(translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
 			if err != nil {
 				return err
 			}
 
 			cfg1, cfg2, err := translator.Spec.ProjectSettings.GetConfigs(
-				tpl.ConfigContext(destination, translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
+				tpl.ConfigContext(translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
 			if err != nil {
 				return err
 			}
+
 			log.V(10).Info(
 				"translator-config",
 				"translator", translator.Name,
@@ -187,8 +191,7 @@ func (i *TenancyController) reconcileArgoProject(
 				"config", translatorCfg.ProjectSpec)
 
 			// Use mergo to merge non-empty fields from translatorCfg.ProjectSpec into appProject.Spec
-			err = reflection.Merge(translatedSpec, &translatorCfg.ProjectSpec)
-			if err != nil {
+			if err := reflection.Merge(translatedSpec, &translatorCfg.ProjectSpec); err != nil {
 				return fmt.Errorf("failed to merge translator spec: %w", err)
 			}
 
@@ -202,6 +205,7 @@ func (i *TenancyController) reconcileArgoProject(
 			}
 
 			// Handle Finalizers
+			//nolint:gocritic
 			finalizers := append(translatorCfg.ProjectMeta.Finalizers, meta.TranslatorFinalizer(translator.Name))
 			for _, finalizer := range finalizers {
 				if !controllerutil.ContainsFinalizer(appProject, finalizer) {
@@ -222,9 +226,10 @@ func (i *TenancyController) reconcileArgoProject(
 					log.V(7).Info("removing translator config", "appproject", appProject.Name, "translator", translatorName)
 
 					// Call RemoveTranslatorForTenant with the actual translator object
-					err := translatorctl.RemoveTranslatorForTenant(ctx, i.Client, log, translator, tenant, appProject, i.Settings)
+					err := translatorctl.RemoveTranslatorForTenant(log, translator, tenant, appProject, i.Settings)
 					if err != nil {
 						log.Error(err, "failed to remove translator", "translator", translatorName)
+
 						return err
 					}
 				}
@@ -275,7 +280,7 @@ func (i *TenancyController) reconcileArgoProject(
 		// Check if tenant is being deleted (Remove owner reference)
 		log.V(5).Info("ensuring ownerreference", "appproject", appProject.Name)
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), appProject, tenant, i.Settings.Get().DecoupleTenant(tenant))
+		return meta.AddDynamicTenantOwnerReference(i.Client.Scheme(), appProject, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
 		return err
@@ -298,7 +303,7 @@ func (i *TenancyController) reconcileArgoProject(
 	return nil
 }
 
-// Applies RBAC to the ArgoCD RBAC configmap in
+// Applies RBAC to the ArgoCD RBAC configmap in.
 func (i *TenancyController) reflectArgoRBAC(
 	ctx context.Context,
 	log logr.Logger,
@@ -307,22 +312,23 @@ func (i *TenancyController) reflectArgoRBAC(
 ) (err error) {
 	// Initialize target configmap
 	configmap := &corev1.ConfigMap{}
-	err = i.Client.Get(ctx, client.ObjectKey{
+	if err := i.Client.Get(ctx, client.ObjectKey{
 		Name:      i.Settings.Get().Argo.RBACConfigMap,
-		Namespace: i.Settings.Get().Argo.Namespace}, configmap)
-	if err != nil {
+		Namespace: i.Settings.Get().Argo.Namespace}, configmap); err != nil {
 		return err
 	}
 
 	// Empty Translators, attempt to remove the tenant from the configmap
 	if len(translators) == 0 {
 		log.V(7).Info("removing argo rbac", "tenant", tenant.Name)
+
 		if _, ok := configmap.Data[argo.ArgoPolicyName(tenant)]; ok {
 			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, configmap, func() error {
 				delete(configmap.Data, argo.ArgoPolicyName(tenant))
 
 				return nil
 			})
+
 			return err
 		}
 	}
@@ -356,7 +362,7 @@ func (i *TenancyController) reflectArgoRBAC(
 	return nil
 }
 
-// Creates CSV file to be applied to the argo configmap
+// Creates CSV file to be applied to the argo configmap.
 func (i *TenancyController) reflectArgoCSV(
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
@@ -394,6 +400,7 @@ func (i *TenancyController) reflectArgoCSV(
 
 			// Assign Users/Groups
 			sb.WriteString("\n")
+
 			for _, clusterRole := range argopolicy.ClusterRoles {
 				log.V(7).Info("generating for subjects matching clusterrrole", "translator", translator.Name, "clusterrole", clusterRole)
 
@@ -405,6 +412,7 @@ func (i *TenancyController) reflectArgoCSV(
 
 						// Assign Access to the tenant
 						sb.WriteString(argo.BindingString(subject, argo.DefaultPolicyReadOnly(tenant)))
+
 						if argopolicy.Owner {
 							sb.WriteString(argo.BindingString(subject, argo.DefaultPolicyOwner(tenant)))
 						}
@@ -429,6 +437,7 @@ func (i *TenancyController) reflectArgoCSV(
 	log.V(7).Info("templating argo csv")
 
 	ArgoCSVTemplate := sb.String()
+
 	tmpl, err := template.New("rbac").Funcs(tpl.ExtraFuncMap()).Parse(ArgoCSVTemplate)
 	if err != nil {
 		return "", err

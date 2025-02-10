@@ -2,7 +2,7 @@
 
 The configure the controller we have a dedicated cluster-scoped resource. This is to ensure type-safety regarding the configuration values. There can be any amount of configurations. However a controller only selects one configuration at a time. Updates to the configuration are reflected without the need to restart the controller.
 
-Here's a simple configuration which configures the argocd properties and the capsule-proxy service:
+Here's a simple configuration which configures the argocd properties:
 
 ```yaml
 apiVersion: addons.projectcapsule.dev/v1alpha1
@@ -14,12 +14,6 @@ apiVersion: addons.projectcapsule.dev/v1alpha1
       namespace: argocd
       rbacConfigMap: argocd-rbac-cm
     force: false
-    proxy:
-      enabled: true
-      serviceAccountNamespace: capsule-argo-addon
-      serviceName: capsule-argo-addon-proxy
-      serviceNamespace: capsule-argo-addon
-      servicePort: 9001
 ```
 
 The controller is then started with the name of the configuration:

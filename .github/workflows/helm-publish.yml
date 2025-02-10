@@ -34,9 +34,9 @@ jobs:
           version: ${{ steps.extract_version.outputs.version }}
           registry-username: ${{ github.actor }}
           registry-password: ${{ secrets.GITHUB_TOKEN }}
-          update-dependencies: 'true' # Defaults to false
+          update-dependencies: 'false' # Defaults to false
           sign-image: 'true'
-          signature-repository: ghcr.io/${{ github.repository_owner }}/signatures
+          signature-repository: ghcr.io/${{ github.repository_owner }}/charts/capsule-argo-addon
   helm-provenance:
     needs: publish-helm
     permissions:

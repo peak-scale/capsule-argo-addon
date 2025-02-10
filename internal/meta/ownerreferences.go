@@ -4,8 +4,6 @@
 package meta
 
 import (
-	"context"
-
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -15,7 +13,6 @@ import (
 // Add Ownerreference, which does not cascade a deletion of the tenant
 // Also considers Decoupling from the tenant
 func AddDynamicTenantOwnerReference(
-	ctx context.Context,
 	schema *runtime.Scheme,
 	obj client.Object,
 	tenant *capsulev1beta2.Tenant,
@@ -23,7 +20,6 @@ func AddDynamicTenantOwnerReference(
 ) (err error) {
 	err = controllerutil.SetControllerReference(tenant, obj, schema)
 	if err != nil {
-
 		return err
 	}
 
@@ -31,6 +27,7 @@ func AddDynamicTenantOwnerReference(
 		ownerRefs := obj.GetOwnerReferences()
 		// Remove blockOwnerDeletion and controller only if they are currently set
 		needsUpdate := false
+
 		for i, ownerRef := range ownerRefs {
 			if ownerRef.UID == tenant.UID {
 				if ownerRef.BlockOwnerDeletion != nil || ownerRef.Controller != nil {
@@ -38,9 +35,11 @@ func AddDynamicTenantOwnerReference(
 					ownerRefs[i].Controller = nil
 					needsUpdate = true
 				}
+
 				break
 			}
 		}
+
 		if needsUpdate {
 			obj.SetOwnerReferences(ownerRefs)
 		}
@@ -54,19 +53,22 @@ func RemoveDynamicTenantOwnerReference(obj client.Object, tenant *capsulev1beta2
 	ownerRefs := obj.GetOwnerReferences()
 	// Remove blockOwnerDeletion and controller only if they are currently set
 	needsUpdate := false
+
 	for i, ownerRef := range ownerRefs {
 		if ownerRef.UID == tenant.UID {
 			ownerRefs = append(ownerRefs[:i], ownerRefs[i+1:]...)
+
 			needsUpdate = true
+
 			break
 		}
 	}
+
 	if needsUpdate {
 		obj.SetOwnerReferences(ownerRefs)
 	}
 
 	return nil
-
 }
 
 // Tells us if there's already an ownerreference of the given tenant
@@ -77,5 +79,6 @@ func HasTenantOwnerReference(obj client.Object, tenant *capsulev1beta2.Tenant) b
 			return true
 		}
 	}
+
 	return false
 }

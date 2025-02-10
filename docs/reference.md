@@ -47,7 +47,6 @@ This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: 
 | **force** | boolean | When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
 and overwritten. When disabled the appprojects will not be changed or adopted.
 This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
-| **[proxy](#argoaddonspecproxy)** | object | Capsule-Proxy configuration for the controller | true |
 | **readonly** | boolean | All appprojects, which are collected by this controller, are set into ready-only mode
 That means only properties from matching translators are respected. Any changes from users are
 overwritten. This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
@@ -67,26 +66,9 @@ It's best to have a dedicated namespace for these serviceaccounts | true |
 | **destination** | string | If you are not using the capsule-proxy integration this destination is registered
 for each appproject.<br/><i>Default</i>: https://kubernetes.default.svc<br/> | false |
 | **destinationServiceAccounts** | boolean | This is a feature which will be released with argocd +v2.13.0
-If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha<br/><i>Default</i>: false<br/> | false |
+If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha<br/><i>Default</i>: true<br/> | false |
 | **namespace** | string | Namespace where the ArgoCD instance is running<br/><i>Default</i>: argocd<br/> | false |
 | **rbacConfigMap** | string | Name of the ArgoCD rbac configmap (required for the controller)<br/><i>Default</i>: argocd-rbac-cm<br/> | false |
-
-
-### ArgoAddon.spec.proxy
-
-
-
-Capsule-Proxy configuration for the controller
-
-| **Name** | **Type** | **Description** | **Required** |
-| :---- | :---- | :----------- | :-------- |
-| **enabled** | boolean | Enable the capsule-proxy integration.
-This automatically creates services for tenants and registers them as destination
-on the argo appproject.<br/><i>Default</i>: false<br/> | false |
-| **serviceName** | string | Name of the capsule-proxy service<br/><i>Default</i>: capsule-proxy<br/> | false |
-| **serviceNamespace** | string |  Namespace where the capsule-proxy service is running<br/><i>Default</i>: capsule-system<br/> | false |
-| **servicePort** | integer | Port of the capsule-proxy service<br/><i>Format</i>: int32<br/><i>Default</i>: 9001<br/> | false |
-| **tls** | boolean | Port of the capsule-proxy service<br/><i>Default</i>: true<br/> | false |
 
 
 ### ArgoAddon.status
@@ -114,7 +96,6 @@ This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: 
 | **force** | boolean | When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
 and overwritten. When disabled the appprojects will not be changed or adopted.
 This is true for any other resource as well. This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
-| **[proxy](#argoaddonstatusloadedproxy)** | object | Capsule-Proxy configuration for the controller | true |
 | **readonly** | boolean | All appprojects, which are collected by this controller, are set into ready-only mode
 That means only properties from matching translators are respected. Any changes from users are
 overwritten. This can also be set on a per-tenant basis via annotations.<br/><i>Default</i>: false<br/> | true |
@@ -134,26 +115,9 @@ It's best to have a dedicated namespace for these serviceaccounts | true |
 | **destination** | string | If you are not using the capsule-proxy integration this destination is registered
 for each appproject.<br/><i>Default</i>: https://kubernetes.default.svc<br/> | false |
 | **destinationServiceAccounts** | boolean | This is a feature which will be released with argocd +v2.13.0
-If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha<br/><i>Default</i>: false<br/> | false |
+If you are not yet on that version, you can't use this feature. Currently Feature is in state Alpha<br/><i>Default</i>: true<br/> | false |
 | **namespace** | string | Namespace where the ArgoCD instance is running<br/><i>Default</i>: argocd<br/> | false |
 | **rbacConfigMap** | string | Name of the ArgoCD rbac configmap (required for the controller)<br/><i>Default</i>: argocd-rbac-cm<br/> | false |
-
-
-### ArgoAddon.status.loaded.proxy
-
-
-
-Capsule-Proxy configuration for the controller
-
-| **Name** | **Type** | **Description** | **Required** |
-| :---- | :---- | :----------- | :-------- |
-| **enabled** | boolean | Enable the capsule-proxy integration.
-This automatically creates services for tenants and registers them as destination
-on the argo appproject.<br/><i>Default</i>: false<br/> | false |
-| **serviceName** | string | Name of the capsule-proxy service<br/><i>Default</i>: capsule-proxy<br/> | false |
-| **serviceNamespace** | string |  Namespace where the capsule-proxy service is running<br/><i>Default</i>: capsule-system<br/> | false |
-| **servicePort** | integer | Port of the capsule-proxy service<br/><i>Format</i>: int32<br/><i>Default</i>: 9001<br/> | false |
-| **tls** | boolean | Port of the capsule-proxy service<br/><i>Default</i>: true<br/> | false |
 
 ## ArgoTranslator
 

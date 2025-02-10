@@ -1,3 +1,6 @@
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
+
 package v1alpha1
 
 import (
@@ -8,7 +11,7 @@ import (
 )
 
 // Get the Cluster-URL within argo-cd
-func (in *ArgoAddonSpec) GetClusterDestination(tenant *capsulev1beta2.Tenant) (dest string) {
+func (in *ArgoAddonSpec) GetClusterDestination(_ *capsulev1beta2.Tenant) (dest string) {
 	return in.Argo.Destination
 }
 
@@ -45,8 +48,6 @@ func (in *ArgoAddonSpec) ReadOnlyTenant(tenant *capsulev1beta2.Tenant) bool {
 }
 
 // Determines if an argo cluster destination should be registered on a tenant-basis
-//
-//nolint:gosimple
 func (in *ArgoAddonSpec) RegisterCluster(tenant *capsulev1beta2.Tenant) (provision bool) {
 	provision = false
 

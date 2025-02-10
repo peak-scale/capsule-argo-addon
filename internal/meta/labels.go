@@ -18,7 +18,7 @@ const (
 	ProvisionedByLabel  = "app.kubernetes.io/provisioned-by"
 )
 
-// Tracking Labels for resources provisioned by this controller
+// Tracking Labels for resources provisioned by this controller.
 func TranslatorTrackingLabels(tenant *capsulev1beta2.Tenant) map[string]string {
 	labels := TrackingLabels()
 	labels[ProvisionedByLabel] = ManagedByLabelValue
@@ -27,7 +27,7 @@ func TranslatorTrackingLabels(tenant *capsulev1beta2.Tenant) map[string]string {
 	return labels
 }
 
-// Respects the labels from the objects and just overwrites the tracking labels
+// Respects the labels from the objects and just overwrites the tracking labels.
 func WithTranslatorTrackingLabels(obj client.Object, tenant *capsulev1beta2.Tenant) (labels map[string]string) {
 	labels = obj.GetLabels()
 	if labels == nil {
@@ -48,19 +48,20 @@ func TranslatorRemoveTenantLabels(labels map[string]string) map[string]string {
 	return labels
 }
 
-// Common Labels for tracking resources provisioned by this controller
+// Common Labels for tracking resources provisioned by this controller.
 func TrackingLabels() map[string]string {
 	return map[string]string{
 		ManagedByLabel: ManagedByLabelValue,
 	}
 }
 
-// Verify if a string slice contains a specific element
+// Verify if a string slice contains a specific element.
 func StringSliceContains(slice []string, element string) bool {
 	for _, sliceElement := range slice {
 		if sliceElement == element {
 			return true
 		}
 	}
+
 	return false
 }

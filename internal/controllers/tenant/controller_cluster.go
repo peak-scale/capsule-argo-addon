@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// Creates or updates the ArgoCD Cluster for the tenant (Tenant ServiceAccount, Cluster Secret)
+// Creates or updates the ArgoCD Cluster for the tenant (Tenant ServiceAccount, Cluster Secret).
 func (i *TenancyController) reconcileArgoCluster(
 	ctx context.Context,
 	log logr.Logger,
@@ -48,6 +48,7 @@ func (i *TenancyController) reconcileArgoCluster(
 	log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
 
 	// Decouple Object
+	//nolint:nestif
 	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
 		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
 			_, err := controllerutil.CreateOrPatch(
@@ -56,6 +57,7 @@ func (i *TenancyController) reconcileArgoCluster(
 				serverSecret,
 				func() error {
 					log.V(5).Info("decoupling server secret", "secret", serverSecret.Name)
+
 					if err := i.DecoupleTenant(serverSecret, tenant); err != nil {
 						return err
 					}
@@ -82,15 +84,16 @@ func (i *TenancyController) reconcileArgoCluster(
 		// Delete the AppProject when it's not decoupled
 		if !i.Settings.Get().DecoupleTenant(tenant) {
 			return i.Client.Delete(ctx, serverSecret)
-		} else {
-			log.V(5).Info(
-				"decoupling serviceaccount",
-				"secret", tenant.Name,
-				"namespace", i.Settings.Get().Argo.Namespace,
-			)
-			if err := i.DecoupleTenant(serverSecret, tenant); err != nil {
-				return err
-			}
+		}
+
+		log.V(5).Info(
+			"decoupling serviceaccount",
+			"secret", tenant.Name,
+			"namespace", i.Settings.Get().Argo.Namespace,
+		)
+
+		if err := i.DecoupleTenant(serverSecret, tenant); err != nil {
+			return err
 		}
 	}
 
@@ -112,6 +115,7 @@ func (i *TenancyController) reconcileArgoCluster(
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return fmt.Errorf("failed to lifecycle destination: %w", err)
 		}
+
 		return nil
 	}
 
@@ -141,11 +145,13 @@ func (i *TenancyController) reconcileArgoCluster(
 			"config":  string(jsonData),
 		}
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), serverSecret, tenant, i.Settings.Get().DecoupleTenant(tenant))
+		return meta.AddDynamicTenantOwnerReference(i.Client.Scheme(), serverSecret, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
 		return err
 	}
+
 	log.Info("Argo Server created", "name", tenant.Name)
+
 	return nil
 }

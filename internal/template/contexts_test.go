@@ -37,7 +37,7 @@ config:
 `
 
 	// Source the context (Mocking the required structs)
-	tplCtx := ConfigContext("example-cluster", &v1alpha1.ArgoTranslator{
+	tplCtx := ConfigContext(&v1alpha1.ArgoTranslator{
 		Spec: v1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -129,7 +129,7 @@ func TestRenderContextToMarkdown(t *testing.T) {
 	}
 
 	// Load template context
-	tplCtx := ConfigContext("example-cluster", &v1alpha1.ArgoTranslator{
+	tplCtx := ConfigContext(&v1alpha1.ArgoTranslator{
 		Spec: v1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{

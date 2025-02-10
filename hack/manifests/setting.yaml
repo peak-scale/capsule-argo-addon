@@ -18,9 +18,6 @@ spec:
         clusterResourceWhitelist:
           - group: "*"
             kind: "*"
-        namespaceResourceWhitelist:
-          - group: "*"
-            kind: "*"
     template: |
         sourceNamespaces:
         - {{ $.Config.Argo.Namespace | quote }}

@@ -53,8 +53,11 @@ func init() {
 
 func main() {
 	var metricsAddr string
+
 	var enableLeaderElection, enablePprof, hooks bool
+
 	var probeAddr string
+
 	var settingName string
 
 	ctx := ctrl.SetupSignalHandler()

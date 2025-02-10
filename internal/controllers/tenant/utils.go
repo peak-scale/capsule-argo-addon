@@ -9,12 +9,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Gets the API Server given via Rest-Config
+// Gets the API Server given via Rest-Config.
 func (i *TenancyController) RetrieveAPIServerURL() string {
 	return i.Rest.Host
 }
 
-// Decouple a Tenant from an Object
+// Decouple a Tenant from an Object.
 func (i *TenancyController) DecoupleTenant(obj client.Object, tenant *capsulev1beta2.Tenant) (err error) {
 	if err = meta.RemoveDynamicTenantOwnerReference(obj, tenant); err != nil {
 		return

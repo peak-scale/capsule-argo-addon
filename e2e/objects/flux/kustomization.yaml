@@ -24,3 +24,10 @@ patches:
     target:
       kind: Deployment
       name: "(kustomize-controller|helm-controller)"
+  - patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 0    
+    target:
+      kind: Deployment
+      name: "(notification-controller|image-reflector-controller|image-automation-controller)"

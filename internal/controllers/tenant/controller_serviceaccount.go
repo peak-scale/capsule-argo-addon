@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// Creates Teanant Service Account with the given name and namespace
+// Creates Teanant Service Account with the given name and namespace.
 func (i *TenancyController) reconcileArgoServiceAccount(
 	ctx context.Context,
 	log logr.Logger,
@@ -87,6 +87,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	}
 
 	// Remove when umatched
+	//nolint:nestif
 	if len(translators) == 0 {
 		if k8serrors.IsNotFound(err) {
 			return "", nil
@@ -95,6 +96,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		// Remove Serviceaccount from Tenant
 		if err := i.removeServiceAccountOwner(ctx, log, tenant, accountResource.Namespace, accountResource.Name); err != nil {
 			log.Error(err, "failed to remove serviceaccount")
+
 			return "", err
 		}
 
@@ -104,17 +106,16 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 			}
 
 			return "", nil
-		} else {
-			log.V(5).Info(
-				"decoupling serviceaccount",
-				"serviceaccount", accountResource.Name,
-				"namespace", accountResource.Namespace)
-			if err := i.DecoupleTenant(accountResource, tenant); err != nil {
-				return "", err
-			}
 		}
 
-		return "", nil
+		log.V(5).Info(
+			"decoupling serviceaccount",
+			"serviceaccount", accountResource.Name,
+			"namespace", accountResource.Namespace)
+
+		err = i.DecoupleTenant(accountResource, tenant)
+
+		return "", err
 	}
 
 	log.V(7).Info("ensuring serviceaccount", "serviceaccount", serviceAccount, "namespace", namespace)
@@ -124,12 +125,13 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		if accountResource.ObjectMeta.Labels == nil {
 			accountResource.ObjectMeta.Labels = make(map[string]string)
 		}
+
 		accountResource.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
 
-		return meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant))
+		return meta.AddDynamicTenantOwnerReference(i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
 	if err != nil {
-		return "", fmt.Errorf("error while applying serviceaccount: %s", err)
+		return "", fmt.Errorf("error while applying serviceaccount: %w", err)
 	}
 
 	// Add ServiceAccount to Tenant-Spec
@@ -166,9 +168,10 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		if tokenResource.ObjectMeta.Annotations == nil {
 			tokenResource.ObjectMeta.Annotations = make(map[string]string)
 		}
+
 		tokenResource.ObjectMeta.Annotations["kubernetes.io/service-account.name"] = serviceAccount
 
-		if err := meta.AddDynamicTenantOwnerReference(ctx, i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant)); err != nil {
+		if err := meta.AddDynamicTenantOwnerReference(i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant)); err != nil {
 			return err
 		}
 
@@ -185,7 +188,8 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		"namespace", namespace)
 
 	var secret corev1.Secret
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+
+	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 		if err = i.Client.Get(ctx, client.ObjectKey{
 			Name:      tokenResource.Name,
 			Namespace: namespace,
@@ -199,9 +203,9 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		}
 
 		token = string(t)
+
 		return
-	})
-	if err != nil {
+	}); err != nil {
 		return "", err
 	}
 
@@ -210,7 +214,7 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	return token, nil
 }
 
-// Adds the given service account as an owner to the tenant
+// Adds the given service account as an owner to the tenant.
 func (i *TenancyController) addServiceAccountOwner(
 	ctx context.Context,
 	log logr.Logger,
@@ -227,25 +231,28 @@ func (i *TenancyController) addServiceAccountOwner(
 	for _, o := range tenant.Spec.Owners {
 		if o.Kind == owner.Kind && o.Name == owner.Name {
 			log.V(5).Info("serviceaccount already owner")
+
 			return nil
 		}
 	}
 
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (conflict error) {
 		_ = i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant)
+
 		log.V(5).Info("adding serviceaccount as owner")
 
 		tenant.Spec.Owners = append(tenant.Spec.Owners, owner)
 		if conflict = i.Client.Update(ctx, tenant); err != nil {
 			return err
 		}
+
 		return
 	})
 
 	return nil
 }
 
-// Removes a ServiceAccount from the ownerspec of a tenant
+// Removes a ServiceAccount from the ownerspec of a tenant.
 func (i *TenancyController) removeServiceAccountOwner(
 	ctx context.Context,
 	log logr.Logger,
@@ -260,10 +267,13 @@ func (i *TenancyController) removeServiceAccountOwner(
 
 	// Check if the owner is already present
 	present := false
+
 	for _, o := range tenant.Spec.Owners {
 		if o.Kind == owner.Kind && o.Name == owner.Name {
 			present = true
+
 			log.V(5).Info("serviceaccount still owner")
+
 			break
 		}
 	}
@@ -279,13 +289,16 @@ func (i *TenancyController) removeServiceAccountOwner(
 		}
 
 		// Filter out the ServiceAccount owner
-		owners := capsulev1beta2.OwnerListSpec{}
 		log.V(5).Info("removing serviceaccount as owner if it exists")
+
+		owners := capsulev1beta2.OwnerListSpec{}
+
 		for _, o := range tenant.Spec.Owners {
 			if !(o.Kind == owner.Kind && o.Name == owner.Name) {
 				owners = append(owners, o)
 			}
 		}
+
 		tenant.Spec.Owners = owners
 
 		// Update the tenant resource

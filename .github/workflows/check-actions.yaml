@@ -6,7 +6,8 @@ on:
     branches:
       - '*'
   pull_request:
-    branches: [ "master", "main" ]
+    branches:
+      - "main"
 
 jobs:
   check:
