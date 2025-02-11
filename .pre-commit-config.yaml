@@ -44,5 +44,3 @@ repos:
     entry: make test
     language: system
     files: \.go$
-
-
