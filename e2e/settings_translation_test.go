@@ -677,6 +677,10 @@ var _ = Describe("Translation Test", func() {
 						Group: "tenant.specific.crd",
 						Kind:  "ApplicationCR",
 					},
+					{
+						Group: "vcluster.alhpa.com",
+						Kind:  "Cluster",
+					},
 				},
 				NamespaceResourceBlacklist: []metav1.GroupKind{
 					{
