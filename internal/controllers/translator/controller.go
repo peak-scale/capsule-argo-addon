@@ -5,7 +5,6 @@ package translator
 
 import (
 	"context"
-	"fmt"
 
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
@@ -186,25 +185,25 @@ func (i *Controller) garbageCollectTranslator(
 	// Remove old Translator-Layout for any tracked Tenants.
 	tenantNames := translator.GetTenantNames()
 	for _, tnt := range tenantNames {
+		// Get the Tenant.
+		tenant := &capsulev1beta2.Tenant{}
+		if err := i.Client.Get(ctx, client.ObjectKey{Name: tnt}, tenant); err != nil {
+			if k8serrors.IsNotFound(err) {
+				// Tenant no longer exists, skip it.
+				return nil
+			}
+
+			return err
+		}
+
+		// Fetch the current state of the AppProject for this tenant.
+		appProject := &argocdapi.AppProject{}
+		appProjectKey := client.ObjectKey{
+			Name:      tenant.Name,
+			Namespace: i.Settings.Get().Argo.Namespace,
+		}
+
 		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			// Get the Tenant.
-			tenant := &capsulev1beta2.Tenant{}
-			if err := i.Client.Get(ctx, client.ObjectKey{Name: tnt}, tenant); err != nil {
-				if k8serrors.IsNotFound(err) {
-					// Tenant no longer exists, skip it.
-					return nil
-				}
-
-				return err
-			}
-
-			// Fetch the current state of the AppProject for this tenant.
-			appProject := &argocdapi.AppProject{}
-			appProjectKey := client.ObjectKey{
-				Name:      tenant.Name,
-				Namespace: i.Settings.Get().Argo.Namespace,
-			}
-
 			if err := i.Client.Get(ctx, appProjectKey, appProject); err != nil {
 				if k8serrors.IsNotFound(err) {
 					// AppProject no longer exists, skip it.
@@ -238,7 +237,9 @@ func (i *Controller) garbageCollectTranslator(
 			return err
 		})
 		if err != nil {
-			return fmt.Errorf("failed garbage collecting translator for tenant %s: %w", tnt, err)
+			i.Log.Error(err, "failed removing old specification")
+
+			continue
 		}
 	}
 
