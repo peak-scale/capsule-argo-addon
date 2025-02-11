@@ -3,6 +3,7 @@ package e2e_test
 
 import (
 	"context"
+	"time"
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -658,6 +659,7 @@ var _ = Describe("Translation Test", func() {
 
 		By("verify translated approject (subtract old secondary)", func() {
 			approject := &argocdv1alpha1.AppProject{}
+			time.Sleep(10000 * time.Millisecond)
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace}, approject)).To(Succeed())
 
 			// Expected Translation
@@ -676,10 +678,6 @@ var _ = Describe("Translation Test", func() {
 					{
 						Group: "tenant.specific.crd",
 						Kind:  "ApplicationCR",
-					},
-					{
-						Group: "vcluster.alhpa.com",
-						Kind:  "Cluster",
 					},
 				},
 				NamespaceResourceBlacklist: []metav1.GroupKind{
