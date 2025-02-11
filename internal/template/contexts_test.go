@@ -31,7 +31,6 @@ tenant:
   {{- end }}
     - {{ .Config.Argo.Namespace }}
 config:
-  proxy: {{- toYaml .Config.Proxy | nindent 4 }}
   argocd:
     namespace: "{{ .Config.Argo.Namespace }}"
 `
@@ -91,15 +90,6 @@ config:
 			},
 		},
 		"config": map[string]interface{}{
-			"proxy": map[string]interface{}{
-				"Enabled":                      true,
-				"CapsuleProxyServiceName":      "",
-				"CapsuleProxyServicePort":      0,
-				"CapsuleProxyServiceNamespace": "",
-				"ServiceAccountNamespace":      "",
-				"CapsuleProxyTLS":              false,
-			},
-
 			"argocd": map[string]interface{}{
 				"namespace": "argocd-namespace",
 			},

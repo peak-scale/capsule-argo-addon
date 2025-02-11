@@ -58,31 +58,6 @@ type ControllerArgoCDConfig struct {
 	ServiceAccountNamespace string `json:"serviceAccountNamespace"`
 }
 
-// Controller Configuration for ArgoCD.
-type ControllerCapsuleProxyConfig struct {
-	// Enable the capsule-proxy integration.
-	// This automatically creates services for tenants and registers them as destination
-	// on the argo appproject.
-	// +kubebuilder:default=false
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Name of the capsule-proxy service
-	// +kubebuilder:default=capsule-proxy
-	CapsuleProxyServiceName string `json:"serviceName,omitempty"`
-
-	//  Namespace where the capsule-proxy service is running
-	// +kubebuilder:default=capsule-system
-	CapsuleProxyServiceNamespace string `json:"serviceNamespace,omitempty"`
-
-	// Port of the capsule-proxy service
-	// +kubebuilder:default=9001
-	CapsuleProxyServicePort int32 `json:"servicePort,omitempty"`
-
-	// Port of the capsule-proxy service
-	// +kubebuilder:default=true
-	CapsuleProxyTLS bool `json:"tls,omitempty"`
-}
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster

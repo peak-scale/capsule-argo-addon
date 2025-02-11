@@ -41,7 +41,7 @@ all: manager
 # Run tests
 .PHONY: test
 test: test-clean generate manifests test-clean
-	@GO111MODULE=on go test -v ./... -coverprofile coverage.out
+	@GO111MODULE=on go test -v $(shell go list ./... | grep -v "e2e") -coverprofile coverage.out
 
 .PHONY: test-clean
 test-clean: ## Clean tests cache
@@ -57,15 +57,15 @@ run: generate manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen apidocs
-	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
+	@$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
 
 # Generate code
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	@$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 apidocs: TARGET_DIR      := $(shell mktemp -d)
 apidocs: apidocs-gen generate
-	$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/reference.md --template ./hack/templates/crds.tmpl
+	@$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/reference.md --template ./hack/templates/crds.tmpl
 
 ####################
 # -- Docker
