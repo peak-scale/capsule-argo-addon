@@ -14,7 +14,6 @@ import (
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
-	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/argo"
 	translatorctl "github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
@@ -23,13 +22,14 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/reflection"
 	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 // Creates or updates the ArgoCD Application Project for the tenant
@@ -39,7 +39,7 @@ func (i *TenancyController) reconcileArgoProject(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
-	translators []*v1alpha1.ArgoTranslator,
+	translators []*configv1alpha1.ArgoTranslator,
 	unmatchedTranslators map[string]*configv1alpha1.ArgoTranslator,
 ) (err error) {
 	// Initialize AppProject
@@ -166,13 +166,13 @@ func (i *TenancyController) reconcileArgoProject(
 		for _, translator := range translators {
 			// Get Approject Config with templating
 			translatorCfg, err := translator.Spec.ProjectSettings.GetConfig(
-				tpl.ConfigContext(translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
+				tpl.ConfigContext(i.Settings.Get(), tenant), tpl.ExtraFuncMap())
 			if err != nil {
 				return err
 			}
 
 			cfg1, cfg2, err := translator.Spec.ProjectSettings.GetConfigs(
-				tpl.ConfigContext(translator, i.Settings.Get(), tenant), tpl.ExtraFuncMap())
+				tpl.ConfigContext(i.Settings.Get(), tenant), tpl.ExtraFuncMap())
 			if err != nil {
 				return err
 			}
@@ -308,13 +308,14 @@ func (i *TenancyController) reflectArgoRBAC(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
-	translators []*v1alpha1.ArgoTranslator,
+	translators []*configv1alpha1.ArgoTranslator,
 ) (err error) {
 	// Initialize target configmap
 	configmap := &corev1.ConfigMap{}
 	if err := i.Client.Get(ctx, client.ObjectKey{
 		Name:      i.Settings.Get().Argo.RBACConfigMap,
-		Namespace: i.Settings.Get().Argo.Namespace}, configmap); err != nil {
+		Namespace: i.Settings.Get().Argo.Namespace,
+	}, configmap); err != nil {
 		return err
 	}
 
@@ -366,7 +367,7 @@ func (i *TenancyController) reflectArgoRBAC(
 func (i *TenancyController) reflectArgoCSV(
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
-	translators []*v1alpha1.ArgoTranslator,
+	translators []*configv1alpha1.ArgoTranslator,
 ) (rbac string, err error) {
 	var sb strings.Builder
 

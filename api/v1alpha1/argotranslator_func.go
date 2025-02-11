@@ -9,15 +9,15 @@ import (
 	"fmt"
 	"text/template"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"dario.cat/mergo"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
-// Get Combined Configuration from structured and Template
+// Get Combined Configuration from structured and Template.
 func (t *ArgocdProjectProperties) GetConfig(
 	data interface{},
 	funcmap template.FuncMap,
@@ -39,7 +39,7 @@ func (t *ArgocdProjectProperties) GetConfig(
 	return
 }
 
-// Get Combined Configuration from structured and Template
+// Get Combined Configuration from structured and Template.
 func (t *ArgocdProjectProperties) GetConfigs(
 	data interface{},
 	funcmap template.FuncMap,
@@ -55,7 +55,7 @@ func (t *ArgocdProjectProperties) GetConfigs(
 	return
 }
 
-// Field templating for the ArgoCD project properties. Needs to unmarshal in json, because of the json tags from argocd
+// Field templating for the ArgoCD project properties. Needs to unmarshal in json, because of the json tags from argocd.
 func (t *ArgocdProjectProperties) RenderTemplate(
 	data interface{},
 	funcmap template.FuncMap,

@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ArgoAddonSpec defines the desired state of ArgoAddon
+// ArgoAddonSpec defines the desired state of ArgoAddon.
 type ArgoAddonSpec struct {
 	// When force is enabled, appprojects which already exist with the same name as a tenant will be adopted
 	// and overwritten. When disabled the appprojects will not be changed or adopted.
@@ -32,7 +32,7 @@ type ArgoAddonSpec struct {
 	// TranslatorSelector *metav1.LabelSelector `json:"translatorSelector,omitempty"`
 }
 
-// Controller Configuration for ArgoCD
+// Controller Configuration for ArgoCD.
 type ControllerArgoCDConfig struct {
 	// Namespace where the ArgoCD instance is running
 	// +kubebuilder:default=argocd
@@ -58,7 +58,7 @@ type ControllerArgoCDConfig struct {
 	ServiceAccountNamespace string `json:"serviceAccountNamespace"`
 }
 
-// Controller Configuration for ArgoCD
+// Controller Configuration for ArgoCD.
 type ControllerCapsuleProxyConfig struct {
 	// Enable the capsule-proxy integration.
 	// This automatically creates services for tenants and registers them as destination
@@ -87,7 +87,7 @@ type ControllerCapsuleProxyConfig struct {
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
 
-// ArgoAddon is the Schema for the ArgoAddons API
+// ArgoAddon is the Schema for the ArgoAddons API.
 type ArgoAddon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -98,7 +98,7 @@ type ArgoAddon struct {
 
 //+kubebuilder:object:root=true
 
-// ArgoAddonList contains a list of ArgoAddon
+// ArgoAddonList contains a list of ArgoAddon.
 type ArgoAddonList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

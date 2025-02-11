@@ -10,22 +10,6 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "github.com/KimMachineGun/automemlimit"
-	_ "go.uber.org/automaxprocs"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	capsuleindexer "github.com/projectcapsule/capsule/pkg/indexer"
-	tntindex "github.com/projectcapsule/capsule/pkg/indexer/tenant"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/config"
@@ -34,8 +18,22 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	"github.com/peak-scale/capsule-argo-addon/internal/webhooks"
+	_ "go.uber.org/automaxprocs"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
-	//+kubebuilder:scaffold:imports
+	capsuleindexer "github.com/projectcapsule/capsule/pkg/indexer"
+	tntindex "github.com/projectcapsule/capsule/pkg/indexer/tenant"
 )
 
 var (
@@ -70,9 +68,11 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+
 	opts := zap.Options{
 		Development: true,
 	}
+
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -156,7 +156,7 @@ func main() {
 
 	metricsRecorder := metrics.MustMakeRecorder()
 
-	settings := &config.ConfigReconciler{
+	settings := &config.Controller{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Config"),
@@ -180,6 +180,7 @@ func main() {
 		setupLog.Error(err, "unable to initialize settings")
 		os.Exit(1)
 	}
+
 	if err := settings.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Config")
 		os.Exit(1)
@@ -197,9 +198,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Tenant")
 		os.Exit(1)
 	}
+
 	setupLog.Info("tenant-controller initialized")
 
-	if err = (&translator.TranslatorController{
+	if err = (&translator.Controller{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Translator"),
 		Recorder: mgr.GetEventRecorderFor("translator-controller"),
@@ -209,18 +211,21 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Translator")
 		os.Exit(1)
 	}
+
 	setupLog.Info("translator-controller initialized")
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
+
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
 
 	setupLog.Info("starting manager")
+
 	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

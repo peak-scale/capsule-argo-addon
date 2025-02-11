@@ -34,7 +34,7 @@ endif
 
 .PHONY: golint
 golint: golangci-lint
-	$(GOLANGCI_LINT) run -c .golangci.yml
+	$(GOLANGCI_LINT) run -c .golangci.yml --fix
 
 all: manager
 
@@ -57,7 +57,7 @@ run: generate manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen apidocs
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
+	$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
 
 # Generate code
 generate: controller-gen
@@ -125,8 +125,8 @@ ko-publish-all: ko-publish-controller
 SRC_ROOT = $(shell git rev-parse --show-toplevel)
 
 helm-controller-version:
-	$(eval VERSION := $(shell grep 'appVersion:' charts/capsule/Chart.yaml | awk '{print "v"$$2}'))
-	$(eval KO_TAGS := $(shell grep 'appVersion:' charts/capsule/Chart.yaml | awk '{print "v"$$2}'))
+	$(eval VERSION := $(shell grep 'appVersion:' charts/capsule-argo-addon/Chart.yaml | awk '{print "v"$$2}'))
+	$(eval KO_TAGS := $(shell grep 'appVersion:' charts/capsule-argo-addon/Chart.yaml | awk '{print "v"$$2}'))
 
 
 helm-docs: helm-doc

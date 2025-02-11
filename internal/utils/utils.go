@@ -11,18 +11,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Check slice if it contains a string
+// Check slice if it contains a string.
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
 			return true
 		}
 	}
+
 	return false
 }
 
 func YamlToJSON(yamlBytes []byte) ([]byte, error) {
 	var yamlObj map[string]interface{}
+
 	err := yaml.Unmarshal(yamlBytes, &yamlObj)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling yaml: %w", err)
@@ -36,6 +38,8 @@ func YamlToJSON(yamlBytes []byte) ([]byte, error) {
 
 	return jsonBytes, nil
 }
+
+//nolint:exhaustive
 func Mapify(data interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 	v := reflect.ValueOf(data)
@@ -45,12 +49,13 @@ func Mapify(data interface{}) map[string]interface{} {
 		if v.IsNil() {
 			return result // Return empty map for nil pointers
 		}
+
 		v = v.Elem()
 	}
 
 	// Ensure we're working with a struct
 	if v.Kind() == reflect.Struct {
-		for i := 0; i < v.NumField(); i++ {
+		for i := range v.NumField() {
 			field := v.Type().Field(i)
 
 			// Skip unexported fields
@@ -69,7 +74,8 @@ func Mapify(data interface{}) map[string]interface{} {
 				result[field.Name] = Mapify(value.Interface())
 			case reflect.Slice:
 				var slice []interface{}
-				for j := 0; j < value.Len(); j++ {
+
+				for j := range value.Len() {
 					item := value.Index(j)
 					if item.Kind() == reflect.Struct {
 						slice = append(slice, Mapify(item.Interface()))
@@ -77,17 +83,20 @@ func Mapify(data interface{}) map[string]interface{} {
 						slice = append(slice, item.Interface())
 					}
 				}
+
 				result[field.Name] = slice
 			case reflect.Map:
 				mapResult := make(map[string]interface{})
 				for _, key := range value.MapKeys() {
 					mapResult[fmt.Sprint(key)] = value.MapIndex(key).Interface()
 				}
+
 				result[field.Name] = mapResult
 			default:
 				result[field.Name] = value.Interface()
 			}
 		}
 	}
+
 	return result
 }

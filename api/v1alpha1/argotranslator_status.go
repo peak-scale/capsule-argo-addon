@@ -4,12 +4,11 @@
 package v1alpha1
 
 import (
-	k8stypes "k8s.io/apimachinery/pkg/types"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 )
 
-// ArgoTranslatorStatus defines the observed state of ArgoTranslator
+// ArgoTranslatorStatus defines the observed state of ArgoTranslator.
 type ArgoTranslatorStatus struct {
 	// List of tenants selected by this translator
 	Tenants []TenantStatus `json:"tenants,omitempty"`

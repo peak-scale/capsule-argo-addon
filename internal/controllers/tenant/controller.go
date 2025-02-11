@@ -5,10 +5,17 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
+	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	"github.com/peak-scale/capsule-argo-addon/internal/argo"
+	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
+	"github.com/peak-scale/capsule-argo-addon/internal/meta"
+	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
+	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,13 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
-	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
-	"github.com/peak-scale/capsule-argo-addon/internal/argo"
-	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
-	"github.com/peak-scale/capsule-argo-addon/internal/meta"
-	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
-	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
@@ -199,7 +199,7 @@ func (i *TenancyController) reconcile(
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
 ) (translators []*configv1alpha1.ArgoTranslator, err error) {
-	allTranslators := &v1alpha1.ArgoTranslatorList{}
+	allTranslators := &configv1alpha1.ArgoTranslatorList{}
 	if err := i.Client.List(ctx, allTranslators); err != nil {
 		return nil, err
 	}
@@ -208,8 +208,8 @@ func (i *TenancyController) reconcile(
 
 	// Fetch Translators Applying to the Tenant
 	var unmatchedTranslators []*configv1alpha1.ArgoTranslator
-	translators, unmatchedTranslators, err = i.aggregateConfigTranslators(allTranslators, tenant)
 
+	translators, unmatchedTranslators, err = i.aggregateConfigTranslators(allTranslators, tenant)
 	if err != nil {
 		return translators, err
 	}
@@ -309,11 +309,10 @@ func (i *TenancyController) handleCondition(
 	}
 
 	// Check the type of error with a type switch
-	switch err := reconcileError.(type) {
-	case *ccaerrrors.ObjectAlreadyExists:
-		// Custom condition for ObjectAlreadyExistsError
-		condition = meta.NewAlreadyExistsCondition(tenant, err.Error())
-	default:
+	eo := &ccaerrrors.ObjectAlreadyExistsError{}
+	if errors.As(reconcileError, &eo) {
+		condition = meta.NewAlreadyExistsCondition(tenant, reconcileError.Error())
+	} else {
 		// Default NotReady condition for other errors
 		condition = meta.NewNotReadyCondition(tenant, reconcileError.Error())
 	}
@@ -324,15 +323,15 @@ func (i *TenancyController) handleCondition(
 // Selects all the translators from the configuration, which match the tenant's labels.
 // Returns all translators to run garbage collection on them.
 func (i *TenancyController) aggregateConfigTranslators(
-	allTranslators *v1alpha1.ArgoTranslatorList,
+	allTranslators *configv1alpha1.ArgoTranslatorList,
 	tenant *capsulev1beta2.Tenant,
 ) (
-	matchedTranslators []*v1alpha1.ArgoTranslator,
-	unmatchedTranslators []*v1alpha1.ArgoTranslator,
+	matchedTranslators []*configv1alpha1.ArgoTranslator,
+	unmatchedTranslators []*configv1alpha1.ArgoTranslator,
 	err error,
 ) {
-	matchedTranslators = make([]*v1alpha1.ArgoTranslator, 0)
-	unmatchedTranslators = make([]*v1alpha1.ArgoTranslator, 0)
+	matchedTranslators = make([]*configv1alpha1.ArgoTranslator, 0)
+	unmatchedTranslators = make([]*configv1alpha1.ArgoTranslator, 0)
 	tenantLabels := labels.Set(tenant.Labels)
 
 	for _, trans := range allTranslators.Items {
@@ -397,7 +396,8 @@ func (i *TenancyController) lifecycleArgo(ctx context.Context, tenant *capsulev1
 		configmap := &corev1.ConfigMap{}
 		if err = i.Client.Get(ctx, client.ObjectKey{
 			Name:      i.Settings.Get().Argo.RBACConfigMap,
-			Namespace: i.Settings.Get().Argo.Namespace},
+			Namespace: i.Settings.Get().Argo.Namespace,
+		},
 			configmap,
 		); err != nil {
 			return

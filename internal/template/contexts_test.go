@@ -37,15 +37,7 @@ config:
 `
 
 	// Source the context (Mocking the required structs)
-	tplCtx := ConfigContext(&v1alpha1.ArgoTranslator{
-		Spec: v1alpha1.ArgoTranslatorSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/type": "prod",
-				},
-			},
-		},
-	}, &v1alpha1.ArgoAddonSpec{
+	tplCtx := ConfigContext(&v1alpha1.ArgoAddonSpec{
 		Argo: v1alpha1.ControllerArgoCDConfig{
 			Namespace: "argocd-namespace",
 		},
@@ -129,15 +121,7 @@ func TestRenderContextToMarkdown(t *testing.T) {
 	}
 
 	// Load template context
-	tplCtx := ConfigContext(&v1alpha1.ArgoTranslator{
-		Spec: v1alpha1.ArgoTranslatorSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/type": "prod",
-				},
-			},
-		},
-	}, &v1alpha1.ArgoAddonSpec{
+	tplCtx := ConfigContext(&v1alpha1.ArgoAddonSpec{
 		Argo: v1alpha1.ControllerArgoCDConfig{
 			RBACConfigMap: "argocd-rbac-cm",
 			Namespace:     "argocd",

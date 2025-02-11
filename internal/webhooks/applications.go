@@ -1,3 +1,6 @@
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
+
 package webhooks
 
 import (
@@ -8,10 +11,11 @@ import (
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 // MutatingWebhook handles mutating webhook requests.

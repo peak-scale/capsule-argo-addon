@@ -3,7 +3,7 @@
 
 package v1alpha1
 
-// Create enums for ArgoCD Permissions Actions
+// Create enums for ArgoCD Permissions Actions.
 type ArgoAction string
 
 const (
@@ -18,7 +18,7 @@ const (
 	ActionWildcard ArgoAction = "*"
 )
 
-// Create enums for ArgoCD Permissions Resources
+// Create enums for ArgoCD Permissions Resources.
 type ArgoResource string
 
 const (
@@ -36,7 +36,7 @@ const (
 	ResourceWildcard        ArgoResource = "*"
 )
 
-// Create enums for ArgoCD Permissions Resources
+// Create enums for ArgoCD Permissions Resources.
 type ArgoVerb string
 
 const (

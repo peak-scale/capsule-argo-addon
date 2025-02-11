@@ -4,15 +4,16 @@
 package meta
 
 import (
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 const (
-	// ManagerLabel
+	// ManagerLabel.
 	ManagedTenantLabel = "argo.addons.projectcapsule.dev/tenant"
 
-	// ManagedByLabel
+	// ManagedByLabel.
 	ManagedByLabel      = "app.kubernetes.io/managed-by"
 	ManagedByLabelValue = "capsule-argocd-addon"
 	ProvisionedByLabel  = "app.kubernetes.io/provisioned-by"

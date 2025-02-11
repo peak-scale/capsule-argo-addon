@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	// FinalizerName is the finalizer name for the translator
+	// FinalizerName is the finalizer name for the translator.
 	TranslatorFinalizerPrefix = "translator.addons.projectcapsule.dev/"
 )
 
@@ -19,7 +19,7 @@ func TranslatorFinalizer(name string) string {
 	return TranslatorFinalizerPrefix + name
 }
 
-// Get all translators based on their finalizer
+// Get all translators based on their finalizer.
 func GetTranslatingFinalizers(obj client.Object) (translators []string) {
 	// Iterate over the finalizers and check if any contain the specified prefix
 	for _, finalizer := range obj.GetFinalizers() {
@@ -31,7 +31,7 @@ func GetTranslatingFinalizers(obj client.Object) (translators []string) {
 	return
 }
 
-// Get all translators based on their finalizer
+// Get all translators based on their finalizer.
 func RemoveTranslatingFinalizers(obj client.Object) {
 	// Iterate over the finalizers and check if any contain the specified prefix
 	for _, finalizer := range obj.GetFinalizers() {
@@ -41,7 +41,7 @@ func RemoveTranslatingFinalizers(obj client.Object) {
 	}
 }
 
-// Contains Translator Finalizers
+// Contains Translator Finalizers.
 func ContainsTranslatorFinalizer(obj client.Object) (contains bool) {
 	contains = false
 

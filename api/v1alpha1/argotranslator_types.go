@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ArgoTranslatorSpec defines the desired state of ArgoTranslator
+// ArgoTranslatorSpec defines the desired state of ArgoTranslator.
 type ArgoTranslatorSpec struct {
 	// Selector to match tenants which are used for the translator
 	Selector *metav1.LabelSelector `json:"selector,omitempty"`
@@ -27,7 +27,7 @@ type ArgoTranslatorSpec struct {
 	CustomPolicy string `json:"customPolicy,omitempty"`
 }
 
-// Define Permission mappings for an ArogCD Project
+// Define Permission mappings for an ArogCD Project.
 type ArgocdProjectRolesTranslator struct {
 	// Name for permission mapping
 	Name string `json:"name,omitempty"`
@@ -87,7 +87,7 @@ type ArgocdProjectPropertieMeta struct {
 // +kubebuilder:printcolumn:name="Tenants",type="integer",JSONPath=".status.size",description="The amount of tenants being translated"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.ready",description="Indicates if all tenants were successfully translated"
 
-// ArgoTranslator is the Schema for the argotranslators API
+// ArgoTranslator is the Schema for the argotranslators API.
 type ArgoTranslator struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -98,7 +98,7 @@ type ArgoTranslator struct {
 
 // +kubebuilder:object:root=true
 
-// ArgoTranslatorList contains a list of ArgoTranslator
+// ArgoTranslatorList contains a list of ArgoTranslator.
 type ArgoTranslatorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

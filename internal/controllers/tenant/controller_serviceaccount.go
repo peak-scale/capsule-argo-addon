@@ -11,7 +11,6 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +18,8 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 // Creates Teanant Service Account with the given name and namespace.
@@ -28,7 +29,6 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	tenant *capsulev1beta2.Tenant,
 	translators []*v1alpha1.ArgoTranslator,
 ) (token string, err error) {
-
 	// Get Required default values
 	serviceAccount := tenant.Name
 	namespace := i.Settings.Get().ServiceAccountNamespace(tenant)

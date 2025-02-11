@@ -5,8 +5,9 @@ package tenant
 
 import (
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 // Gets the API Server given via Rest-Config.

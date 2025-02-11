@@ -1,8 +1,17 @@
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
+
 package utils
 
 import (
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+)
+
+const (
+	ownerUser  = "User"
+	ownerGroup = "Group"
 )
 
 type TenantPermission struct {
@@ -31,6 +40,7 @@ func GetClusterRolePermissions(tenant *capsulev1beta2.Tenant) (rolePerms map[str
 		if _, exists := rolePerms[clusterRole]; !exists {
 			rolePerms[clusterRole] = []rbacv1.Subject{}
 		}
+
 		rolePerms[clusterRole] = append(rolePerms[clusterRole], permission)
 	}
 
@@ -63,7 +73,7 @@ func GetClusterRolePermissions(tenant *capsulev1beta2.Tenant) (rolePerms map[str
 	return rolePerms
 }
 
-// Get the permissions for a tenant ordered by groups and users
+// Get the permissions for a tenant ordered by groups and users.
 func GetTenantPermissions(tenant *capsulev1beta2.Tenant) map[string]map[string]TenantPermission {
 	permissions := make(map[string]map[string]TenantPermission)
 
@@ -76,8 +86,9 @@ func GetTenantPermissions(tenant *capsulev1beta2.Tenant) map[string]map[string]T
 
 	// Process owners
 	for _, owner := range tenant.Spec.Owners {
-		if owner.Kind == "User" || owner.Kind == "Group" {
+		if owner.Kind == ownerUser || owner.Kind == ownerGroup {
 			initNestedMap(owner.Kind.String())
+
 			if perm, exists := permissions[owner.Kind.String()][owner.Name]; exists {
 				// If the permission entry already exists, append cluster roles
 				perm.ClusterRoles = append(perm.ClusterRoles, owner.ClusterRoles...)
@@ -94,8 +105,9 @@ func GetTenantPermissions(tenant *capsulev1beta2.Tenant) map[string]map[string]T
 	// Process additional role bindings
 	for _, role := range tenant.Spec.AdditionalRoleBindings {
 		for _, subject := range role.Subjects {
-			if subject.Kind == "User" || subject.Kind == "Group" {
+			if subject.Kind == ownerUser || subject.Kind == ownerGroup {
 				initNestedMap(subject.Kind)
+
 				if perm, exists := permissions[subject.Kind][subject.Name]; exists {
 					// If the permission entry already exists, append cluster roles
 					perm.ClusterRoles = append(perm.ClusterRoles, role.ClusterRoleName)
@@ -121,15 +133,18 @@ func GetTenantPermissions(tenant *capsulev1beta2.Tenant) map[string]map[string]T
 	return permissions
 }
 
-// Helper function to remove duplicates from a slice of strings
+// Helper function to remove duplicates from a slice of strings.
 func uniqueStrings(input []string) []string {
 	seen := make(map[string]struct{})
 	result := []string{}
+
 	for _, str := range input {
 		if _, exists := seen[str]; !exists {
 			seen[str] = struct{}{}
+
 			result = append(result, str)
 		}
 	}
+
 	return result
 }

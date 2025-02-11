@@ -1,5 +1,6 @@
 // Copyright 2024 Peak Scale
 // SPDX-License-Identifier: Apache-2.0
+//
 
 package reflection
 
@@ -41,8 +42,9 @@ func Merge(target, source interface{}) error {
 	return nil
 }
 
+//nolint:exhaustive
 func mergeRecursive(targetVal, sourceVal reflect.Value) {
-	for i := 0; i < targetVal.NumField(); i++ {
+	for i := range targetVal.NumField() {
 		targetField := targetVal.Field(i)
 		sourceField := sourceVal.Field(i)
 
@@ -71,7 +73,7 @@ func mergeSlices(targetField, sourceField reflect.Value) {
 	}
 
 	// Retain all existing items from the target slice
-	for i := 0; i < targetField.Len(); i++ {
+	for i := range targetField.Len() {
 		targetItem := targetField.Index(i)
 		uniqueItems[generateKey(targetItem)] = true
 	}
@@ -80,12 +82,12 @@ func mergeSlices(targetField, sourceField reflect.Value) {
 	mergedSlice := reflect.MakeSlice(targetField.Type(), 0, targetField.Len()+sourceField.Len())
 
 	// Add all unique items from the target slice first
-	for i := 0; i < targetField.Len(); i++ {
+	for i := range targetField.Len() {
 		mergedSlice = reflect.Append(mergedSlice, targetField.Index(i))
 	}
 
 	// Append unique items from the source slice to the merged slice
-	for i := 0; i < sourceField.Len(); i++ {
+	for i := range sourceField.Len() {
 		sourceItem := sourceField.Index(i)
 		if !uniqueItems[generateKey(sourceItem)] {
 			mergedSlice = reflect.Append(mergedSlice, sourceItem)

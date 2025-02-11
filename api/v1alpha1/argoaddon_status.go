@@ -3,7 +3,7 @@
 
 package v1alpha1
 
-// ArgoAddonStatus defines the observed state of ArgoAddon
+// ArgoAddonStatus defines the observed state of ArgoAddon.
 type ArgoAddonStatus struct {
 	// Last applied valid configuration
 	Config ArgoAddonSpec `json:"loaded,omitempty"`

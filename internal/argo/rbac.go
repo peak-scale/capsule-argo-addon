@@ -7,10 +7,10 @@ import (
 	"fmt"
 
 	"github.com/argoproj/argo-cd/v2/util/rbac"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	addonsv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	v1 "k8s.io/api/rbac/v1"
 
-	addonsv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 // Validates entire CSV policy and returns an error if it is invalid.
@@ -20,7 +20,6 @@ func ValidateCSV(csv string) error {
 
 // Converts the ArgoCD Project Policy Definition to a string (common argo).
 func PolicyString(policy string, tenant string, argopolicy addonsv1alpha1.ArgocdPolicyDefinition) (result string) {
-
 	for _, action := range argopolicy.Action {
 		path := argopolicy.Path
 		if tenant != "" {

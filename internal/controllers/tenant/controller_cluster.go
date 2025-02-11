@@ -12,12 +12,13 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 // Creates or updates the ArgoCD Cluster for the tenant (Tenant ServiceAccount, Cluster Secret).
