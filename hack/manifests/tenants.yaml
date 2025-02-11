@@ -57,7 +57,3 @@ spec:
     subjects:
     - name: bob
       kind: User
-
-
-
-

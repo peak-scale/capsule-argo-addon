@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TxtFuncMap returns an aggregated template function map. Currently (custom functions + sprig)
+// TxtFuncMap returns an aggregated template function map. Currently (custom functions + sprig).
 func ExtraFuncMap() template.FuncMap {
 	funcMap := sprig.FuncMap()
 
@@ -46,6 +46,7 @@ func toYAML(v interface{}) string {
 		// Swallow errors inside of a template.
 		return ""
 	}
+
 	return strings.TrimSuffix(string(data), "\n")
 }
 
@@ -61,6 +62,7 @@ func fromYAML(str string) map[string]interface{} {
 	if err := yaml.Unmarshal([]byte(str), &m); err != nil {
 		m["Error"] = err.Error()
 	}
+
 	return m
 }
 
@@ -76,6 +78,7 @@ func fromYAMLArray(str string) []interface{} {
 	if err := yaml.Unmarshal([]byte(str), &a); err != nil {
 		a = []interface{}{err.Error()}
 	}
+
 	return a
 }
 
@@ -86,10 +89,12 @@ func fromYAMLArray(str string) []interface{} {
 func toTOML(v interface{}) string {
 	b := bytes.NewBuffer(nil)
 	e := toml.NewEncoder(b)
+
 	err := e.Encode(v)
 	if err != nil {
 		return err.Error()
 	}
+
 	return b.String()
 }
 
@@ -105,6 +110,7 @@ func fromTOML(str string) map[string]interface{} {
 	if err := toml.Unmarshal([]byte(str), &m); err != nil {
 		m["Error"] = err.Error()
 	}
+
 	return m
 }
 
@@ -118,6 +124,7 @@ func toJSON(v interface{}) string {
 		// Swallow errors inside of a template.
 		return ""
 	}
+
 	return string(data)
 }
 
@@ -133,6 +140,7 @@ func fromJSON(str string) map[string]interface{} {
 	if err := json.Unmarshal([]byte(str), &m); err != nil {
 		m["Error"] = err.Error()
 	}
+
 	return m
 }
 
@@ -148,5 +156,6 @@ func fromJSONArray(str string) []interface{} {
 	if err := json.Unmarshal([]byte(str), &a); err != nil {
 		a = []interface{}{err.Error()}
 	}
+
 	return a
 }

@@ -17,20 +17,31 @@ IMG_BASE        ?= $(REPOSITORY)
 IMG             ?= $(IMG_BASE):$(VERSION)
 FULL_IMG        ?= $(REGISTRY)/$(IMG_BASE)
 
+## Tool Binaries
+KUBECTL ?= kubectl
+HELM ?= helm
+
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
 ####################
 # -- Golang
 ####################
 
 .PHONY: golint
 golint: golangci-lint
-	$(GOLANGCI_LINT) run -c .golangci.yml
+	$(GOLANGCI_LINT) run -c .golangci.yml --fix
 
 all: manager
 
 # Run tests
 .PHONY: test
 test: test-clean generate manifests test-clean
-	@GO111MODULE=on go test -v ./... -coverprofile coverage.out
+	@GO111MODULE=on go test -v $(shell go list ./... | grep -v "e2e") -coverprofile coverage.out
 
 .PHONY: test-clean
 test-clean: ## Clean tests cache
@@ -46,16 +57,15 @@ run: generate manifests
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen apidocs
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
+	@$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
 
 # Generate code
 generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	@$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 apidocs: TARGET_DIR      := $(shell mktemp -d)
 apidocs: apidocs-gen generate
-	$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/reference.md --template ./hack/templates/crds.tmpl
-
+	@$(APIDOCS_GEN) crdoc --resources charts/capsule-argo-addon/crds --output docs/reference.md --template ./hack/templates/crds.tmpl
 
 ####################
 # -- Docker
@@ -114,13 +124,19 @@ ko-publish-all: ko-publish-controller
 # Helm
 SRC_ROOT = $(shell git rev-parse --show-toplevel)
 
-helm-docs: HELMDOCS_VERSION := v1.11.0
-helm-docs: docker
-	@docker run -v "$(SRC_ROOT):/helm-docs" jnorwood/helm-docs:$(HELMDOCS_VERSION) --chart-search-root /helm-docs
+helm-controller-version:
+	$(eval VERSION := $(shell grep 'appVersion:' charts/capsule-argo-addon/Chart.yaml | awk '{print $$2}'))
+	$(eval KO_TAGS := $(shell grep 'appVersion:' charts/capsule-argo-addon/Chart.yaml | awk '{print $$2}'))
 
-helm-lint: CT_VERSION := v3.11.0
-helm-lint: docker
-	@docker run -v "$(SRC_ROOT):/workdir" --entrypoint /bin/sh quay.io/helmpack/chart-testing:$(CT_VERSION) -c "cd /workdir; ct lint --config .github/configs/ct.yaml  --lint-conf .github/configs/lintconf.yaml  --all --debug"
+
+helm-docs: helm-doc
+	$(HELM_DOCS) --chart-search-root ./charts
+
+helm-lint: ct
+	@$(CT) lint --config .github/configs/ct.yaml --validate-yaml=false --all --debug
+
+helm-schema: helm-plugin-schema
+	cd charts/capsule-argo-addon && $(HELM) schema -output values.schema.json
 
 helm-test: kind ct
 	@$(KIND) create cluster --wait=60s --name helm-capsule-argo-addon
@@ -128,8 +144,8 @@ helm-test: kind ct
 	@$(MAKE) helm-test-exec
 	@$(KIND) delete cluster --name helm-capsule-argo-addon
 
-helm-test-exec: ct ko-build-all
-	@$(KIND) load docker-image --name helm-capsule-argo-addon $(FULL_IMG):latest
+helm-test-exec: ct helm-controller-version ko-build-all
+	@$(KIND) load docker-image --name helm-capsule-argo-addon $(FULL_IMG):$(VERSION)
 	@$(CT) install --config $(SRC_ROOT)/.github/configs/ct.yaml --all --debug
 
 docker:
@@ -146,7 +162,7 @@ K3S_CLUSTER ?= "capsule-argo-addon"
 e2e: e2e-build e2e-exec e2e-destroy
 
 e2e-build: kind
-	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0} 
+	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0}
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
@@ -177,78 +193,159 @@ e2e-install-addon: e2e-load-image
 		./charts/capsule-argo-addon
 
 e2e-install-distro:
-	@kubectl kustomize e2e/objects/flux/ | kubectl apply -f -
-	@kubectl kustomize e2e/objects/distro/ | kubectl apply -f -
+	@$(KUBECTL) kustomize e2e/objects/flux/ | kubectl apply -f -
+	@$(KUBECTL) kustomize e2e/objects/distro/ | kubectl apply -f -
 	@$(MAKE) wait-for-helmreleases
 
 .PHONY: e2e-load-image
 e2e-load-image: ko-build-all
 	kind load docker-image --name $(K3S_CLUSTER) $(FULL_IMG):$(VERSION)
 
-dev-kubeconf-user: 
+dev-kubeconf-user:
 	@mkdir -p hack/kubeconfs || true
 	@cd hack/kubeconfs \
-	    && kubectl get secret capsule-argocd-addon-proxy -n capsule-argocd-addon -o jsonpath='{.data.ca\.crt}' | base64 -d > root-ca.pem \
+	    && $(KUBECTL) get secret capsule-argocd-addon-proxy -n capsule-argocd-addon -o jsonpath='{.data.ca\.crt}' | base64 -d > root-ca.pem \
 		&& rm -f alice.kubeconfig \
 		&& curl -s https://raw.githubusercontent.com/projectcapsule/capsule/main/hack/create-user.sh | bash -s -- alice projectcapsule.dev \
 		&& mv alice-*.kubeconfig alice.kubeconfig \
-		&& KUBECONFIG=alice.kubeconfig kubectl config set clusters.kind-$(K3S_CLUSTER).server https://127.0.0.1:9001 \
-		&& KUBECONFIG=alice.kubeconfig kubectl config set clusters.kind-$(K3S_CLUSTER).certificate-authority-data $$(cat root-ca.pem | base64 |tr -d '\n') 
+		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).server https://127.0.0.1:9001 \
+		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).certificate-authority-data $$(cat root-ca.pem | base64 |tr -d '\n')
 
 wait-for-helmreleases:
 	@ echo "Waiting for all HelmReleases to have observedGeneration >= 0..."
-	@while [ "$$(kubectl get helmrelease -A -o jsonpath='{range .items[?(@.status.observedGeneration<0)]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | wc -l)" -ne 0 ]; do \
+	@while [ "$$($(KUBECTL) get helmrelease -A -o jsonpath='{range .items[?(@.status.observedGeneration<0)]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | wc -l)" -ne 0 ]; do \
 	  sleep 5; \
 	done
+
+
+# Setup development env
+# Usage:
+# 	LAPTOP_HOST_IP=<YOUR_LAPTOP_IP> make dev-setup
+# For example:
+#	LAPTOP_HOST_IP=192.168.10.101 make dev-setup
+define TLS_CNF
+[ req ]
+default_bits       = 4096
+distinguished_name = req_distinguished_name
+req_extensions     = req_ext
+[ req_distinguished_name ]
+countryName                = SG
+stateOrProvinceName        = SG
+localityName               = SG
+organizationName           = CAPSULE
+commonName                 = CAPSULE
+[ req_ext ]
+subjectAltName = @alt_names
+[alt_names]
+IP.1   = $(LAPTOP_HOST_IP)
+endef
+export TLS_CNF
+dev-setup:
+	mkdir -p /tmp/k8s-webhook-server/serving-certs
+	echo "$${TLS_CNF}" > _tls.cnf
+	openssl req -newkey rsa:4096 -days 3650 -nodes -x509 \
+		-subj "/C=SG/ST=SG/L=SG/O=CAPSULE/CN=CAPSULE" \
+		-extensions req_ext \
+		-config _tls.cnf \
+		-keyout /tmp/k8s-webhook-server/serving-certs/tls.key \
+		-out /tmp/k8s-webhook-server/serving-certs/tls.crt
+	$(KUBECTL) create secret tls capsule-tls -n capsule-system \
+		--cert=/tmp/k8s-webhook-server/serving-certs/tls.crt\
+		--key=/tmp/k8s-webhook-server/serving-certs/tls.key || true
+	rm -f _tls.cnf
+	export WEBHOOK_URL="https://$${LAPTOP_HOST_IP}:9443"; \
+	export CA_BUNDLE=`openssl base64 -in /tmp/k8s-webhook-server/serving-certs/tls.crt | tr -d '\n'`; \
+	$(HELM) upgrade \
+	    --dependency-update \
+		--debug \
+		--install \
+		--namespace capsule-argo-addon \
+		--create-namespace \
+		--set 'crds.install=true' \
+		--set webhooks.enabled=true \
+		--set "webhooks.service.url=$${WEBHOOK_URL}" \
+		--set "webhooks.service.caBundle=$${CA_BUNDLE}" \
+		capsule-argo-addon \
+		./charts/capsule-argo-addon
+	$(KUBECTL) -n capsule-argo-addon scale deployment --all --replicas=0 || true
+
+
+##@ Build Dependencies
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+####################
+# -- Helm Plugins
+####################
+
+HELM_SCHEMA_VERSION   := ""
+helm-plugin-schema:
+	@$(HELM) plugin install https://github.com/losisin/helm-values-schema-json.git --version $(HELM_SCHEMA_VERSION) || true
+
+HELM_DOCS         := $(LOCALBIN)/helm-docs
+HELM_DOCS_VERSION := v1.14.1
+HELM_DOCS_LOOKUP  := norwoodj/helm-docs
+helm-doc:
+	@test -s $(HELM_DOCS) || \
+	$(call go-install-tool,$(HELM_DOCS),github.com/$(HELM_DOCS_LOOKUP)/cmd/helm-docs@$(HELM_DOCS_VERSION))
 
 ####################
 # -- Tools
 ####################
-CONTROLLER_GEN         := $(shell pwd)/bin/controller-gen
-CONTROLLER_GEN_VERSION := v0.16.3
-controller-gen: ## Download controller-gen locally if necessary.
+CONTROLLER_GEN         := $(LOCALBIN)/controller-gen
+CONTROLLER_GEN_VERSION ?= v0.17.1
+CONTROLLER_GEN_LOOKUP  := kubernetes-sigs/controller-tools
+controller-gen:
+	@test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_GEN_VERSION) || \
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION))
 
-GINKGO         := $(shell pwd)/bin/ginkgo
-ginkgo: ## Download ginkgo locally if necessary.
+GINKGO := $(LOCALBIN)/ginkgo
+ginkgo:
 	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo)
 
-CT         := $(shell pwd)/bin/ct
-CT_VERSION := v3.11.0
-ct: ## Download ct locally if necessary.
-	$(call go-install-tool,$(CT),github.com/helm/chart-testing/v3/ct@$(CT_VERSION))
+CT         := $(LOCALBIN)/ct
+CT_VERSION := v3.12.0
+CT_LOOKUP  := helm/chart-testing
+ct:
+	@test -s $(CT) && $(CT) version | grep -q $(CT_VERSION) || \
+	$(call go-install-tool,$(CT),github.com/$(CT_LOOKUP)/v3/ct@$(CT_VERSION))
 
-KIND         := $(shell pwd)/bin/kind
-KIND_VERSION := v0.17.0
-kind: ## Download kind locally if necessary.
+KIND         := $(LOCALBIN)/kind
+KIND_VERSION := v0.26.0
+KIND_LOOKUP  := kubernetes-sigs/kind
+kind:
+	@test -s $(KIND) && $(KIND) --version | grep -q $(KIND_VERSION) || \
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION))
 
-KUSTOMIZE         := $(shell pwd)/bin/kustomize
-KUSTOMIZE_VERSION := 3.8.7
-kustomize: ## Download kustomize locally if necessary.
-	$(call install-kustomize,$(KUSTOMIZE),$(KUSTOMIZE_VERSION))
-
-KO = $(shell pwd)/bin/ko
-KO_VERSION = v0.14.1
+KO           := $(LOCALBIN)/ko
+KO_VERSION   := v0.17.1
+KO_LOOKUP    := google/ko
 ko:
-	$(call go-install-tool,$(KO),github.com/google/ko@$(KO_VERSION))
+	@test -s $(KO) && $(KO) -h | grep -q $(KO_VERSION) || \
+	$(call go-install-tool,$(KO),github.com/$(KO_LOOKUP)@$(KO_VERSION))
 
-
-GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
-GOLANGCI_LINT_VERSION = v1.56.2
+GOLANGCI_LINT          := $(LOCALBIN)/golangci-lint
+GOLANGCI_LINT_VERSION  := v1.63.4
+GOLANGCI_LINT_LOOKUP   := golangci/golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
+	@test -s $(GOLANGCI_LINT) && $(GOLANGCI_LINT) -h | grep -q $(GOLANGCI_LINT_VERSION) || \
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/$(GOLANGCI_LINT_LOOKUP)/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
 
-APIDOCS_GEN         := $(shell pwd)/bin/crdoc
-APIDOCS_GEN_VERSION := latest
+APIDOCS_GEN         := $(LOCALBIN)/crdoc
+APIDOCS_GEN_VERSION := v0.6.4
+APIDOCS_GEN_LOOKUP  := fybrik/crdoc
 apidocs-gen: ## Download crdoc locally if necessary.
+	@test -s $(APIDOCS_GEN) && $(APIDOCS_GEN) --version | grep -q $(APIDOCS_GEN_VERSION) || \
 	$(call go-install-tool,$(APIDOCS_GEN),fybrik.io/crdoc@$(APIDOCS_GEN_VERSION))
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-install-tool
-@[ -f $(1) ] || { \
-set -e ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
+[ -f $(1) ] || { \
+    set -e ;\
+    GOBIN=$(LOCALBIN) go install $(2) ;\
 }
 endef

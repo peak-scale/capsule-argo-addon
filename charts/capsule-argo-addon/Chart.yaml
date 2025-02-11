@@ -2,8 +2,10 @@ apiVersion: v2
 name: capsule-argo-addon
 description: Capsule Argo Addon
 type: application
-version: 0.1.0
-appVersion: "1.16.0"
+# Note: The version is overwritten by the release workflow.
+version: 0.0.0
+# Note: The version is overwritten by the release workflow.
+appVersion: 0.0.0
 home: https://github.com/peak-scale/capsule-argo-addon
 icon: https://github.com/projectcapsule/capsule/raw/main/assets/logo/capsule_small.png
 keywords:

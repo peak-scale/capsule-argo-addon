@@ -32,3 +32,6 @@ dist
 .hugo_build.lock
 public/
 *.tgz
+.cache/
+.tmp
+*trivy*

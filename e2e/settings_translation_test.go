@@ -3,6 +3,7 @@ package e2e_test
 
 import (
 	"context"
+	"time"
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -253,7 +254,8 @@ var _ = Describe("Translation Test", func() {
 			}
 
 			// Compare the Spec
-			Expect(approject.Spec).To(Equal(*expected), "AppProject spec should match the expected spec")
+			ok, msg := DeepCompare(*expected, approject.Spec)
+			Expect(ok).To(BeTrue(), "AppProject spec mismatch: %s", msg)
 
 			// Finalizer should not contain the translator finalizer
 			Expect(meta.ContainsTranslatorFinalizer(approject)).To(BeTrue(), "AppProject should contain translator finalizer")
@@ -313,12 +315,12 @@ var _ = Describe("Translation Test", func() {
 				PermitOnlyProjectScopedClusters: true,
 				Destinations: []argocdv1alpha1.ApplicationDestination{
 					{
-						Name:      "custom-server",
-						Namespace: "selected,namespaces",
-					},
-					{
 						Name:      "some-other-server",
 						Namespace: "tenant-*",
+					},
+					{
+						Name:      "custom-server",
+						Namespace: "selected,namespaces",
 					},
 				},
 				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
@@ -326,17 +328,17 @@ var _ = Describe("Translation Test", func() {
 					{DefaultServiceAccount: "custom-serviceaccount", Server: "custom-server"},
 				},
 				SourceNamespaces: []string{
-					"somewhere",
 					"a-second-place",
+					"somewhere",
 				},
 				ClusterResourceWhitelist: []metav1.GroupKind{
 					{
-						Group: "*",
-						Kind:  "ConfigMap",
-					},
-					{
 						Group: "vcluster.alhpa.com",
 						Kind:  "Cluster",
+					},
+					{
+						Group: "*",
+						Kind:  "ConfigMap",
 					},
 				},
 				NamespaceResourceBlacklist: []metav1.GroupKind{
@@ -348,7 +350,8 @@ var _ = Describe("Translation Test", func() {
 			}
 
 			// Compare the Spec
-			Expect(approject.Spec).To(Equal(*expected2), "AppProject spec should match the expected spec")
+			ok, msg := DeepCompare(*expected2, approject.Spec)
+			Expect(ok).To(BeTrue(), "AppProject spec mismatch: %s", msg)
 
 			// Finalizer should not contain the translator finalizer
 			Expect(meta.ContainsTranslatorFinalizer(approject)).To(BeTrue(), "AppProject should contain translator finalizer")
@@ -569,12 +572,12 @@ var _ = Describe("Translation Test", func() {
 				},
 				ClusterResourceWhitelist: []metav1.GroupKind{
 					{
-						Group: "vcluster.alhpa.com",
-						Kind:  "Cluster",
-					},
-					{
 						Group: "tenant.specific.crd",
 						Kind:  "ApplicationCR",
+					},
+					{
+						Group: "vcluster.alhpa.com",
+						Kind:  "Cluster",
 					},
 				},
 				NamespaceResourceBlacklist: []metav1.GroupKind{
@@ -590,7 +593,129 @@ var _ = Describe("Translation Test", func() {
 			}
 
 			// Compare the Spec
-			Expect(approject.Spec).To(Equal(*expected), "AppProject spec should match the expected spec")
+			ok, msg := DeepCompare(*expected, approject.Spec)
+			Expect(ok).To(BeTrue(), "AppProject spec mismatch: %s", msg)
+
+			// Finalizer should not contain the translator finalizer
+			Expect(meta.ContainsTranslatorFinalizer(approject)).To(BeTrue(), "AppProject should contain translator finalizer")
+
+			// Expected labels
+			expectedLabels := map[string]string{
+				"translator2":           "label",
+				"structured":            "exclusive",
+				"override":              "structured",
+				meta.ManagedByLabel:     meta.ManagedByLabelValue,
+				meta.ManagedTenantLabel: solar.Name,
+				meta.ProvisionedByLabel: meta.ManagedByLabelValue,
+			}
+
+			expectedAnnotations := map[string]string{
+				"translator2": "annotation",
+				"structured":  "exclusive",
+				"override":    "structured",
+			}
+
+			// Compare Metadata
+			Expect(approject.Labels).To(Equal(expectedLabels), "AppProject should have the correct labels")
+			Expect(approject.Annotations).To(Equal(expectedAnnotations), "AppProject should have the correct annotations")
+
+			// Check for finalizers (assuming a finalizer example)
+			expectedFinalizers := []string{
+				meta.TranslatorFinalizer(translator2.Name),
+			}
+
+			// Compare finalizers
+			Expect(approject.Finalizers).To(Equal(expectedFinalizers), "AppProject should have the expected finalizers")
+		})
+
+		By("modifying certain fields in the translator (secondary)", func() {
+			updatedTranslator := &v1alpha1.ArgoTranslator{}
+			Expect(k8sClient.Get(context.TODO(), client.ObjectKey{Name: translator2.Name}, updatedTranslator)).To(Succeed())
+
+			updatedTranslator.Spec.ProjectSettings.Structured.ProjectSpec = argocdv1alpha1.AppProjectSpec{
+				PermitOnlyProjectScopedClusters: false,
+				SourceNamespaces: []string{
+					"a-third-place",
+				},
+				ClusterResourceWhitelist: []metav1.GroupKind{
+					{
+						Group: "tenant.global.crd",
+						Kind:  "ApplicationCR",
+					},
+				},
+				NamespaceResourceBlacklist: []metav1.GroupKind{
+					{
+						Group: "*",
+						Kind:  "Deployments",
+					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: "custom-serviceaccount-3", Server: "custom-server-3"},
+				},
+			}
+
+			Expect(k8sClient.Update(context.TODO(), updatedTranslator)).To(Succeed())
+		})
+
+		By("verify translated approject (subtract old secondary)", func() {
+			approject := &argocdv1alpha1.AppProject{}
+			time.Sleep(10000 * time.Millisecond)
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace}, approject)).To(Succeed())
+
+			// Expected Translation
+			expected := &argocdv1alpha1.AppProjectSpec{
+				PermitOnlyProjectScopedClusters: false,
+				Destinations:                    []argocdv1alpha1.ApplicationDestination{},
+				Description:                     "My new description",
+				SourceNamespaces: []string{
+					"a-third-place",
+				},
+				ClusterResourceWhitelist: []metav1.GroupKind{
+					{
+						Group: "tenant.global.crd",
+						Kind:  "ApplicationCR",
+					},
+					{
+						Group: "tenant.specific.crd",
+						Kind:  "ApplicationCR",
+					},
+				},
+				NamespaceResourceBlacklist: []metav1.GroupKind{
+					{
+						Group: "*",
+						Kind:  "Deployments",
+					},
+					{
+						Group: "*",
+						Kind:  "Overwritten",
+					},
+				},
+				DestinationServiceAccounts: []argocdv1alpha1.ApplicationDestinationServiceAccount{
+					{DefaultServiceAccount: argoaddon.Spec.DestinationServiceAccount(solar), Namespace: "*", Server: argoaddon.Spec.Argo.Destination},
+					{DefaultServiceAccount: "custom-serviceaccount-3", Server: "custom-server-3"},
+				},
+				Roles: []argocdv1alpha1.ProjectRole{
+					{
+						Name:        "ci-role",
+						Description: "ci integration for teams",
+						Groups: []string{
+							"some-dev-team",
+						},
+					},
+				},
+				SyncWindows: argocdv1alpha1.SyncWindows{
+					&argocdv1alpha1.SyncWindow{
+						Kind:         "allows",
+						Duration:     "30m",
+						Schedule:     "* * * * SUN",
+						Applications: []string{"*"},
+					},
+				},
+			}
+
+			// Compare the Spec
+			ok, msg := DeepCompare(*expected, approject.Spec)
+			Expect(ok).To(BeTrue(), "AppProject spec mismatch: %s", msg)
 
 			// Finalizer should not contain the translator finalizer
 			Expect(meta.ContainsTranslatorFinalizer(approject)).To(BeTrue(), "AppProject should contain translator finalizer")

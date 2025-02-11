@@ -25,6 +25,7 @@ func NewConfigStore() *ConfigStore {
 func (s *ConfigStore) Get() *addonsv1alpha1.ArgoAddonSpec {
 	s.RLock()
 	defer s.RUnlock()
+
 	return s.config
 }
 

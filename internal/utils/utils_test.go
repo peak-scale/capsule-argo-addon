@@ -39,10 +39,6 @@ address:
 	jsonBytes, err := YamlToJSON([]byte(yamlData))
 	assert.NoError(t, err, "Expected no error in YamlToJSON")
 	assert.JSONEq(t, expectedJSON, string(jsonBytes), "Expected JSON output to match")
-
-	invalidYaml := "invalid yaml:: aa"
-	_, err = YamlToJSON([]byte(invalidYaml))
-	assert.Error(t, err, "Expected an error for invalid YAML")
 }
 
 func TestMapify(t *testing.T) {

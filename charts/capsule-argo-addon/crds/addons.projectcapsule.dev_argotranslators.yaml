@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: argotranslators.addons.projectcapsule.dev
 spec:
   group: addons.projectcapsule.dev
@@ -29,7 +29,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ArgoTranslator is the Schema for the argotranslators API
+        description: ArgoTranslator is the Schema for the argotranslators API.
         properties:
           apiVersion:
             description: |-
@@ -49,7 +49,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ArgoTranslatorSpec defines the desired state of ArgoTranslator
+            description: ArgoTranslatorSpec defines the desired state of ArgoTranslator.
             properties:
               customPolicy:
                 description: |-
@@ -59,7 +59,7 @@ spec:
               roles:
                 description: Application-Project Roles for the tenant
                 items:
-                  description: Define Permission mappings for an ArogCD Project
+                  description: Define Permission mappings for an ArogCD Project.
                   properties:
                     clusterRoles:
                       description: TenantRoles selects tenant users based on their
@@ -464,7 +464,7 @@ spec:
                 type: object
             type: object
           status:
-            description: ArgoTranslatorStatus defines the observed state of ArgoTranslator
+            description: ArgoTranslatorStatus defines the observed state of ArgoTranslator.
             properties:
               ready:
                 description: Ready field indicating overall readiness of the translator

@@ -2,9 +2,9 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name:  projectcapsule
+  name: projectcapsule
 spec:
-  interval: 5m0s
+  interval: 30s
   url: https://projectcapsule.github.io/charts
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2

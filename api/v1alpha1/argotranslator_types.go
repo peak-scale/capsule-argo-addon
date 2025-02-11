@@ -1,18 +1,5 @@
-/*
-Copyright 2024.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2024 Peak Scale
+// SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
@@ -21,10 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// ArgoTranslatorSpec defines the desired state of ArgoTranslator
+// ArgoTranslatorSpec defines the desired state of ArgoTranslator.
 type ArgoTranslatorSpec struct {
 	// Selector to match tenants which are used for the translator
 	Selector *metav1.LabelSelector `json:"selector,omitempty"`
@@ -43,7 +27,7 @@ type ArgoTranslatorSpec struct {
 	CustomPolicy string `json:"customPolicy,omitempty"`
 }
 
-// Define Permission mappings for an ArogCD Project
+// Define Permission mappings for an ArogCD Project.
 type ArgocdProjectRolesTranslator struct {
 	// Name for permission mapping
 	Name string `json:"name,omitempty"`
@@ -103,7 +87,7 @@ type ArgocdProjectPropertieMeta struct {
 // +kubebuilder:printcolumn:name="Tenants",type="integer",JSONPath=".status.size",description="The amount of tenants being translated"
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.ready",description="Indicates if all tenants were successfully translated"
 
-// ArgoTranslator is the Schema for the argotranslators API
+// ArgoTranslator is the Schema for the argotranslators API.
 type ArgoTranslator struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -114,7 +98,7 @@ type ArgoTranslator struct {
 
 // +kubebuilder:object:root=true
 
-// ArgoTranslatorList contains a list of ArgoTranslator
+// ArgoTranslatorList contains a list of ArgoTranslator.
 type ArgoTranslatorList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

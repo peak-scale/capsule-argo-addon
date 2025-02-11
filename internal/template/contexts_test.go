@@ -31,21 +31,12 @@ tenant:
   {{- end }}
     - {{ .Config.Argo.Namespace }}
 config:
-  proxy: {{- toYaml .Config.Proxy | nindent 4 }}
   argocd:
     namespace: "{{ .Config.Argo.Namespace }}"
 `
 
 	// Source the context (Mocking the required structs)
-	tplCtx := ConfigContext("example-cluster", &v1alpha1.ArgoTranslator{
-		Spec: v1alpha1.ArgoTranslatorSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/type": "prod",
-				},
-			},
-		},
-	}, &v1alpha1.ArgoAddonSpec{
+	tplCtx := ConfigContext(&v1alpha1.ArgoAddonSpec{
 		Argo: v1alpha1.ControllerArgoCDConfig{
 			Namespace: "argocd-namespace",
 		},
@@ -99,15 +90,6 @@ config:
 			},
 		},
 		"config": map[string]interface{}{
-			"proxy": map[string]interface{}{
-				"Enabled":                      true,
-				"CapsuleProxyServiceName":      "",
-				"CapsuleProxyServicePort":      0,
-				"CapsuleProxyServiceNamespace": "",
-				"ServiceAccountNamespace":      "",
-				"CapsuleProxyTLS":              false,
-			},
-
 			"argocd": map[string]interface{}{
 				"namespace": "argocd-namespace",
 			},
@@ -129,15 +111,7 @@ func TestRenderContextToMarkdown(t *testing.T) {
 	}
 
 	// Load template context
-	tplCtx := ConfigContext("example-cluster", &v1alpha1.ArgoTranslator{
-		Spec: v1alpha1.ArgoTranslatorSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/type": "prod",
-				},
-			},
-		},
-	}, &v1alpha1.ArgoAddonSpec{
+	tplCtx := ConfigContext(&v1alpha1.ArgoAddonSpec{
 		Argo: v1alpha1.ControllerArgoCDConfig{
 			RBACConfigMap: "argocd-rbac-cm",
 			Namespace:     "argocd",

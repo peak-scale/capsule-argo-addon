@@ -10,35 +10,35 @@ import (
 )
 
 const (
-	// Finalizer for the ArgoCD addon
+	// Finalizer for the ArgoCD addon.
 	ControllerFinalizer = "argo.addons.projectcapsule.dev/finalize"
 
-	// Annotation on Tenant
-	// Change the Appproject Name for the tenant
+	// Annotation on Tenant.
+	// Change the Appproject Name for the tenant.
 	AnnotationProjectName = "argo.addons.projectcapsule.dev/name"
 
 	// Annotation on Tenant
-	// Change the ServiceAccount Namespace for the tenant
+	// Change the ServiceAccount Namespace for the tenant.
 	AnnotationServiceAccountNamespace = "argo.addons.projectcapsule.dev/service-account-namespace"
 
-	// Annotation on Tenant
-	// Apply force for this tenant
+	// Annotation on Tenant.
+	// Apply force for this tenant.
 	AnnotationForce = "argo.addons.projectcapsule.dev/force"
 
-	// Annotation on Tenant
-	// Annotation to control if a ServiceAccount should be registered as destination
+	// Annotation on Tenant.
+	// Annotation to control if a ServiceAccount should be registered as destination.
 	AnnotationDestinationRegister = "argo.addons.projectcapsule.dev/register-dest"
 
-	// Annotation on Tenant
-	// Decouple Ownerreference from the origin tenant, to avoid deletion of the appproject
+	// Annotation on Tenant.
+	// Decouple Ownerreference from the origin tenant, to avoid deletion of the appproject.
 	AnnotationProjectDecouple = "argo.addons.projectcapsule.dev/decouple"
 
-	// Annotation on Tenant
-	// Read-Only mode for the approject (every change from approject ownership is ignored)
+	// Annotation on Tenant.
+	// Read-Only mode for the approject (every change from approject ownership is ignored).
 	AnnotationProjectReadOnly = "argo.addons.projectcapsule.dev/read-only"
 )
 
-// Tenant Approject-Name
+// Tenant Approject-Name.
 func TenantProjectName(tenant *capsulev1beta2.Tenant) (name string) {
 	name = tenant.Annotations[AnnotationProjectName]
 	if name == "" {
@@ -48,7 +48,7 @@ func TenantProjectName(tenant *capsulev1beta2.Tenant) (name string) {
 	return
 }
 
-// Tenant ServiceAccount Namespace
+// Tenant ServiceAccount Namespace.
 func TenantServiceAccountNamespace(tenant *capsulev1beta2.Tenant) string {
 	return tenant.Annotations[AnnotationServiceAccountNamespace]
 }

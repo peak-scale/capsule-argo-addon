@@ -16,20 +16,15 @@ The follwing data context is available for templating:
 ```yaml
 Config:
     Argo:
-        DefaultServerNamespace: ""
         Destination: ""
         DestinationServiceAccounts: false
         Namespace: argocd
         RBACConfigMap: argocd-rbac-cm
         ServiceAccountNamespace: ""
+    Decouple: false
     Force: false
-    Proxy:
-        CapsuleProxyServiceName: capsule-proxy
-        CapsuleProxyServiceNamespace: capsule-system
-        CapsuleProxyServicePort: 0
-        CapsuleProxyTLS: false
-        Enabled: true
-Endpoint: example-cluster
+    ReadOnly: false
+Endpoint: ""
 Tenant:
     Name: example-tenant
     Namespaces:

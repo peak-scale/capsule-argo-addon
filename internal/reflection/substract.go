@@ -1,5 +1,6 @@
 // Copyright 2024 Peak Scale
 // SPDX-License-Identifier: Apache-2.0
+//
 
 package reflection
 
@@ -9,8 +10,9 @@ func Subtract(target, source interface{}) {
 	subtractRecursive(reflect.ValueOf(target).Elem(), reflect.ValueOf(source).Elem())
 }
 
+//nolint:exhaustive
 func subtractRecursive(targetVal, sourceVal reflect.Value) {
-	for i := 0; i < targetVal.NumField(); i++ {
+	for i := range targetVal.NumField() {
 		targetField := targetVal.Field(i)
 		sourceField := sourceVal.Field(i)
 
@@ -37,14 +39,16 @@ func subtractRecursive(targetVal, sourceVal reflect.Value) {
 func subtractSlices(targetField, sourceField reflect.Value) {
 	resultSlice := reflect.MakeSlice(targetField.Type(), 0, targetField.Len())
 
-	for i := 0; i < targetField.Len(); i++ {
+	for i := range targetField.Len() {
 		targetItem := targetField.Index(i)
 
 		found := false
-		for j := 0; j < sourceField.Len(); j++ {
+
+		for j := range sourceField.Len() {
 			sourceItem := sourceField.Index(j)
 			if reflect.DeepEqual(targetItem.Interface(), sourceItem.Interface()) {
 				found = true
+
 				break
 			}
 		}

@@ -12,7 +12,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/reflection"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,14 +23,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	tpl "github.com/peak-scale/capsule-argo-addon/internal/template"
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
-var _ reconcile.Reconciler = &TranslatorController{}
+var _ reconcile.Reconciler = &Controller{}
 
-type TranslatorController struct {
+type Controller struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
@@ -39,16 +40,48 @@ type TranslatorController struct {
 	requeue  chan event.GenericEvent
 }
 
-func (i *TranslatorController) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (i *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	// Initialize Channel
 	i.requeue = make(chan event.GenericEvent)
 
+	// Predicates
+	translatePredicate := predicate.Funcs{
+		CreateFunc: func(event.CreateEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			i.Log.V(5).Info("received event")
+			oldObj, okOld := e.ObjectOld.(*configv1alpha1.ArgoTranslator)
+			_, okNew := e.ObjectNew.(*configv1alpha1.ArgoTranslator)
+
+			if !okOld || !okNew {
+				i.Log.V(5).Info("garbage collection")
+
+				return false
+			}
+
+			// ✅ Call your custom reconcile function here with old/new objects
+			err := i.garbageCollectTranslator(ctx, oldObj)
+			if err != nil {
+				return true
+			}
+
+			i.Log.V(5).Info("ran garbage collection")
+
+			return true
+		},
+		DeleteFunc: func(event.DeleteEvent) bool {
+			return true
+		},
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1alpha1.ArgoTranslator{}).
+		WithEventFilter(translatePredicate).
 		// Reconcile when an appproject is directly deleted and may include non translated
 		// attributes, which should not be wiped.
 		Watches(&argocdapi.AppProject{},
-			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a client.Object) []reconcile.Request {
+			handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a client.Object) []reconcile.Request {
 				// Based on finalizers get other finalizing translators
 				translators := meta.GetTranslatingFinalizers(a)
 
@@ -67,7 +100,7 @@ func (i *TranslatorController) SetupWithManager(ctx context.Context, mgr ctrl.Ma
 		Complete(i)
 }
 
-func (i *TranslatorController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+func (i *Controller) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	log := i.Log.WithValues("translator", request.Name)
 
 	origin := &configv1alpha1.ArgoTranslator{}
@@ -76,23 +109,24 @@ func (i *TranslatorController) Reconcile(ctx context.Context, request ctrl.Reque
 	}
 
 	// Finalize Dependencies
+	//nolint:nestif
 	if !origin.ObjectMeta.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 			log.V(5).Info("finalizing translator")
-			err := i.finalize(ctx, log, origin)
-			if err != nil {
+
+			if err := i.finalize(ctx, log, origin); err != nil {
 				return ctrl.Result{}, err
 			}
 
 			controllerutil.RemoveFinalizer(origin, meta.ControllerFinalizer)
-			err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+
+			if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 				if err := i.Client.Update(ctx, origin); err != nil {
 					return err
 				}
 
 				return
-			})
-			if err != nil {
+			}); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -114,105 +148,115 @@ func (i *TranslatorController) Reconcile(ctx context.Context, request ctrl.Reque
 		if k8serrors.IsNotFound(err) {
 			log.V(5).Info("garbage collection", "tenant", tenant.Name)
 			origin.RemoveTenantCondition(tnt)
+
 			continue
 		}
+
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	// Update Status if necessary
-	//err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-	//	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, origin, func() error {
-	//		return i.Client.Status().Update(ctx, origin, &client.SubResourceUpdateOptions{})
-	//	})
-	//
-	//	return
-	//})
-	//if err != nil {
-	//	return ctrl.Result{}, err
-	//}
-
 	if !controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 		controllerutil.AddFinalizer(origin, meta.ControllerFinalizer)
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+
+		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
 			if err := i.Client.Update(ctx, origin); err != nil {
 				return err
 			}
 
 			return
-		})
-		if err != nil {
+		}); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
-
 }
 
-func (i *TranslatorController) finalize(ctx context.Context, log logr.Logger, translator *configv1alpha1.ArgoTranslator) error {
-	// Finalize all tenants (approjects)
-	tnts := translator.GetTenantNames()
+// Takes Old specification and removes it.
+func (i *Controller) garbageCollectTranslator(
+	ctx context.Context,
+	translator *configv1alpha1.ArgoTranslator,
+) error {
+	log := i.Log.WithValues("translator", translator.Name)
+	log.V(5).Info("garbage collection", "translator", translator.Name)
 
-	for _, tnt := range tnts {
+	// Remove old Translator-Layout for any tracked Tenants.
+	tenantNames := translator.GetTenantNames()
+	for _, tnt := range tenantNames {
+		// Get the Tenant.
 		tenant := &capsulev1beta2.Tenant{}
-		err := i.Client.Get(ctx, client.ObjectKey{
-			Name: tnt,
-		}, tenant)
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err := i.Client.Get(ctx, client.ObjectKey{Name: tnt}, tenant); err != nil {
+			if k8serrors.IsNotFound(err) {
+				// Tenant no longer exists, skip it.
+				return nil
+			}
+
 			return err
 		}
 
-		// Remove the approject from the tenant
-		approject := &argocdapi.AppProject{}
-		err = i.Client.Get(ctx, client.ObjectKey{
-			Name:      meta.TenantProjectName(tenant),
+		// Fetch the current state of the AppProject for this tenant.
+		appProject := &argocdapi.AppProject{}
+		appProjectKey := client.ObjectKey{
+			Name:      tenant.Name,
 			Namespace: i.Settings.Get().Argo.Namespace,
-		}, approject)
-		if k8serrors.IsNotFound(err) {
-			continue
 		}
-		if err != nil {
+
+		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			if err := i.Client.Get(ctx, appProjectKey, appProject); err != nil {
+				if k8serrors.IsNotFound(err) {
+					// AppProject no longer exists, skip it.
+					return nil
+				}
+
+				return err
+			}
+
+			// Retrieve the configuration for the translator's project settings.
+			cfg, err := translator.Spec.ProjectSettings.GetConfig(
+				tpl.ConfigContext(i.Settings.Get(), tenant),
+				tpl.ExtraFuncMap(),
+			)
+			if err != nil {
+				return err
+			}
+
+			// Make a deep copy of the current AppProject spec.
+			currentSpec := appProject.Spec.DeepCopy()
+
+			// Use CreateOrUpdate to subtract the translator's AppProject layout.
+			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, appProject, func() error {
+				// Subtract the translator-specific settings.
+				reflection.Subtract(currentSpec, &cfg.ProjectSpec)
+				appProject.Spec = *currentSpec
+
+				return nil
+			})
+
 			return err
-		}
-
-		// if tenant is no longer managing an approject
-		//if !controllerutil.ContainsFinalizer(tenant, meta.ControllerFinalizer) {
-		//	continue
-		//}
-
-		if err := RemoveTranslatorForTenant(ctx, i.Client, log, translator, tenant, approject, i.Settings); err != nil {
-			return err
-		}
-
-		err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-			err = i.Client.Update(ctx, approject)
-			return
 		})
 		if err != nil {
-			return err
-		}
+			i.Log.Error(err, "failed removing old specification")
 
+			continue
+		}
 	}
 
 	return nil
 }
 
-// Remove Translator for tenant
+// Remove Translator for tenant.
 func RemoveTranslatorForTenant(
-	ctx context.Context,
-	c client.Client,
 	log logr.Logger,
 	translator *configv1alpha1.ArgoTranslator,
 	tenant *capsulev1beta2.Tenant,
 	approject *argocdapi.AppProject,
 	settings *stores.ConfigStore,
 ) error {
-
 	// Remove the approject from the tenant
 	cfg, err := translator.Spec.ProjectSettings.GetConfig(
-		tpl.ConfigContext("", translator, settings.Get(), tenant), tpl.ExtraFuncMap())
+		tpl.ConfigContext(settings.Get(), tenant), tpl.ExtraFuncMap())
 	if err != nil {
 		return err
 	}
@@ -242,13 +286,56 @@ func RemoveTranslatorForTenant(
 	}
 
 	// Remove Finalizers from the approject
+	//nolint:gocritic
 	finalizers := append(cfg.ProjectMeta.Finalizers, meta.TranslatorFinalizer(translator.Name))
 	for _, finalizer := range finalizers {
 		if controllerutil.ContainsFinalizer(approject, finalizer) {
 			controllerutil.RemoveFinalizer(approject, finalizer)
-			if err != nil {
-				return err
-			}
+		}
+	}
+
+	return nil
+}
+
+func (i *Controller) finalize(
+	ctx context.Context,
+	log logr.Logger,
+	translator *configv1alpha1.ArgoTranslator,
+) error {
+	// Finalize all tenants (approjects)
+	tnts := translator.GetTenantNames()
+
+	for _, tnt := range tnts {
+		tenant := &capsulev1beta2.Tenant{}
+		if err := i.Client.Get(ctx, client.ObjectKey{
+			Name: tnt,
+		}, tenant); err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+
+		// Remove the approject from the tenant
+		approject := &argocdapi.AppProject{}
+		err := i.Client.Get(ctx, client.ObjectKey{
+			Name:      meta.TenantProjectName(tenant),
+			Namespace: i.Settings.Get().Argo.Namespace,
+		}, approject)
+
+		if k8serrors.IsNotFound(err) {
+			continue
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if err := RemoveTranslatorForTenant(log, translator, tenant, approject, i.Settings); err != nil {
+			return err
+		}
+
+		if err = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
+			return i.Client.Update(ctx, approject)
+		}); err != nil {
+			return err
 		}
 	}
 

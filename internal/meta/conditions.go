@@ -15,13 +15,13 @@ const (
 	ReadyCondition    string = "Ready"
 	NotReadyCondition string = "NotReady"
 
-	// SucceededReason indicates a condition or event observed a success
+	// SucceededReason indicates a condition or event observed a success.
 	SucceededReason string = "Applied"
 
-	// FailedReason indicates a condition or event observed a failure
+	// FailedReason indicates a condition or event observed a failure.
 	FailedReason string = "Failed"
 
-	// Given object already exists
+	// Given object already exists.
 	ObjectAlreadyExistsReason string = "ObjectAlreadyExists"
 
 	// ProgressingReason indicates a condition or event observed progression, for example when the reconciliation of a
@@ -30,7 +30,7 @@ const (
 )
 
 // Can be used when tenant was successfully translated
-// Should be used on translator level
+// Should be used on translator level.
 func NewReadyCondition(obj client.Object) metav1.Condition {
 	return metav1.Condition{
 		Type:               ReadyCondition,

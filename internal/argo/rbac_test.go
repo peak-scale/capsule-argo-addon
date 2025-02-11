@@ -58,9 +58,14 @@ func TestDefaultPolicies(t *testing.T) {
 		},
 	}
 
-	expectedResult := "p, caa:role:test-tenant:read-only,projects,get,test-tenant,allow\n" +
-		"p, caa:role:test-tenant:owner,projects,update,test-tenant,allow\n" +
-		"p, caa:role:test-tenant:read-only,clusters,get,https://custom-cluster,allow\n"
+	expectedResult := []string([]string{
+		"p, caa:role:test-tenant:read-only,projects,get,test-tenant,allow\n",
+		"p, caa:role:test-tenant:read-only,projects,list,test-tenant,allow\n",
+		"p, caa:role:test-tenant:owner,projects,update,test-tenant,allow\n",
+		"p, caa:role:test-tenant:read-only,clusters,get,test-tenant/*,allow\n",
+		"p, caa:role:test-tenant:read-only,clusters,list,test-tenant/*,allow\n",
+		"p, caa:role:test-tenant:read-only,clusters,get,https://custom-cluster,allow\n",
+	})
 
 	result := DefaultPolicies(tenant, "https://custom-cluster")
 	assert.Equal(t, expectedResult, result, "DefaultPolicies should return correct default policies")

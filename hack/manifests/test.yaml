@@ -17,7 +17,7 @@ spec:
     settings:
       namespaceResourceWhitelist:
       - group: "*"
-        kind: "*"      
+        kind: "*"
       clusterResourceWhitelist:
       - group: "*"
         kind: "*"
@@ -33,11 +33,6 @@ spec:
     - name: "admin"
       clusterRoles:
         - "admin"
-      policies:  
+      policies:
       - resource: applications
         action: ["*"]
-
-
-
-
-
