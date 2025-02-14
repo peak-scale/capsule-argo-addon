@@ -23,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -40,44 +39,12 @@ type Controller struct {
 	requeue  chan event.GenericEvent
 }
 
-func (i *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (i *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	// Initialize Channel
 	i.requeue = make(chan event.GenericEvent)
 
-	// Predicates
-	translatePredicate := predicate.Funcs{
-		CreateFunc: func(event.CreateEvent) bool {
-			return true
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			i.Log.V(5).Info("received event")
-			oldObj, okOld := e.ObjectOld.(*configv1alpha1.ArgoTranslator)
-			_, okNew := e.ObjectNew.(*configv1alpha1.ArgoTranslator)
-
-			if !okOld || !okNew {
-				i.Log.V(5).Info("garbage collection")
-
-				return false
-			}
-
-			// ✅ Call your custom reconcile function here with old/new objects
-			err := i.garbageCollectTranslator(ctx, oldObj)
-			if err != nil {
-				return true
-			}
-
-			i.Log.V(5).Info("ran garbage collection")
-
-			return true
-		},
-		DeleteFunc: func(event.DeleteEvent) bool {
-			return true
-		},
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1alpha1.ArgoTranslator{}).
-		WithEventFilter(translatePredicate).
 		// Reconcile when an appproject is directly deleted and may include non translated
 		// attributes, which should not be wiped.
 		Watches(&argocdapi.AppProject{},
@@ -114,7 +81,7 @@ func (i *Controller) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
 			log.V(5).Info("finalizing translator")
 
-			if err := i.finalize(ctx, log, origin); err != nil {
+			if err := i.finalize(ctx, origin); err != nil {
 				return ctrl.Result{}, err
 			}
 
@@ -138,23 +105,8 @@ func (i *Controller) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	// Collect Tenants from Status and verify if they are still active
-	tnts := origin.GetTenantNames()
-	for _, tnt := range tnts {
-		tenant := &capsulev1beta2.Tenant{}
-		err := i.Client.Get(ctx, client.ObjectKey{
-			Name: tnt,
-		}, tenant)
-		// Remove unexisting tenants
-		if k8serrors.IsNotFound(err) {
-			log.V(5).Info("garbage collection", "tenant", tenant.Name)
-			origin.RemoveTenantCondition(tnt)
-
-			continue
-		}
-
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+	if err := i.garbageCollectTenants(ctx, origin); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if !controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
@@ -174,123 +126,171 @@ func (i *Controller) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	return ctrl.Result{}, nil
 }
 
-// Takes Old specification and removes it.
-func (i *Controller) garbageCollectTranslator(
+// Remove Tenants which are no longer existent from status.
+func (i *Controller) garbageCollectTenants(
 	ctx context.Context,
 	translator *configv1alpha1.ArgoTranslator,
 ) error {
-	log := i.Log.WithValues("translator", translator.Name)
-	log.V(5).Info("garbage collection", "translator", translator.Name)
-
-	// Remove old Translator-Layout for any tracked Tenants.
-	tenantNames := translator.GetTenantNames()
-	for _, tnt := range tenantNames {
-		// Get the Tenant.
+	tnts := translator.GetTenantNames()
+	for _, tnt := range tnts {
 		tenant := &capsulev1beta2.Tenant{}
-		if err := i.Client.Get(ctx, client.ObjectKey{Name: tnt}, tenant); err != nil {
-			if k8serrors.IsNotFound(err) {
-				// Tenant no longer exists, skip it.
-				return nil
-			}
-
-			return err
-		}
-
-		// Fetch the current state of the AppProject for this tenant.
-		appProject := &argocdapi.AppProject{}
-		appProjectKey := client.ObjectKey{
-			Name:      tenant.Name,
-			Namespace: i.Settings.Get().Argo.Namespace,
-		}
-
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			if err := i.Client.Get(ctx, appProjectKey, appProject); err != nil {
-				if k8serrors.IsNotFound(err) {
-					// AppProject no longer exists, skip it.
-					return nil
-				}
-
-				return err
-			}
-
-			// Retrieve the configuration for the translator's project settings.
-			cfg, err := translator.Spec.ProjectSettings.GetConfig(
-				tpl.ConfigContext(i.Settings.Get(), tenant),
-				tpl.ExtraFuncMap(),
-			)
-			if err != nil {
-				return err
-			}
-
-			// Make a deep copy of the current AppProject spec.
-			currentSpec := appProject.Spec.DeepCopy()
-
-			// Use CreateOrUpdate to subtract the translator's AppProject layout.
-			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, appProject, func() error {
-				// Subtract the translator-specific settings.
-				reflection.Subtract(currentSpec, &cfg.ProjectSpec)
-				appProject.Spec = *currentSpec
-
-				return nil
-			})
-
-			return err
-		})
-		if err != nil {
-			i.Log.Error(err, "failed removing old specification")
+		err := i.Client.Get(ctx, client.ObjectKey{
+			Name: tnt,
+		}, tenant)
+		// Remove unexisting tenants
+		if k8serrors.IsNotFound(err) {
+			translator.RemoveTenantCondition(tnt)
 
 			continue
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
+// Takes Old specification and removes it.
+// func (i *Controller) garbageCollectTranslator(
+//	ctx context.Context,
+//	translator *configv1alpha1.ArgoTranslator,
+// ) error {
+//	log := i.Log.WithValues("translator", translator.Name)
+//	log.V(5).Info("garbage collection", "translator", translator.Name)
+//
+//	// Remove old Translator-Layout for any tracked Tenants.
+//	tenantNames := translator.GetTenantNames()
+//	for _, tnt := range tenantNames {
+//		// Get the Tenant.
+//		tenant := &capsulev1beta2.Tenant{}
+//		if err := i.Client.Get(ctx, client.ObjectKey{Name: tnt}, tenant); err != nil {
+//			if k8serrors.IsNotFound(err) {
+//				// Tenant no longer exists, skip it.
+//				return nil
+//			}
+//
+//			return err
+//		}
+//
+//		// Fetch the current state of the AppProject for this tenant.
+//		appProject := &argocdapi.AppProject{}
+//		appProjectKey := client.ObjectKey{
+//			Name:      tenant.Name,
+//			Namespace: i.Settings.Get().Argo.Namespace,
+//		}
+//
+//		err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+//			if err := i.Client.Get(ctx, appProjectKey, appProject); err != nil {
+//				if k8serrors.IsNotFound(err) {
+//					// AppProject no longer exists, skip it.
+//					return nil
+//				}
+//
+//				return err
+//			}
+//
+//			// Retrieve the configuration for the translator's project settings.
+//			cfg, err := translator.GetProjectConfig(
+//				tpl.ConfigContext(i.Settings.Get(), tenant),
+//				tpl.ExtraFuncMap(),
+//			)
+//			if err != nil {
+//				return err
+//			}
+//
+//			// Make a deep copy of the current AppProject spec.
+//			currentSpec := appProject.Spec.DeepCopy()
+//
+//			// Use CreateOrUpdate to subtract the translator's AppProject layout.
+//			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, appProject, func() error {
+//				// Subtract the translator-specific settings.
+//				reflection.Subtract(currentSpec, &cfg.ProjectSpec)
+//				appProject.Spec = *currentSpec
+//
+//				return nil
+//			})
+//
+//			return err
+//		})
+//		if err != nil {
+//			i.Log.Error(err, "failed removing old specification")
+//
+//			continue
+//		}
+//	}
+//
+//	return nil
+//}
+
 // Remove Translator for tenant.
 func RemoveTranslatorForTenant(
-	log logr.Logger,
 	translator *configv1alpha1.ArgoTranslator,
 	tenant *capsulev1beta2.Tenant,
-	approject *argocdapi.AppProject,
+	appproject *argocdapi.AppProject,
 	settings *stores.ConfigStore,
-) error {
-	// Remove the approject from the tenant
-	cfg, err := translator.Spec.ProjectSettings.GetConfig(
+) (err error) {
+	finalizer := meta.TranslatorFinalizer(translator.Name)
+	if controllerutil.ContainsFinalizer(appproject, finalizer) {
+		controllerutil.RemoveFinalizer(appproject, finalizer)
+	}
+
+	return SubstractTranslatorSpec(translator, tenant, appproject, settings)
+}
+
+// Remove Translator for tenant.
+func SubstractTranslatorSpec(
+	translator *configv1alpha1.ArgoTranslator,
+	tenant *capsulev1beta2.Tenant,
+	appproject *argocdapi.AppProject,
+	settings *stores.ConfigStore,
+) (err error) {
+	// Verify if currently Something is serving
+	stat := translator.GetTenantStatus(tenant)
+	if stat == nil {
+		return nil
+	}
+
+	cfg, err := stat.Serving.GetConfig(
 		tpl.ConfigContext(settings.Get(), tenant), tpl.ExtraFuncMap())
 	if err != nil {
 		return err
 	}
 
-	currentSpec := approject.Spec.DeepCopy()
+	if cfg == nil {
+		return nil
+	}
 
-	reflection.Subtract(currentSpec, &cfg.ProjectSpec)
+	// Specification
+	reflection.Subtract(&appproject.Spec, cfg.ProjectSpec)
 
-	log.V(7).Info("finalized spec", "spec", currentSpec)
-	approject.Spec = *currentSpec
-
+	// Metadata
+	if cfg.ProjectMeta == nil {
+		return nil
+	}
 	// Remove transformer labels from the approject
 	for key, value := range cfg.ProjectMeta.Labels {
-		if currentValue, ok := approject.Labels[key]; ok {
+		if currentValue, ok := appproject.Labels[key]; ok {
 			if currentValue == value {
-				delete(approject.Labels, key)
+				delete(appproject.Labels, key)
 			}
 		}
 	}
 	// Remove transformer annotations from the approject
 	for key, value := range cfg.ProjectMeta.Annotations {
-		if currentValue, ok := approject.Annotations[key]; ok {
+		if currentValue, ok := appproject.Annotations[key]; ok {
 			if currentValue == value {
-				delete(approject.Annotations, key)
+				delete(appproject.Annotations, key)
 			}
 		}
 	}
 
 	// Remove Finalizers from the approject
-	//nolint:gocritic
-	finalizers := append(cfg.ProjectMeta.Finalizers, meta.TranslatorFinalizer(translator.Name))
-	for _, finalizer := range finalizers {
-		if controllerutil.ContainsFinalizer(approject, finalizer) {
-			controllerutil.RemoveFinalizer(approject, finalizer)
+
+	for _, finalizer := range cfg.ProjectMeta.Finalizers {
+		if controllerutil.ContainsFinalizer(appproject, finalizer) {
+			controllerutil.RemoveFinalizer(appproject, finalizer)
 		}
 	}
 
@@ -299,7 +299,6 @@ func RemoveTranslatorForTenant(
 
 func (i *Controller) finalize(
 	ctx context.Context,
-	log logr.Logger,
 	translator *configv1alpha1.ArgoTranslator,
 ) error {
 	// Finalize all tenants (approjects)
@@ -328,7 +327,7 @@ func (i *Controller) finalize(
 			return err
 		}
 
-		if err := RemoveTranslatorForTenant(log, translator, tenant, approject, i.Settings); err != nil {
+		if err := RemoveTranslatorForTenant(translator, tenant, approject, i.Settings); err != nil {
 			return err
 		}
 

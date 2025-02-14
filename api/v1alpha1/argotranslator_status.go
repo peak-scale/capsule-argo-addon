@@ -21,10 +21,10 @@ type ArgoTranslatorStatus struct {
 type TenantStatus struct {
 	// List of tenants selected by this translator
 	Name string `json:"name,omitempty"`
-
 	// UID of the tracked Tenant to pin point tracking
 	k8stypes.UID `json:"uid,omitempty" protobuf:"bytes,5,opt,name=uid"`
-
 	// Conditions represent the latest available observations of an object's state
 	Condition metav1.Condition `json:"condition,omitempty"`
+	// Serving  Settings for this Tenant
+	Serving *ArgocdProjectProperties `json:"serving,omitempty"`
 }

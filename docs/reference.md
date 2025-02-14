@@ -1439,6 +1439,13 @@ ArgoTranslatorStatus defines the observed state of ArgoTranslator.
         </td>
         <td>false</td>
       </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexserving">serving</a></b></td>
+        <td>object</td>
+        <td>
+          Serving  Settings for this Tenant<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>uid</b></td>
         <td>string</td>
         <td>
@@ -1520,6 +1527,734 @@ with respect to the current state of the instance.<br/>
           <br/>
             <i>Format</i>: int64<br/>
             <i>Minimum</i>: 0<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindex)</sup></sup>
+
+
+
+Serving  Settings for this Tenant
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructured">structured</a></b></td>
+        <td>object</td>
+        <td>
+          Structured Properties for the argocd project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>template</b></td>
+        <td>string</td>
+        <td>
+          Use a template to generate to argo project settings<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexserving)</sup></sup>
+
+
+
+Structured Properties for the argocd project
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredmeta">meta</a></b></td>
+        <td>object</td>
+        <td>
+          Project Metadata<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspec">spec</a></b></td>
+        <td>object</td>
+        <td>
+          Application Project Spec (Upstream ArgoCD)<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.meta
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructured)</sup></sup>
+
+
+
+Project Metadata
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>annotations</b></td>
+        <td>map[string]string</td>
+        <td>
+          Annotations for the project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>finalizers</b></td>
+        <td>[]string</td>
+        <td>
+          Finalizers for the project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>labels</b></td>
+        <td>map[string]string</td>
+        <td>
+          Labels for the project<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructured)</sup></sup>
+
+
+
+Application Project Spec (Upstream ArgoCD)
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecclusterresourceblacklistindex">clusterResourceBlacklist</a></b></td>
+        <td>[]object</td>
+        <td>
+          ClusterResourceBlacklist contains list of blacklisted cluster level resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecclusterresourcewhitelistindex">clusterResourceWhitelist</a></b></td>
+        <td>[]object</td>
+        <td>
+          ClusterResourceWhitelist contains list of whitelisted cluster level resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          Description contains optional project description<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecdestinationserviceaccountsindex">destinationServiceAccounts</a></b></td>
+        <td>[]object</td>
+        <td>
+          DestinationServiceAccounts holds information about the service accounts to be impersonated for the application sync operation for each destination.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecdestinationsindex">destinations</a></b></td>
+        <td>[]object</td>
+        <td>
+          Destinations contains list of destinations available for deployment<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecnamespaceresourceblacklistindex">namespaceResourceBlacklist</a></b></td>
+        <td>[]object</td>
+        <td>
+          NamespaceResourceBlacklist contains list of blacklisted namespace level resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecnamespaceresourcewhitelistindex">namespaceResourceWhitelist</a></b></td>
+        <td>[]object</td>
+        <td>
+          NamespaceResourceWhitelist contains list of whitelisted namespace level resources<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecorphanedresources">orphanedResources</a></b></td>
+        <td>object</td>
+        <td>
+          OrphanedResources specifies if controller should monitor orphaned resources of apps in this project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>permitOnlyProjectScopedClusters</b></td>
+        <td>boolean</td>
+        <td>
+          PermitOnlyProjectScopedClusters determines whether destinations can only reference clusters which are project-scoped<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecrolesindex">roles</a></b></td>
+        <td>[]object</td>
+        <td>
+          Roles are user defined RBAC roles associated with this project<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsignaturekeysindex">signatureKeys</a></b></td>
+        <td>[]object</td>
+        <td>
+          SignatureKeys contains a list of PGP key IDs that commits in Git must be signed with in order to be allowed for sync<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sourceNamespaces</b></td>
+        <td>[]string</td>
+        <td>
+          SourceNamespaces defines the namespaces application resources are allowed to be created in<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>sourceRepos</b></td>
+        <td>[]string</td>
+        <td>
+          SourceRepos contains list of repository URLs which can be used for deployment<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsyncwindowsindex">syncWindows</a></b></td>
+        <td>[]object</td>
+        <td>
+          SyncWindows controls when syncs can be run for apps in this project<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.clusterResourceBlacklist[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
+concepts during lookup stages without having partially valid types
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>group</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.clusterResourceWhitelist[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
+concepts during lookup stages without having partially valid types
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>group</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.destinationServiceAccounts[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+ApplicationDestinationServiceAccount holds information about the service account to be impersonated for the application sync operation.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>defaultServiceAccount</b></td>
+        <td>string</td>
+        <td>
+          DefaultServiceAccount to be used for impersonation during the sync operation<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>server</b></td>
+        <td>string</td>
+        <td>
+          Server specifies the URL of the target cluster's Kubernetes control plane API.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace specifies the target namespace for the application's resources.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.destinations[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+ApplicationDestination holds information about the application's destination
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is an alternate way of specifying the target cluster by its symbolic name. This must be set if Server is not set.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespace</b></td>
+        <td>string</td>
+        <td>
+          Namespace specifies the target namespace for the application's resources.
+The namespace will only be set for namespace-scoped resources that have not set a value for .metadata.namespace<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>server</b></td>
+        <td>string</td>
+        <td>
+          Server specifies the URL of the target cluster's Kubernetes control plane API. This must be set if Name is not set.<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.namespaceResourceBlacklist[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
+concepts during lookup stages without having partially valid types
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>group</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.namespaceResourceWhitelist[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
+concepts during lookup stages without having partially valid types
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>group</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.orphanedResources
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+OrphanedResources specifies if controller should monitor orphaned resources of apps in this project
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecorphanedresourcesignoreindex">ignore</a></b></td>
+        <td>[]object</td>
+        <td>
+          Ignore contains a list of resources that are to be excluded from orphaned resources monitoring<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>warn</b></td>
+        <td>boolean</td>
+        <td>
+          Warn indicates if warning condition should be created for apps which have orphaned resources<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.orphanedResources.ignore[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspecorphanedresources)</sup></sup>
+
+
+
+OrphanedResourceKey is a reference to a resource to be ignored from
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>group</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.roles[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+ProjectRole represents a role that has access to a project
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is a name for this role<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          Description is a description of the role<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>groups</b></td>
+        <td>[]string</td>
+        <td>
+          Groups are a list of OIDC group claims bound to this role<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecrolesindexjwttokensindex">jwtTokens</a></b></td>
+        <td>[]object</td>
+        <td>
+          JWTTokens are a list of generated JWT tokens bound to this role<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>policies</b></td>
+        <td>[]string</td>
+        <td>
+          Policies Stores a list of casbin formatted strings that define access policies for the role in the project<br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.roles[index].jwtTokens[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspecrolesindex)</sup></sup>
+
+
+
+JWTToken holds the issuedAt and expiresAt values of a token
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>iat</b></td>
+        <td>integer</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>exp</b></td>
+        <td>integer</td>
+        <td>
+          <br/>
+          <br/>
+            <i>Format</i>: int64<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>id</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>false</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.signatureKeys[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+SignatureKey is the specification of a key required to verify commit signatures with
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keyID</b></td>
+        <td>string</td>
+        <td>
+          The ID of the key in hexadecimal notation<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.syncWindows[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+SyncWindow contains the kind, time, duration and attributes that are used to assign the syncWindows to apps
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>applications</b></td>
+        <td>[]string</td>
+        <td>
+          Applications contains a list of applications that the window will apply to<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>clusters</b></td>
+        <td>[]string</td>
+        <td>
+          Clusters contains a list of clusters that the window will apply to<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>duration</b></td>
+        <td>string</td>
+        <td>
+          Duration is the amount of time the sync window will be open<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>kind</b></td>
+        <td>string</td>
+        <td>
+          Kind defines if the window allows or blocks syncs<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>manualSync</b></td>
+        <td>boolean</td>
+        <td>
+          ManualSync enables manual syncs when they would otherwise be blocked<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>namespaces</b></td>
+        <td>[]string</td>
+        <td>
+          Namespaces contains a list of namespaces that the window will apply to<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>schedule</b></td>
+        <td>string</td>
+        <td>
+          Schedule is the time the window will begin, specified in cron format<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>timeZone</b></td>
+        <td>string</td>
+        <td>
+          TimeZone of the sync that will be applied to the schedule<br/>
         </td>
         <td>false</td>
       </tr></tbody>

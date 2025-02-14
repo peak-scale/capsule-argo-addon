@@ -207,7 +207,7 @@ func main() {
 		Recorder: mgr.GetEventRecorderFor("translator-controller"),
 		Scheme:   mgr.GetScheme(),
 		Settings: store,
-	}).SetupWithManager(ctx, mgr); err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Translator")
 		os.Exit(1)
 	}

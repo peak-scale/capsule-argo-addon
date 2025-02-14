@@ -18,12 +18,22 @@ spec:
         clusterResourceWhitelist:
           - group: "*"
             kind: "*"
+        clusterResourceBlacklist:
+          - group: "*"
+            kind: "*"
+        destinations:
+          - name: "sad-server-2"
+            namespace: "*"
     template: |
-        sourceNamespaces:
-        - {{ $.Config.Argo.Namespace | quote }}
-        {{- range $_, $value := $.Tenant.Namespaces }}
-        - {{ $value | quote }}
-        {{- end }}
+        spec:
+          destinations:
+            - name: "sad-server"
+              namespace: "*"
+          sourceNamespaces:
+          - {{ $.Config.Argo.Namespace | quote }}
+          {{- range $_, $value := $.Tenant.Namespaces }}
+          - {{ $value | quote }}
+          {{- end }}
   roles:
   # This creates the baseline role. All users with the cluster-role "admin" will be able to access all repositories
   - name: "viewer"

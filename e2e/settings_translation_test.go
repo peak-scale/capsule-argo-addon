@@ -3,7 +3,6 @@ package e2e_test
 
 import (
 	"context"
-	"time"
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -100,9 +99,9 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 			},
-			ProjectSettings: v1alpha1.ArgocdProjectProperties{
-				Structured: v1alpha1.ArgocdProjectStructuredProperties{
-					ProjectMeta: v1alpha1.ArgocdProjectPropertieMeta{
+			ProjectSettings: &v1alpha1.ArgocdProjectProperties{
+				Structured: &v1alpha1.ArgocdProjectStructuredProperties{
+					ProjectMeta: &v1alpha1.ArgocdProjectPropertieMeta{
 						Labels: map[string]string{
 							"translator1": "label",
 							"structured":  "exclusive",
@@ -149,9 +148,9 @@ var _ = Describe("Translation Test", func() {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: suiteSelector,
 			},
-			ProjectSettings: v1alpha1.ArgocdProjectProperties{
-				Structured: v1alpha1.ArgocdProjectStructuredProperties{
-					ProjectMeta: v1alpha1.ArgocdProjectPropertieMeta{
+			ProjectSettings: &v1alpha1.ArgocdProjectProperties{
+				Structured: &v1alpha1.ArgocdProjectStructuredProperties{
+					ProjectMeta: &v1alpha1.ArgocdProjectPropertieMeta{
 						Labels: map[string]string{
 							"translator2": "label",
 							"structured":  "exclusive",
@@ -282,8 +281,8 @@ var _ = Describe("Translation Test", func() {
 
 			// Check for finalizers (assuming a finalizer example)
 			expectedFinalizers := []string{
-				"resources-finalizer.argocd.argoproj.io",
 				meta.TranslatorFinalizer(translator1.Name),
+				"resources-finalizer.argocd.argoproj.io",
 			}
 
 			// Compare finalizers
@@ -380,9 +379,9 @@ var _ = Describe("Translation Test", func() {
 
 			// Check for finalizers (assuming a finalizer example)
 			expectedFinalizers2 := []string{
-				"resources-finalizer.argocd.argoproj.io",
 				meta.TranslatorFinalizer(translator1.Name),
 				meta.TranslatorFinalizer(translator2.Name),
+				"resources-finalizer.argocd.argoproj.io",
 			}
 
 			// Compare finalizers
@@ -659,7 +658,6 @@ var _ = Describe("Translation Test", func() {
 
 		By("verify translated approject (subtract old secondary)", func() {
 			approject := &argocdv1alpha1.AppProject{}
-			time.Sleep(10000 * time.Millisecond)
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: meta.TenantProjectName(solar), Namespace: argoaddon.Spec.Argo.Namespace}, approject)).To(Succeed())
 
 			// Expected Translation
@@ -882,8 +880,8 @@ var _ = Describe("Translation Test", func() {
 
 			// Check for finalizers (assuming a finalizer example)
 			expectedFinalizers := []string{
-				"resources-finalizer.argocd.argoproj.io",
 				meta.TranslatorFinalizer(translator1.Name),
+				"resources-finalizer.argocd.argoproj.io",
 			}
 
 			// Compare finalizers
@@ -999,8 +997,8 @@ var _ = Describe("Translation Test", func() {
 
 			// Check for finalizers (assuming a finalizer example)
 			expectedFinalizers := []string{
-				"resources-finalizer.argocd.argoproj.io",
 				meta.TranslatorFinalizer(translator1.Name),
+				"resources-finalizer.argocd.argoproj.io",
 			}
 
 			// Compare finalizers

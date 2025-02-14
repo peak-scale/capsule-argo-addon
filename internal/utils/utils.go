@@ -11,6 +11,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Get Config for ArgoTranslator
+
 // Check slice if it contains a string.
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {

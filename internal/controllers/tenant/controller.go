@@ -247,6 +247,7 @@ func (i *TenancyController) reconcile(
 						Name:      tenant.Name,
 						UID:       tenant.UID,
 						Condition: condition,
+						Serving:   selected.Spec.ProjectSettings,
 					})
 				}
 
@@ -258,7 +259,7 @@ func (i *TenancyController) reconcile(
 
 			return
 		}); err != nil {
-			log.Info("failed to update translator statius")
+			log.Error(err, "failed to update translator status")
 
 			return translators, err
 		}
@@ -290,9 +291,6 @@ func (i *TenancyController) reconcile(
 	}
 
 	// Finally return if reconciliation had an error.
-	if reconcileErr != nil {
-		return translators, reconcileErr
-	}
 
 	// Return on success
 	return translators, nil

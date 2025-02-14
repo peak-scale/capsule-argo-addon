@@ -12,23 +12,40 @@ func Subtract(target, source interface{}) {
 
 //nolint:exhaustive
 func subtractRecursive(targetVal, sourceVal reflect.Value) {
+	// If the value is a pointer, and both are non-nil, then dereference and continue.
+	if targetVal.Kind() == reflect.Ptr && sourceVal.Kind() == reflect.Ptr {
+		if !targetVal.IsNil() && !sourceVal.IsNil() {
+			subtractRecursive(targetVal.Elem(), sourceVal.Elem())
+		}
+
+		return
+	}
+
 	for i := range targetVal.NumField() {
 		targetField := targetVal.Field(i)
 		sourceField := sourceVal.Field(i)
 
-		// Handle different types
+		// If the field is a pointer, handle it specially.
+		if targetField.Kind() == reflect.Ptr {
+			if !targetField.IsNil() && !sourceField.IsNil() {
+				subtractRecursive(targetField.Elem(), sourceField.Elem())
+			}
+
+			continue
+		}
+
 		switch targetField.Kind() {
 		case reflect.Struct:
-			// Recurse for nested structs
+			// Recurse for nested structs.
 			subtractRecursive(targetField, sourceField)
 		case reflect.Slice:
-			// Handle slices
+			// Handle slices.
 			subtractSlices(targetField, sourceField)
 		case reflect.Map:
-			// Handle maps
+			// Handle maps.
 			subtractMaps(targetField, sourceField)
 		default:
-			// Handle primitive types
+			// For primitive types, if they are equal, zero out the target field.
 			if reflect.DeepEqual(targetField.Interface(), sourceField.Interface()) {
 				targetField.Set(reflect.Zero(targetField.Type()))
 			}

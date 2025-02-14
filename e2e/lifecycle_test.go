@@ -64,8 +64,8 @@ var _ = Describe("lifecycle Appproject", func() {
 					Owner: true,
 				},
 			},
-			ProjectSettings: v1alpha1.ArgocdProjectProperties{
-				Structured: v1alpha1.ArgocdProjectStructuredProperties{
+			ProjectSettings: &v1alpha1.ArgocdProjectProperties{
+				Structured: &v1alpha1.ArgocdProjectStructuredProperties{
 					ProjectSpec: argocdv1alpha1.AppProjectSpec{
 						PermitOnlyProjectScopedClusters: true,
 						Destinations: []argocdv1alpha1.ApplicationDestination{

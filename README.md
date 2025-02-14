@@ -1,10 +1,22 @@
-[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=shield&issueType=license)](https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_shield&issueType=license)
-[![codecov](https://codecov.io/gh/peak-scale/capsule-argo-addon/graph/badge.svg?token=26QLMNSN54)](https://codecov.io/gh/peak-scale/capsule-argo-addon)
-
 # Capsule ❤️ Argo
 
 ![Argo Capsule Addon](docs/images/capsule-argo.png)
+
+<p align="center">
+<a href="https://github.com/peak-scale/capsule-argo-addon/releases/latest">
+  <img alt="GitHub release (latest SemVer)" src="https://img.shields.io/github/v/release/peak-scale/capsule-argo-addon?sort=semver">
+</a>
+<a href="https://artifacthub.io/packages/search?repo=capsule-argo-addon">
+  <img src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon" alt="Artifact Hub">
+</a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_shield&issueType=license">
+  <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=shield&issueType=license" alt="FOSSA Status">
+</a>
+<a href="https://codecov.io/gh/peak-scale/capsule-argo-addon">
+  <img src="https://codecov.io/gh/peak-scale/capsule-argo-addon/graph/badge.svg?token=26QLMNSN54" alt="codecov">
+</a>
+</p>
+
 
 This addon is designed for kubernetes administrators, to automatically translate their existing Capsule Tenants into Argo Appprojects. This addon adds new capabilities to the Capsule project, by allowing the administrator to create a new tenant in Capsule, and automatically create a new Argo Appproject for that tenant. This addon is designed to be used in conjunction with the Capsule project, and is not intended to be used as a standalone project.
 
