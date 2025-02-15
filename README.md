@@ -24,7 +24,7 @@ See the [Documentation](docs/README.md) for more information on how to use this 
 
 Spin up a live demonstration of the addon on Killercoda:
 
-- [https://killercoda.com/peak-scale/course/solutions/multi-tenant-argo](https://killercoda.com/peak-scale/course/solutions/multi-tenant-argo)
+- [https://killercoda.com/peakscale/course/solutions/multi-tenant-argo](https://killercoda.com/peakscale/course/solutions/multi-tenant-argo)
 
 ## Support
 
