@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	corev1 "k8s.io/api/core/v1"
@@ -22,12 +21,11 @@ import (
 )
 
 // Creates or updates the ArgoCD Cluster for the tenant (Tenant ServiceAccount, Cluster Secret).
-func (i *TenancyController) reconcileArgoCluster(
+func (i *Reconciler) reconcileArgoCluster(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
 	token string,
-	translators []*v1alpha1.ArgoTranslator,
 ) (
 	err error,
 ) {
@@ -48,76 +46,20 @@ func (i *TenancyController) reconcileArgoCluster(
 
 	log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
 
-	// Decouple Object
-	//nolint:nestif
-	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
-			_, err := controllerutil.CreateOrPatch(
-				ctx,
-				i.Client,
-				serverSecret,
-				func() error {
-					log.V(5).Info("decoupling server secret", "secret", serverSecret.Name)
-
-					if err := i.DecoupleTenant(serverSecret, tenant); err != nil {
-						return err
-					}
-
-					return i.DecoupleTenant(serverSecret, tenant)
-				})
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}
+	// Remove Cluster-Secret if not enabled. Token is deleted cascading via OwnerReference
+	if !i.Settings.Get().RegisterCluster(tenant) || token == "" {
+		return i.lifecycleArgoCluster(ctx, tenant)
 	}
 
-	// Remove when umatched
-	if len(translators) == 0 {
-		// Approject is already absent
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-
-		log.V(7).Info("reconciling cluster", "secret", tenant.Name, "namespace", i.Settings.Get().Argo.Namespace)
-
-		// Delete the AppProject when it's not decoupled
-		if !i.Settings.Get().DecoupleTenant(tenant) {
-			return i.Client.Delete(ctx, serverSecret)
-		}
-
-		log.V(5).Info(
-			"decoupling serviceaccount",
-			"secret", tenant.Name,
-			"namespace", i.Settings.Get().Argo.Namespace,
-		)
-
-		if err := i.DecoupleTenant(serverSecret, tenant); err != nil {
-			return err
-		}
-	}
-
-	// Handle Force, if an object already exists with the same name
 	if !meta.HasTenantOwnerReference(serverSecret, tenant) {
 		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info(
-				"cluster secret already present, not overriding",
-				"secret", tenant.Name,
-				"namespace", i.Settings.Get().Argo.Namespace)
+				"proxy already present, not overriding",
+				"serviceaccount", serverSecret.Name,
+				"namespace", serverSecret.Namespace)
 
 			return ccaerrrors.NewObjectAlreadyExistsError(serverSecret)
 		}
-	}
-
-	// Remove Cluster-Secret if not enabled. Token is deleted cascading via OwnerReference
-	if !i.Settings.Get().RegisterCluster(tenant) || token == "" {
-		err := i.Client.Delete(ctx, serverSecret)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return fmt.Errorf("failed to lifecycle destination: %w", err)
-		}
-
-		return nil
 	}
 
 	// Dynamic
@@ -155,4 +97,41 @@ func (i *TenancyController) reconcileArgoCluster(
 	log.Info("Argo Server created", "name", tenant.Name)
 
 	return nil
+}
+
+// Remove/Decouple Cluster Secret...
+func (i *Reconciler) lifecycleArgoCluster(
+	ctx context.Context,
+	tenant *capsulev1beta2.Tenant,
+) (
+	err error,
+) {
+	// Initialize Secret
+	serverSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenant.Name,
+			Namespace: i.Settings.Get().Argo.Namespace,
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
+
+	err = i.Client.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+
+	// Delete the AppProject when it's not decoupled
+	if !i.Settings.Get().DecoupleTenant(tenant) {
+		return i.Client.Delete(ctx, serverSecret)
+	}
+
+	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, serverSecret, func() (err error) {
+		return i.DecoupleTenant(serverSecret, tenant)
+	})
+
+	return
 }

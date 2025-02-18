@@ -12,12 +12,20 @@ func Subtract(target, source interface{}) {
 
 //nolint:exhaustive
 func subtractRecursive(targetVal, sourceVal reflect.Value) {
-	// If the value is a pointer, and both are non-nil, then dereference and continue.
-	if targetVal.Kind() == reflect.Ptr && sourceVal.Kind() == reflect.Ptr {
-		if !targetVal.IsNil() && !sourceVal.IsNil() {
-			subtractRecursive(targetVal.Elem(), sourceVal.Elem())
+	// If either is a pointer, ensure both are pointers before recursing.
+	if targetVal.Kind() == reflect.Ptr || sourceVal.Kind() == reflect.Ptr {
+		// Only proceed if both are pointers.
+		if targetVal.Kind() == reflect.Ptr && sourceVal.Kind() == reflect.Ptr {
+			if !targetVal.IsNil() && !sourceVal.IsNil() {
+				subtractRecursive(targetVal.Elem(), sourceVal.Elem())
+			}
 		}
 
+		return
+	}
+
+	// Make sure we are working with structs.
+	if targetVal.Kind() != reflect.Struct || sourceVal.Kind() != reflect.Struct {
 		return
 	}
 
@@ -25,8 +33,14 @@ func subtractRecursive(targetVal, sourceVal reflect.Value) {
 		targetField := targetVal.Field(i)
 		sourceField := sourceVal.Field(i)
 
-		// If the field is a pointer, handle it specially.
+		// Handle pointer fields.
 		if targetField.Kind() == reflect.Ptr {
+			// Ensure that the source field is also a pointer.
+			if sourceField.Kind() != reflect.Ptr {
+				// If types are mismatched, you might choose to skip or handle differently.
+				continue
+			}
+
 			if !targetField.IsNil() && !sourceField.IsNil() {
 				subtractRecursive(targetField.Elem(), sourceField.Elem())
 			}
@@ -36,16 +50,13 @@ func subtractRecursive(targetVal, sourceVal reflect.Value) {
 
 		switch targetField.Kind() {
 		case reflect.Struct:
-			// Recurse for nested structs.
 			subtractRecursive(targetField, sourceField)
 		case reflect.Slice:
-			// Handle slices.
 			subtractSlices(targetField, sourceField)
 		case reflect.Map:
-			// Handle maps.
 			subtractMaps(targetField, sourceField)
 		default:
-			// For primitive types, if they are equal, zero out the target field.
+			// For primitives, if they are equal, zero out the target.
 			if reflect.DeepEqual(targetField.Interface(), sourceField.Interface()) {
 				targetField.Set(reflect.Zero(targetField.Type()))
 			}

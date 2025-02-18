@@ -8,7 +8,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	corev1 "k8s.io/api/core/v1"
@@ -23,11 +22,10 @@ import (
 )
 
 // Creates Teanant Service Account with the given name and namespace.
-func (i *TenancyController) reconcileArgoServiceAccount(
+func (i *Reconciler) reconcileArgoServiceAccount(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
-	translators []*v1alpha1.ArgoTranslator,
 ) (token string, err error) {
 	// Get Required default values
 	serviceAccount := tenant.Name
@@ -52,29 +50,6 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 		return "", err
 	}
 
-	// Decouple Object
-	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		if i.Settings.Get().DecoupleTenant(tenant) && !k8serrors.IsNotFound(err) {
-			_, err := controllerutil.CreateOrPatch(
-				ctx,
-				i.Client,
-				accountResource,
-				func() error {
-					log.V(5).Info(
-						"decoupling serviceaccount",
-						"serviceaccount", accountResource.Name,
-						"namespace", accountResource.Namespace)
-
-					return i.DecoupleTenant(accountResource, tenant)
-				})
-			if err != nil {
-				return "", err
-			}
-
-			return "", nil
-		}
-	}
-
 	if !meta.HasTenantOwnerReference(accountResource, tenant) {
 		if !i.Settings.Get().ForceTenant(tenant) && !k8serrors.IsNotFound(err) {
 			log.V(5).Info(
@@ -84,38 +59,6 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 
 			return "", ccaerrrors.NewObjectAlreadyExistsError(accountResource)
 		}
-	}
-
-	// Remove when umatched
-	//nolint:nestif
-	if len(translators) == 0 {
-		if k8serrors.IsNotFound(err) {
-			return "", nil
-		}
-
-		// Remove Serviceaccount from Tenant
-		if err := i.removeServiceAccountOwner(ctx, log, tenant, accountResource.Namespace, accountResource.Name); err != nil {
-			log.Error(err, "failed to remove serviceaccount")
-
-			return "", err
-		}
-
-		if !i.Settings.Get().DecoupleTenant(tenant) {
-			if err := i.Client.Delete(ctx, accountResource); err != nil {
-				return "", err
-			}
-
-			return "", nil
-		}
-
-		log.V(5).Info(
-			"decoupling serviceaccount",
-			"serviceaccount", accountResource.Name,
-			"namespace", accountResource.Namespace)
-
-		err = i.DecoupleTenant(accountResource, tenant)
-
-		return "", err
 	}
 
 	log.V(7).Info("ensuring serviceaccount", "serviceaccount", serviceAccount, "namespace", namespace)
@@ -214,8 +157,49 @@ func (i *TenancyController) reconcileArgoServiceAccount(
 	return token, nil
 }
 
+func (i *Reconciler) lifecycleArgoServiceAccount(
+	ctx context.Context,
+	tenant *capsulev1beta2.Tenant,
+) (err error) {
+	// Get Required default values
+	serviceAccount := tenant.Name
+	namespace := i.Settings.Get().ServiceAccountNamespace(tenant)
+
+	accountResource := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceAccount,
+			Namespace: namespace,
+		},
+	}
+
+	gerr := i.Client.Get(ctx, client.ObjectKey{Name: accountResource.Name, Namespace: accountResource.Namespace}, accountResource)
+	if gerr != nil && !k8serrors.IsNotFound(gerr) {
+		return gerr
+	}
+
+	if !meta.HasTenantOwnerReference(accountResource, tenant) {
+		return nil
+	}
+
+	// Delete the AppProject when it's not decoupled
+	if !i.Settings.Get().DecoupleTenant(tenant) {
+		// Remove ServiceAccount from tenant
+		if err := i.removeServiceAccountOwner(ctx, tenant, accountResource.Namespace, accountResource.Name); err != nil {
+			return err
+		}
+
+		return i.Client.Delete(ctx, accountResource)
+	}
+
+	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, accountResource, func() (err error) {
+		return i.DecoupleTenant(accountResource, tenant)
+	})
+
+	return
+}
+
 // Adds the given service account as an owner to the tenant.
-func (i *TenancyController) addServiceAccountOwner(
+func (i *Reconciler) addServiceAccountOwner(
 	ctx context.Context,
 	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
@@ -253,9 +237,8 @@ func (i *TenancyController) addServiceAccountOwner(
 }
 
 // Removes a ServiceAccount from the ownerspec of a tenant.
-func (i *TenancyController) removeServiceAccountOwner(
+func (i *Reconciler) removeServiceAccountOwner(
 	ctx context.Context,
-	log logr.Logger,
 	tenant *capsulev1beta2.Tenant,
 	namespace string,
 	name string,
@@ -272,8 +255,6 @@ func (i *TenancyController) removeServiceAccountOwner(
 		if o.Kind == owner.Kind && o.Name == owner.Name {
 			present = true
 
-			log.V(5).Info("serviceaccount still owner")
-
 			break
 		}
 	}
@@ -287,9 +268,6 @@ func (i *TenancyController) removeServiceAccountOwner(
 		if err := i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant); err != nil {
 			return err
 		}
-
-		// Filter out the ServiceAccount owner
-		log.V(5).Info("removing serviceaccount as owner if it exists")
 
 		owners := capsulev1beta2.OwnerListSpec{}
 

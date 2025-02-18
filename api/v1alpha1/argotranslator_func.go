@@ -13,6 +13,9 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
@@ -103,6 +106,27 @@ func (t *ArgocdProjectProperties) RenderTemplate(
 	return
 }
 
+// Function to verify if an object matches the translator.
+func (in *ArgoTranslator) MatchesObject(obj client.Object) (match bool) {
+	match = false
+
+	// Skip translators that are being deleted
+	if !in.ObjectMeta.DeletionTimestamp.IsZero() {
+		return
+	}
+
+	if in.Spec.Selector == nil {
+		return
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(in.Spec.Selector)
+	if err != nil {
+		return
+	}
+
+	return selector.Matches(labels.Set(obj.GetLabels()))
+}
+
 // Assign Tenants to the ArgoTranslator.
 func (in *ArgoTranslator) GetTenants() []TenantStatus {
 	return in.Status.Tenants
@@ -121,6 +145,18 @@ func (in *ArgoTranslator) GetTenantNames() (tnts []string) {
 func (in *ArgoTranslator) CollectStatus() {
 	in.updateTenantSize()
 	in.updateReadyStatus()
+}
+
+// Assign Tenants to the ArgoTranslator.
+func (in *ArgoTranslator) SyncFinalizerStatus() {
+	size := uint(len(in.Status.Tenants))
+
+	// Keep or remove Finalizer based on status inventory
+	if size > 0 {
+		controllerutil.AddFinalizer(in, meta.ControllerFinalizer)
+	} else {
+		controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
+	}
 }
 
 // Assign Tenants to the ArgoTranslator.

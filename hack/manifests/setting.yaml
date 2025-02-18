@@ -13,6 +13,9 @@ spec:
           - prod
   settings:
     structured:
+      #meta:
+      #  labels:
+      #    extra: "sad"
       spec:
         permitOnlyProjectScopedClusters: false
         clusterResourceWhitelist:

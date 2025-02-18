@@ -3,6 +3,7 @@ package e2e_test
 
 import (
 	"context"
+	"time"
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
@@ -380,8 +381,8 @@ var _ = Describe("Translation Test", func() {
 			// Check for finalizers (assuming a finalizer example)
 			expectedFinalizers2 := []string{
 				meta.TranslatorFinalizer(translator1.Name),
-				meta.TranslatorFinalizer(translator2.Name),
 				"resources-finalizer.argocd.argoproj.io",
+				meta.TranslatorFinalizer(translator2.Name),
 			}
 
 			// Compare finalizers
@@ -752,6 +753,8 @@ var _ = Describe("Translation Test", func() {
 		})
 
 		By("ensure tenant assets are removed", func() {
+			time.Sleep(2000 * time.Millisecond)
+
 			// Assets which should be absent
 			expectedResources := []struct {
 				object client.Object

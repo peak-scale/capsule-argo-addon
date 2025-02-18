@@ -8,6 +8,8 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/prometheus/client_golang/prometheus"
 	crtlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 type Recorder struct {
@@ -61,9 +63,28 @@ func (r *Recorder) RecordTranslatorCondition(translator *configv1alpha1.ArgoTran
 	}
 }
 
-// DeleteCondition deletes the condition metrics for the ref.
-func (r *Recorder) DeleteTranslatorCondition(translator *configv1alpha1.ArgoTranslator) {
+// RecordCondition records the condition as given for the ref.
+func (r *Recorder) RecordTenantCondition(tenant *capsulev1beta2.Tenant, condition string) {
 	for _, status := range []string{meta.ReadyCondition, meta.NotReadyCondition} {
-		r.translatorConditionGauge.DeleteLabelValues(translator.Name, status)
+		var value float64
+		if status == condition {
+			value = 1
+		}
+
+		r.tenantConditionGauge.WithLabelValues(tenant.Name, status).Set(value)
+	}
+}
+
+// DeleteCondition deletes the condition metrics for the ref.
+func (r *Recorder) DeleteTenantCondition(tenantName string) {
+	for _, status := range []string{meta.ReadyCondition, meta.NotReadyCondition} {
+		r.tenantConditionGauge.DeleteLabelValues(tenantName, status)
+	}
+}
+
+// DeleteCondition deletes the condition metrics for the ref.
+func (r *Recorder) DeleteTranslatorCondition(translatorName string) {
+	for _, status := range []string{meta.ReadyCondition, meta.NotReadyCondition} {
+		r.translatorConditionGauge.DeleteLabelValues(translatorName, status)
 	}
 }

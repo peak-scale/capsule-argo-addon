@@ -99,7 +99,7 @@ ArgoAddonSpec defines the desired state of ArgoAddon.
           When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
 This can also be set on a per-tenant basis via annotations.<br/>
           <br/>
-            <i>Default</i>: false<br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>true</td>
       </tr><tr>
@@ -252,7 +252,7 @@ Last applied valid configuration
           When decouple is enabled, appprojects are preserved even in the case when the origin tenant is deleted.
 This can also be set on a per-tenant basis via annotations.<br/>
           <br/>
-            <i>Default</i>: false<br/>
+            <i>Default</i>: true<br/>
         </td>
         <td>true</td>
       </tr><tr>

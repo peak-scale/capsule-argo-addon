@@ -34,7 +34,7 @@ endif
 
 .PHONY: golint
 golint: golangci-lint
-	$(GOLANGCI_LINT) run -c .golangci.yml --fix
+	$(GOLANGCI_LINT) run -c .golangci.yml
 
 all: manager
 

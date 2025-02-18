@@ -213,7 +213,7 @@ monitoring:
           expr: cca_translator_condition{status="NotReady"} == 1
           for: 5m
           labels:
-            severity: critical
+            severity: warning
           annotations:
             summary: "Translator {{ $labels.name }} is not ready"
             description: "The Translator {{ $labels.name }} has been in a NotReady state for over 5 minutes."

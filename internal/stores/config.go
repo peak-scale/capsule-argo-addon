@@ -34,12 +34,7 @@ func (s *ConfigStore) Update(config *addonsv1alpha1.ArgoAddonSpec) {
 	defer s.Unlock()
 	s.config = config
 
-	// Notify that config has been updated
-	select {
-	case s.notify <- struct{}{}:
-	default:
-		// If a message is already in the channel, do nothing to prevent blocking
-	}
+	s.notify <- struct{}{}
 }
 
 func (s *ConfigStore) NotifyChannel() <-chan struct{} {
