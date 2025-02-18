@@ -33,11 +33,6 @@ type ReconcilerConfig struct {
 	SettingName string
 }
 
-//nolint:lll
-//+kubebuilder:rbac:groups=config.projectcapsule.dev,resources=argocdaddons,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=config.projectcapsule.dev,resources=argocdaddons/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=config.projectcapsule.dev,resources=argocdaddons/finalizers,verbs=update
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).

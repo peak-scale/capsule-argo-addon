@@ -41,6 +41,7 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+//nolint:wsl
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(capsulev1beta2.AddToScheme(scheme))
@@ -84,7 +85,6 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "fefb3d10.projectcapsule.dev",
-		PprofBindAddress:       ":8082",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -186,7 +186,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&tenant.TenancyController{
+	if err = (&tenant.Reconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Tenant"),
 		Recorder: mgr.GetEventRecorderFor("tenant-controller"),
@@ -201,13 +201,14 @@ func main() {
 
 	setupLog.Info("tenant-controller initialized")
 
-	if err = (&translator.Controller{
+	if err = (&translator.Reconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Translator"),
 		Recorder: mgr.GetEventRecorderFor("translator-controller"),
 		Scheme:   mgr.GetScheme(),
+		Metrics:  metricsRecorder,
 		Settings: store,
-	}).SetupWithManager(ctx, mgr); err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Translator")
 		os.Exit(1)
 	}

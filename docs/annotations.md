@@ -16,9 +16,9 @@ By default the service account used for the capsule proxy is created in the same
 
 > This is only relevant if the proxy or registration is enabled
 
-## `argo.addons.projectcapsule.dev/register-proxy`
+## `argo.addons.projectcapsule.dev/register-dest`
 
-By default, if the proxy integration is enabled, for each tenant a dedicated argo cluster is registered, which uses a dedicated service account via the capsule-proxy. If you want to disable the registration of the proxy, you can set the `argo.addons.projectcapsule.dev/register-proxy` annotation to `false`.
+By default no new destination is registered in Argo, when setting this annotation to `true` a new destination is registered in the project with the provided destination url from the ArgoConfig.
 
 ## `argo.addons.projectcapsule.dev/read-only`
 

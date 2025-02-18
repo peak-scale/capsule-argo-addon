@@ -18,7 +18,7 @@ func AddDynamicTenantOwnerReference(
 	tenant *capsulev1beta2.Tenant,
 	decouple bool,
 ) (err error) {
-	err = controllerutil.SetControllerReference(tenant, obj, schema)
+	err = controllerutil.SetOwnerReference(tenant, obj, schema)
 	if err != nil {
 		return err
 	}

@@ -184,6 +184,7 @@ What's important
 - Multiple translators having project settings are merged together
 - By default Users with `Owner` privileges can edit appproject settings. They are merged with all the translator specifications.
 - If multiple translator match, Non-Slice fields are overwritten, there's not yet a concrete priority implemented.
+- Structured overwrites/merges over templated
 
 #### Structured
 

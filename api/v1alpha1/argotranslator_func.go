@@ -13,6 +13,9 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
@@ -21,11 +24,12 @@ import (
 func (t *ArgocdProjectProperties) GetConfig(
 	data interface{},
 	funcmap template.FuncMap,
-) (props ArgocdProjectStructuredProperties, err error) {
-	props = ArgocdProjectStructuredProperties{}
-	if t != nil {
-		props = t.Structured
+) (props *ArgocdProjectStructuredProperties, err error) {
+	if t == nil {
+		return
 	}
+
+	props = t.Structured
 
 	// Get Templated config
 	templated, err := t.RenderTemplate(data, funcmap)
@@ -34,7 +38,7 @@ func (t *ArgocdProjectProperties) GetConfig(
 	}
 
 	// Use mergo.Merge to merge prop2 into merged (prop1), with overwrite enabled
-	err = mergo.Merge(&props, templated, mergo.WithAppendSlice)
+	err = mergo.Merge(props, templated, mergo.WithAppendSlice)
 
 	return
 }
@@ -43,7 +47,7 @@ func (t *ArgocdProjectProperties) GetConfig(
 func (t *ArgocdProjectProperties) GetConfigs(
 	data interface{},
 	funcmap template.FuncMap,
-) (structured ArgocdProjectStructuredProperties, templated ArgocdProjectStructuredProperties, err error) {
+) (structured *ArgocdProjectStructuredProperties, templated *ArgocdProjectStructuredProperties, err error) {
 	structured = t.Structured
 
 	// Get Templated config
@@ -59,34 +63,68 @@ func (t *ArgocdProjectProperties) GetConfigs(
 func (t *ArgocdProjectProperties) RenderTemplate(
 	data interface{},
 	funcmap template.FuncMap,
-) (ArgocdProjectStructuredProperties, error) {
-	var structuredProperties ArgocdProjectStructuredProperties
+) (props *ArgocdProjectStructuredProperties, err error) {
+	props = &ArgocdProjectStructuredProperties{}
+
+	if t == nil {
+		return
+	}
+
 	// Parse and execute the template using sprig functions
 	tmpl, err := template.New("argoTemplate").Funcs(funcmap).Parse(t.Template)
 	if err != nil {
-		return structuredProperties, fmt.Errorf("error parsing template: %w", err)
+		err = fmt.Errorf("error parsing template: %w", err)
+
+		return
 	}
 
 	var rendered bytes.Buffer
 
 	err = tmpl.Execute(&rendered, data)
 	if err != nil {
-		return structuredProperties, fmt.Errorf("error executing template: %w", err)
+		err = fmt.Errorf("error executing template: %w", err)
+
+		return
 	}
 
 	yamlBytes := rendered.Bytes()
 
 	jsonBytes, err := utils.YamlToJSON(yamlBytes)
 	if err != nil {
-		return structuredProperties, fmt.Errorf("error converting yaml to json: %w", err)
+		err = fmt.Errorf("error converting yaml to json: %w", err)
+
+		return
 	}
 
-	err = json.Unmarshal(jsonBytes, &structuredProperties)
+	err = json.Unmarshal(jsonBytes, props)
 	if err != nil {
-		return structuredProperties, fmt.Errorf("error unmarshaling json: %w", err)
+		err = fmt.Errorf("error unmarshaling json: %w", err)
+
+		return
 	}
 
-	return structuredProperties, nil
+	return
+}
+
+// Function to verify if an object matches the translator.
+func (in *ArgoTranslator) MatchesObject(obj client.Object) (match bool) {
+	match = false
+
+	// Skip translators that are being deleted
+	if !in.ObjectMeta.DeletionTimestamp.IsZero() {
+		return
+	}
+
+	if in.Spec.Selector == nil {
+		return
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(in.Spec.Selector)
+	if err != nil {
+		return
+	}
+
+	return selector.Matches(labels.Set(obj.GetLabels()))
 }
 
 // Assign Tenants to the ArgoTranslator.
@@ -110,6 +148,18 @@ func (in *ArgoTranslator) CollectStatus() {
 }
 
 // Assign Tenants to the ArgoTranslator.
+func (in *ArgoTranslator) SyncFinalizerStatus() {
+	size := uint(len(in.Status.Tenants))
+
+	// Keep or remove Finalizer based on status inventory
+	if size > 0 {
+		controllerutil.AddFinalizer(in, meta.ControllerFinalizer)
+	} else {
+		controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
+	}
+}
+
+// Assign Tenants to the ArgoTranslator.
 func (in *ArgoTranslator) updateTenantSize() {
 	in.Status.Size = uint(len(in.Status.Tenants))
 }
@@ -130,7 +180,7 @@ func (in *ArgoTranslator) UpdateTenantCondition(tnt TenantStatus) {
 	// Check if the tenant is already present in the status
 	for i, existingTenant := range in.Status.Tenants {
 		if existingTenant.Name == tnt.Name {
-			in.Status.Tenants[i].Condition = tnt.Condition
+			in.Status.Tenants[i] = tnt
 			in.CollectStatus()
 
 			return
@@ -140,6 +190,17 @@ func (in *ArgoTranslator) UpdateTenantCondition(tnt TenantStatus) {
 	// If tenant not found, append it to the list
 	in.Status.Tenants = append(in.Status.Tenants, tnt)
 	in.CollectStatus()
+}
+
+// Get Status for a tenant, if no status is present (tenant absent) returns nil.
+func (in *ArgoTranslator) GetTenantStatus(tnt *capsulev1beta2.Tenant) *TenantStatus {
+	for _, tenant := range in.Status.Tenants {
+		if tenant.Name == tnt.Name && tenant.UID == tnt.UID {
+			return &tenant
+		}
+	}
+
+	return nil
 }
 
 // Get Condition for a tenant, if no condition is present (tenant absent) returns nil.

@@ -14,16 +14,13 @@ type ArgoTranslatorSpec struct {
 	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 
 	// Application-Project Roles for the tenant
-	//+kubebuilder:optional
 	ProjectRoles []ArgocdProjectRolesTranslator `json:"roles,omitempty"`
 
 	// Additional settings for the argocd project
-	//+kubebuilder:optional
-	ProjectSettings ArgocdProjectProperties `json:"settings,omitempty"`
+	ProjectSettings *ArgocdProjectProperties `json:"settings,omitempty"`
 
 	// In this field you can define custom policies. It must result in a valid argocd policy format (CSV)
 	// You can use Sprig Templating with this field
-	//+kubebuilder:optional
 	CustomPolicy string `json:"customPolicy,omitempty"`
 }
 
@@ -47,21 +44,15 @@ type ArgocdProjectRolesTranslator struct {
 
 type ArgocdProjectProperties struct {
 	// Structured Properties for the argocd project
-	//+kubebuilder:optional
-	Structured ArgocdProjectStructuredProperties `json:"structured,omitempty"`
-
+	Structured *ArgocdProjectStructuredProperties `json:"structured,omitempty"`
 	// Use a template to generate to argo project settings
-	//+kubebuilder:optional
 	Template string `json:"template,omitempty"`
 }
 
 type ArgocdProjectStructuredProperties struct {
 	// Project Metadata
-	//+kubebuilder:optional
-	ProjectMeta ArgocdProjectPropertieMeta `json:"meta,omitempty"`
-
+	ProjectMeta *ArgocdProjectPropertieMeta `json:"meta,omitempty"`
 	// Application Project Spec (Upstream ArgoCD)
-	//+kubebuilder:optional
 	ProjectSpec argocdv1alpha1.AppProjectSpec `json:"spec,omitempty"`
 }
 

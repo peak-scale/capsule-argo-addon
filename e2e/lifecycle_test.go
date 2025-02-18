@@ -64,8 +64,8 @@ var _ = Describe("lifecycle Appproject", func() {
 					Owner: true,
 				},
 			},
-			ProjectSettings: v1alpha1.ArgocdProjectProperties{
-				Structured: v1alpha1.ArgocdProjectStructuredProperties{
+			ProjectSettings: &v1alpha1.ArgocdProjectProperties{
+				Structured: &v1alpha1.ArgocdProjectStructuredProperties{
 					ProjectSpec: argocdv1alpha1.AppProjectSpec{
 						PermitOnlyProjectScopedClusters: true,
 						Destinations: []argocdv1alpha1.ApplicationDestination{
@@ -389,6 +389,14 @@ var _ = Describe("lifecycle Appproject", func() {
 				},
 			}
 			Expect(k8sClient.Create(context.Background(), appproject)).To(Succeed())
+
+			serviceaccount := &corev1.ServiceAccount{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      solar.Name,
+					Namespace: argoaddon.Spec.Argo.ServiceAccountNamespace,
+				},
+			}
+			Expect(k8sClient.Create(context.Background(), serviceaccount)).To(Succeed())
 		})
 
 		By("create tenant solar", func() {

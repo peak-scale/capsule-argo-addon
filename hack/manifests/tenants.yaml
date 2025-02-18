@@ -4,11 +4,9 @@ kind: Tenant
 metadata:
   name: solar
   labels:
-    app.kubernetes.io/type: test
-    hello: "there"
-    nyan: "dann"
+    app.kubernetes.io/type: dev
   annotations:
-    argo.addons.projectcapsule.dev/read-only: "false"
+    argo.addons.projectcapsule.dev/read-only: "true"
     argo.addons.projectcapsule.dev/decouple: "false"
 spec:
   owners:

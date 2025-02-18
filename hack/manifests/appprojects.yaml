@@ -1,11 +1,15 @@
----
-apiVersion: capsule.clastix.io/v1beta2
-kind: Tenant
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
 metadata:
   name: solar
+  namespace: argocd
 spec:
-  owners:
-  - name: solar-users
-    kind: Group
-  - name: alice
-    kind: User
+  clusterResourceBlacklist:
+  - group: '*'
+    kind: '*'
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  sourceNamespaces:
+  - argocd
+  - custom-namespace

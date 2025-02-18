@@ -5,25 +5,21 @@ package tenant
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
-	"github.com/peak-scale/capsule-argo-addon/internal/argo"
-	ccaerrrors "github.com/peak-scale/capsule-argo-addon/internal/errors"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -35,9 +31,9 @@ import (
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
-var _ reconcile.Reconciler = &TenancyController{}
+var _ reconcile.Reconciler = &Reconciler{}
 
-type TenancyController struct {
+type Reconciler struct {
 	client.Client
 	Metrics  *metrics.Recorder
 	Scheme   *runtime.Scheme
@@ -48,7 +44,7 @@ type TenancyController struct {
 	Rest     *rest.Config
 }
 
-func (i *TenancyController) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (i *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	i.requeue = make(chan event.GenericEvent)
 
 	go func() {
@@ -103,7 +99,7 @@ func (i *TenancyController) SetupWithManager(ctx context.Context, mgr ctrl.Manag
 }
 
 // Handler to reconcile all Tenants.
-func (i *TenancyController) TenantRequeueHandler() handler.EventHandler {
+func (i *Reconciler) TenantRequeueHandler() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, _ client.Object) []reconcile.Request {
 		// List all tenants
 		tenants := &capsulev1beta2.TenantList{}
@@ -129,289 +125,115 @@ func (i *TenancyController) TenantRequeueHandler() handler.EventHandler {
 	})
 }
 
-func (i *TenancyController) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
+func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.Result, error) {
 	log := i.Log.WithValues("tenant", request.Name)
-
-	log.V(7).Info("controller configuration", "config", i.Settings.Get())
 
 	origin := &capsulev1beta2.Tenant{}
 	if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		if k8serrors.IsNotFound(err) {
+			log.V(5).Info("Request object not found, could have been deleted after reconcile request")
+
+			origin = &capsulev1beta2.Tenant{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      request.NamespacedName.Name,
+					Namespace: request.NamespacedName.Namespace,
+				},
+			}
+
+			// Cleanup ArgoCD
+			ferr := i.finalize(ctx, log, origin)
+
+			return reconcile.Result{}, ferr
+		}
+
+		return reconcile.Result{}, err
 	}
 
-	translators, err := i.reconcile(ctx, log, origin)
+	allTranslators := &configv1alpha1.ArgoTranslatorList{}
+	if err := i.Client.List(ctx, allTranslators); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	translatorsPtr := make([]*configv1alpha1.ArgoTranslator, len(allTranslators.Items))
+	for i := range allTranslators.Items {
+		translatorsPtr[i] = &allTranslators.Items[i]
+	}
+
+	log.V(3).Info("available translators", "count", len(allTranslators.Items))
+
+	finalize, err := i.reconcileProject(ctx, log, origin, translatorsPtr)
 	if err != nil {
+		i.Metrics.RecordTenantCondition(origin, meta.NotReadyCondition)
+
 		log.Error(err, "reconcile error")
 
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
-	//nolint:nestif
-	if !origin.ObjectMeta.DeletionTimestamp.IsZero() || len(translators) == 0 {
-		// Wait until all translators have finished
-		if len(meta.GetTranslatingFinalizers(origin)) == 0 {
-			if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
-				log.V(5).Info("finalizing tenant")
+	log.V(5).Info("reconciled translators", "count", len(allTranslators.Items))
 
-				if err := i.lifecycle(ctx, log, origin); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
+	// Handle lifecycle
+	if _, err = controllerutil.CreateOrUpdate(ctx, i.Client, origin, func() error {
+		if finalize {
+			log.V(5).Info("adding finalizer")
 
-			return ctrl.Result{
-				Requeue: false,
-			}, nil
+			i.Metrics.RecordTenantCondition(origin, meta.ReadyCondition)
+
+			controllerutil.AddFinalizer(origin, meta.ControllerFinalizer)
+		} else {
+			log.V(5).Info("lifecycling")
+
+			return i.finalize(ctx, log, origin)
 		}
 
-		if controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
-			log.V(5).Info("finalizing tenant")
-
-			if err := i.lifecycle(ctx, log, origin); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		// Stop reconciliation as the item is being deleted
-		return ctrl.Result{
-			Requeue: false,
-		}, nil
-	}
-
-	if !controllerutil.ContainsFinalizer(origin, meta.ControllerFinalizer) {
-		controllerutil.AddFinalizer(origin, meta.ControllerFinalizer)
-
-		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-			if err := i.Client.Update(ctx, origin); err != nil {
-				return err
-			}
-
-			return
-		}); err != nil {
-			return ctrl.Result{}, err
-		}
+		return nil
+	}); err != nil {
+		return ctrl.Result{}, fmt.Errorf("error finalizing tenant; %w", err)
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// Reconcile all the assets.
-func (i *TenancyController) reconcile(
-	ctx context.Context,
-	log logr.Logger,
-	tenant *capsulev1beta2.Tenant,
-) (translators []*configv1alpha1.ArgoTranslator, err error) {
-	allTranslators := &configv1alpha1.ArgoTranslatorList{}
-	if err := i.Client.List(ctx, allTranslators); err != nil {
-		return nil, err
-	}
-
-	log.V(3).Info("available translators", "count", len(allTranslators.Items))
-
-	// Fetch Translators Applying to the Tenant
-	var unmatchedTranslators []*configv1alpha1.ArgoTranslator
-
-	translators, unmatchedTranslators, err = i.aggregateConfigTranslators(allTranslators, tenant)
-	if err != nil {
-		return translators, err
-	}
-
-	log.V(3).Info("matched translators", "count", len(translators))
-
-	unmatchedTranslatorMap := make(map[string]*configv1alpha1.ArgoTranslator)
-
-	for _, translator := range unmatchedTranslators {
-		unmatchedTranslatorMap[translator.Name] = translator
-	}
-
-	// Reconcile the Argo Assets
-	reconcileErr := i.reconcileArgoProject(ctx, log, tenant, translators, unmatchedTranslatorMap)
-
-	// Status handling always runs even when reconciliation failed
-	// Evaluate Condition
-	condition := i.handleCondition(tenant, reconcileErr)
-
-	// Update the tenant status.
-	for _, selected := range translators {
-		log.V(5).Info("updating translator conditions", "translator", selected.Name)
-
-		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tenant.DeepCopy(), func() error {
-				// Get latest revision
-				if err := i.Client.Get(ctx, client.ObjectKeyFromObject(selected), selected); err != nil {
-					return fmt.Errorf("failed to get the latest version of translator: %w", err)
-				}
-
-				if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-					selected.RemoveTenantCondition(tenant.Name)
-				} else {
-					selected.UpdateTenantCondition(configv1alpha1.TenantStatus{
-						Name:      tenant.Name,
-						UID:       tenant.UID,
-						Condition: condition,
-					})
-				}
-
-				i.Metrics.RecordTranslatorCondition(selected)
-				log.V(10).Info("new translator status", "translator", selected.Name, "status", selected.Status)
-
-				return i.Client.Status().Update(ctx, selected, &client.SubResourceUpdateOptions{})
-			})
-
-			return
-		}); err != nil {
-			log.Info("failed to update translator statius")
-
-			return translators, err
-		}
-
-		i.Metrics.RecordTranslatorCondition(selected)
-	}
-
-	log.V(7).Info("unmatched translators", "count", len(unmatchedTranslators))
-
-	// Lifecycle from unmatched tenants
-	for _, unmatched := range unmatchedTranslators {
-		err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-			// Get latest revision
-			if err := i.Client.Get(ctx, client.ObjectKeyFromObject(unmatched), unmatched); err != nil {
-				return fmt.Errorf("failed to get the latest version of translator: %w", err)
-			}
-
-			_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tenant.DeepCopy(), func() error {
-				unmatched.RemoveTenantCondition(tenant.Name)
-
-				return i.Client.Status().Update(ctx, unmatched, &client.SubResourceUpdateOptions{})
-			})
-
-			return
-		})
-		if err != nil {
-			return translators, err
-		}
-	}
-
-	// Finally return if reconciliation had an error.
-	if reconcileErr != nil {
-		return translators, reconcileErr
-	}
-
-	// Return on success
-	return translators, nil
-}
-
-// Handle Condition assignment based on err provided.
-func (i *TenancyController) handleCondition(
-	tenant *capsulev1beta2.Tenant,
-	reconcileError error,
-) (condition metav1.Condition) {
-	if reconcileError == nil {
-		// No error; set to Ready condition
-		return meta.NewReadyCondition(tenant)
-	}
-
-	// Check the type of error with a type switch
-	eo := &ccaerrrors.ObjectAlreadyExistsError{}
-	if errors.As(reconcileError, &eo) {
-		condition = meta.NewAlreadyExistsCondition(tenant, reconcileError.Error())
-	} else {
-		// Default NotReady condition for other errors
-		condition = meta.NewNotReadyCondition(tenant, reconcileError.Error())
-	}
-
-	return
-}
-
-// Selects all the translators from the configuration, which match the tenant's labels.
-// Returns all translators to run garbage collection on them.
-func (i *TenancyController) aggregateConfigTranslators(
-	allTranslators *configv1alpha1.ArgoTranslatorList,
-	tenant *capsulev1beta2.Tenant,
-) (
-	matchedTranslators []*configv1alpha1.ArgoTranslator,
-	unmatchedTranslators []*configv1alpha1.ArgoTranslator,
-	err error,
-) {
-	matchedTranslators = make([]*configv1alpha1.ArgoTranslator, 0)
-	unmatchedTranslators = make([]*configv1alpha1.ArgoTranslator, 0)
-	tenantLabels := labels.Set(tenant.Labels)
-
-	for _, trans := range allTranslators.Items {
-		translator := trans
-
-		// Skip translators that are being deleted
-		if !translator.ObjectMeta.DeletionTimestamp.IsZero() {
-			continue
-		}
-
-		if translator.Spec.Selector == nil {
-			unmatchedTranslators = append(unmatchedTranslators, &translator)
-
-			continue
-		}
-
-		// Convert LabelSelector to a labels.Selector
-		var selector labels.Selector
-
-		selector, err = metav1.LabelSelectorAsSelector(translator.Spec.Selector)
-		if err != nil {
-			return
-		}
-
-		// Check if tenant's labels match the translator's selector
-		if selector.Matches(tenantLabels) {
-			matchedTranslators = append(matchedTranslators, &translator)
-		} else {
-			unmatchedTranslators = append(unmatchedTranslators, &translator)
-		}
-	}
-
-	return
-}
-
 // Patch the tenant from the argocd configmap.
-func (i *TenancyController) lifecycle(ctx context.Context, log logr.Logger, tenant *capsulev1beta2.Tenant) (err error) {
+func (i *Reconciler) finalize(ctx context.Context, log logr.Logger, tenant *capsulev1beta2.Tenant) (err error) {
+	// Skip if finalizer no longer present
 	if !controllerutil.ContainsFinalizer(tenant, meta.ControllerFinalizer) {
+		return
+	}
+
+	log.V(7).Info("lifecycling", "decoupling", i.Settings.Get().DecoupleTenant(tenant))
+
+	// Make sure Metrics are absent
+	i.Metrics.DeleteTenantCondition(tenant.Name)
+
+	log.V(7).Info("lifecycling argo project")
+
+	// Remove the approject from the tenant
+	if err = i.lifecycleArgoProject(ctx, tenant); err != nil {
+		return
+	}
+
+	log.V(7).Info("lifecycling argo cluster")
+
+	if err = i.lifecycleArgoCluster(ctx, tenant); err != nil {
+		return
+	}
+
+	log.V(7).Info("lifecycling argo serviceaccount")
+
+	if err = i.lifecycleArgoServiceAccount(ctx, tenant); err != nil {
 		return
 	}
 
 	// Update existing configmap with new csv
 	log.V(7).Info("lifecycling argo components")
 
-	if err = i.lifecycleArgo(ctx, tenant); err != nil {
+	if err = i.lifecycleArgoRbac(ctx, tenant); err != nil {
 		return
 	}
 
 	// Remove Finalizers after tenant
 	controllerutil.RemoveFinalizer(tenant, meta.ControllerFinalizer)
-
-	if err = i.Client.Update(ctx, tenant); err != nil {
-		return
-	}
-
-	return
-}
-
-func (i *TenancyController) lifecycleArgo(ctx context.Context, tenant *capsulev1beta2.Tenant) (err error) {
-	// Update existing configmap with new csv
-	if !i.Settings.Get().DecoupleTenant(tenant) {
-		configmap := &corev1.ConfigMap{}
-		if err = i.Client.Get(ctx, client.ObjectKey{
-			Name:      i.Settings.Get().Argo.RBACConfigMap,
-			Namespace: i.Settings.Get().Argo.Namespace,
-		},
-			configmap,
-		); err != nil {
-			return
-		}
-
-		_, err = controllerutil.CreateOrUpdate(ctx, i.Client, configmap, func() error {
-			delete(configmap.Data, argo.ArgoPolicyName(tenant))
-
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
 
 	return
 }
