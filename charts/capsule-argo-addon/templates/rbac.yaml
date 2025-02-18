@@ -56,7 +56,9 @@ rules:
   - addons.projectcapsule.dev
   resources:
   - "argoaddons"
+  - "argoaddons/status"
   - "argotranslators"
+  - "argotranslators/status"
   verbs:
   - create
   - delete
