@@ -19,7 +19,6 @@ FULL_IMG        ?= $(REGISTRY)/$(IMG_BASE)
 
 ## Tool Binaries
 KUBECTL ?= kubectl
-HELM ?= helm
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -135,7 +134,7 @@ helm-docs: helm-doc
 helm-lint: ct
 	@$(CT) lint --config .github/configs/ct.yaml --validate-yaml=false --all --debug
 
-helm-schema: helm-plugin-schema
+helm-schema: helm helm-plugin-schema
 	cd charts/capsule-argo-addon && $(HELM) schema -output values.schema.json
 
 helm-test: kind ct
@@ -174,8 +173,8 @@ e2e-destroy: kind
 e2e-install: e2e-install-distro e2e-install-addon
 
 .PHONY: e2e-install
-e2e-install-addon: e2e-load-image
-	helm upgrade \
+e2e-install-addon: helm e2e-load-image
+	$(HELM) upgrade \
 	    --dependency-update \
 		--debug \
 		--install \
@@ -240,7 +239,7 @@ subjectAltName = @alt_names
 IP.1   = $(LAPTOP_HOST_IP)
 endef
 export TLS_CNF
-dev-setup:
+dev-setup: helm
 	mkdir -p /tmp/k8s-webhook-server/serving-certs
 	echo "$${TLS_CNF}" > _tls.cnf
 	openssl req -newkey rsa:4096 -days 3650 -nodes -x509 \
@@ -282,7 +281,7 @@ $(LOCALBIN):
 ####################
 
 HELM_SCHEMA_VERSION   := ""
-helm-plugin-schema:
+helm-plugin-schema: helm
 	@$(HELM) plugin install https://github.com/losisin/helm-values-schema-json.git --version $(HELM_SCHEMA_VERSION) || true
 
 HELM_DOCS         := $(LOCALBIN)/helm-docs
@@ -319,6 +318,13 @@ KIND_LOOKUP  := kubernetes-sigs/kind
 kind:
 	@test -s $(KIND) && $(KIND) --version | grep -q $(KIND_VERSION) || \
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION))
+
+HELM         := $(LOCALBIN)/helm
+HELM_VERSION := v3.17.1
+HELM_LOOKUP  := helm/helm
+helm:
+	@test -s $(HELM) && $(HELM) version | grep -q $(HELM_VERSION) || \
+	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@$(HELM_VERSION))
 
 KO           := $(LOCALBIN)/ko
 KO_VERSION   := v0.17.1
