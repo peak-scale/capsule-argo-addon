@@ -7,7 +7,7 @@ toolchain go1.22.7
 require (
 	dario.cat/mergo v1.0.1
 	github.com/BurntSushi/toml v1.4.0
-	github.com/KimMachineGun/automemlimit v0.7.0
+	github.com/KimMachineGun/automemlimit v0.7.1
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/argoproj/argo-cd/v2 v2.14.2
 	github.com/go-logr/logr v1.4.2
