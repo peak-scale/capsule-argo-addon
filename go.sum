@@ -656,12 +656,16 @@ github.com/argoproj/argo-cd/v2 v2.14.1 h1:synvwkqSSEDkg/VUwasQB9dtLlMPGha2PKC47r
 github.com/argoproj/argo-cd/v2 v2.14.1/go.mod h1:n0yQ6En1dx4Ap03tqXWrbujFrlzXJXArMP7XYXSd0GY=
 github.com/argoproj/argo-cd/v2 v2.14.2 h1:5kHd4lEkN679r/6VFlYoLMZ5Pl5wL4tHnOdEgQTgQKk=
 github.com/argoproj/argo-cd/v2 v2.14.2/go.mod h1:n0yQ6En1dx4Ap03tqXWrbujFrlzXJXArMP7XYXSd0GY=
+github.com/argoproj/argo-cd/v2 v2.14.5 h1:ukSLv5oS6Yw6OfACMHLfvHQWx0c/rX9Nt9JK9DDyMDI=
+github.com/argoproj/argo-cd/v2 v2.14.5/go.mod h1:TgBU+mQLezr6FHknnTIpUgyLlbw+ZdnRl71JQjECacE=
 github.com/argoproj/gitops-engine v0.7.1-0.20240714153147-adb68bcaab73 h1:7kyTgFsPjvb6noafslp2pr7fBCS9s8OJ759LdLzrOro=
 github.com/argoproj/gitops-engine v0.7.1-0.20240714153147-adb68bcaab73/go.mod h1:xMIbuLg9Qj2e0egTy+8NcukbhRaVmWwK9vm3aAQZoi4=
 github.com/argoproj/gitops-engine v0.7.1-0.20240905010810-bd7681ae3f8b h1:wOPWJ5MBScQO767WpU55oUJDXObfvPL0EfAYWxogbSw=
 github.com/argoproj/gitops-engine v0.7.1-0.20240905010810-bd7681ae3f8b/go.mod h1:b1vuwkyMUszyUK+USUJqC8vJijnQsEPNDpC+sDdDLtM=
 github.com/argoproj/gitops-engine v0.7.1-0.20250129155113-c19f8cfa4d27 h1:OYlZjVY13/x3Rn1HyStXoBGPbFkmvBWyRTEiBlJXkUU=
 github.com/argoproj/gitops-engine v0.7.1-0.20250129155113-c19f8cfa4d27/go.mod h1:WsnykM8idYRUnneeT31cM/Fq/ZsjkefCbjiD8ioCJkU=
+github.com/argoproj/gitops-engine v0.7.1-0.20250304190342-43fce7ce19f1 h1:3qG1uQNtjCIunZ5b3qmO1JS8OBLCssll41VwBYYlKio=
+github.com/argoproj/gitops-engine v0.7.1-0.20250304190342-43fce7ce19f1/go.mod h1:WsnykM8idYRUnneeT31cM/Fq/ZsjkefCbjiD8ioCJkU=
 github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1 h1:qsHwwOJ21K2Ao0xPju1sNuqphyMnMYkyB3ZLoLtxWpo=
 github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1/go.mod h1:CZHlkyAD1/+FbEn6cB2DQTj48IoLGvEYsWEvtzP3238=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
@@ -1231,6 +1235,8 @@ github.com/redis/go-redis/v9 v9.6.1 h1:HHDteefn6ZkTtY5fGUE8tj8uy85AHk6zP7CpzIAM0
 github.com/redis/go-redis/v9 v9.6.1/go.mod h1:0C0c6ycQsdpVNQpxb1njEQIqkx5UcsM8FJCQLgE9+RA=
 github.com/redis/go-redis/v9 v9.7.0 h1:HhLSs+B6O021gwzl+locl0zEDnyNkxMtf/Z3NNBMa9E=
 github.com/redis/go-redis/v9 v9.7.0/go.mod h1:f6zhXITC7JUJIlPEiBOTXxJgPLdZcA93GewI7inzyWw=
+github.com/redis/go-redis/v9 v9.7.1 h1:4LhKRCIduqXqtvCUlaq9c8bdHOkICjDMrr1+Zb3osAc=
+github.com/redis/go-redis/v9 v9.7.1/go.mod h1:f6zhXITC7JUJIlPEiBOTXxJgPLdZcA93GewI7inzyWw=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
 github.com/robfig/cron/v3 v3.0.1/go.mod h1:eQICP3HwyT7UooqI/z+Ov+PtYAWygg1TEWWzGIFLtro=
