@@ -9,9 +9,7 @@
 <a href="https://artifacthub.io/packages/search?repo=capsule-argo-addon">
   <img src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon" alt="Artifact Hub">
 </a>
-<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_shield&issueType=license">
-  <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=shield&issueType=license" alt="FOSSA Status">
-</a>
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon?ref=badge_small" alt="FOSSA Status"><img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fpeak-scale%2Fcapsule-argo-addon.svg?type=small"/></a>
 <a href="https://codecov.io/gh/peak-scale/capsule-argo-addon">
   <img src="https://codecov.io/gh/peak-scale/capsule-argo-addon/graph/badge.svg?token=26QLMNSN54" alt="codecov">
 </a>

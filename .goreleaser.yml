@@ -47,11 +47,13 @@ changelog:
     exclude:
     - '^test:'
     - '^chore'
+    - '^rebase:'
     - 'merge conflict'
     - Merge pull request
     - Merge remote-tracking branch
     - Merge branch
   groups:
+    # https://github.com/conventional-changelog/commitlint/tree/master/%40commitlint/config-conventional
     - title: '🛠 Dependency updates'
       regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
       order: 300
