@@ -26,7 +26,7 @@ jobs:
           echo "Extracted version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Install Cosign
-        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
       - name: Publish with KO
         id: publish
         uses: peak-scale/github-actions/make-ko-publish@a441cca016861c546ab7e065277e40ce41a3eb84 # v0.2.0
