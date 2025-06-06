@@ -327,7 +327,7 @@ helm:
 	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@$(HELM_VERSION))
 
 KO           := $(LOCALBIN)/ko
-KO_VERSION   := v0.17.1
+KO_VERSION   := v0.18.0
 KO_LOOKUP    := google/ko
 ko:
 	@test -s $(KO) && $(KO) -h | grep -q $(KO_VERSION) || \
