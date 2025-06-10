@@ -116,7 +116,7 @@ func (in *ArgoTranslator) MatchesObject(obj client.Object) (match bool) {
 	}
 
 	if in.Spec.Selector == nil {
-		return
+		return true
 	}
 
 	selector, err := metav1.LabelSelectorAsSelector(in.Spec.Selector)
