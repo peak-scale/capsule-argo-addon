@@ -11,7 +11,7 @@ See the following Topics for insights for the configuration of Translators. [Vie
 
 ### Tenant Selection
 
-Each Translator selects it's tenants via [Selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/). Setting no selector results in no tenants being selected (not all tenants).
+Each Translator selects it's tenants via [Selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/). Setting no selector results in all tenants being selected.
 
 A tenant must be selected by at least one Translator, to create an Argo Project. If a tenant is not selected by any Translator, the operator will not consider it.
 
