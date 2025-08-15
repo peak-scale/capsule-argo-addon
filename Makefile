@@ -173,7 +173,7 @@ e2e-install: e2e-install-distro e2e-install-addon
 .PHONY: e2e-install
 e2e-install-addon: VERSION := 0.0.0
 e2e-install-addon: KO_TAGS := 0.0.0
-e2e-install-addon: helm e2e-load-image ko-build-all
+e2e-install-addon: helm ko-build-all e2e-load-image
 	$(HELM) upgrade \
 	    --dependency-update \
 		--debug \
