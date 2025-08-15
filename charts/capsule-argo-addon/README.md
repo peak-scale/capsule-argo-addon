@@ -73,7 +73,7 @@ The following Values are available for this chart.
 | webhooks.certificate.fields | object | `{"privateKey":{"rotationPolicy":"Always"}}` | Additional fields to include in certificate |
 | webhooks.certificate.ipAddresses | list | `[]` | Additional IP Addresses to include in certificate |
 | webhooks.certificate.uris | list | `[]` | Additional URIs to include in certificate |
-| webhooks.enabled | bool | `false` | Enable the usage of mutating and validating webhooks |
+| webhooks.enabled | bool | `true` | Enable the usage of mutating and validating webhooks |
 | webhooks.service.caBundle | string | `""` | CABundle for the webhook service |
 | webhooks.service.name | string | `""` | Custom service name for the webhook service |
 | webhooks.service.namespace | string | `""` | Custom service namespace for the webhook service |

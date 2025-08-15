@@ -251,7 +251,7 @@ monitoring:
 
 webhooks:
   # -- Enable the usage of mutating and validating webhooks
-  enabled: false
+  enabled: true
 
   # Configure custom webhook service
   service:

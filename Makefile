@@ -123,11 +123,6 @@ ko-publish-all: ko-publish-controller
 # Helm
 SRC_ROOT = $(shell git rev-parse --show-toplevel)
 
-helm-controller-version:
-	$(eval VERSION := $(shell grep 'appVersion:' charts/capsule-argo-addon/Chart.yaml | awk '{print $$2}'))
-	$(eval KO_TAGS := $(shell grep 'appVersion:' charts/capsule-argo-addon/Chart.yaml | awk '{print $$2}'))
-
-
 helm-docs: helm-doc
 	$(HELM_DOCS) --chart-search-root ./charts
 
@@ -135,7 +130,7 @@ helm-lint: ct
 	@$(CT) lint --config .github/configs/ct.yaml --validate-yaml=false --all --debug
 
 helm-schema: helm helm-plugin-schema
-	cd charts/capsule-argo-addon && $(HELM) schema -output values.schema.json
+	cd charts/capsule-argo-addon && $(HELM) schema
 
 helm-test: kind ct
 	@$(KIND) create cluster --wait=60s --name helm-capsule-argo-addon
@@ -173,7 +168,9 @@ e2e-destroy: kind
 e2e-install: e2e-install-distro e2e-install-addon
 
 .PHONY: e2e-install
-e2e-install-addon: helm e2e-load-image
+e2e-install-addon: VERSION :=v0.0.0
+e2e-install-addon: KO_TAGS :=v0.0.0
+e2e-install-addon: helm e2e-load-image ko-build-all
 	$(HELM) upgrade \
 	    --dependency-update \
 		--debug \
@@ -183,9 +180,6 @@ e2e-install-addon: helm e2e-load-image
 		--set 'image.pullPolicy=Never' \
 		--set "image.tag=$(VERSION)" \
 		--set certManager.certificate.dnsNames={localhost} \
-		--set proxy.enabled=true \
-		--set proxy.crds.install=true \
-        --set certManager.certificate.dnsNames={localhost} \
 		--set webhooks.enabled=true \
 		--set args.logLevel=10 \
 		capsule-argo-addon \
@@ -197,7 +191,7 @@ e2e-install-distro:
 	@$(MAKE) wait-for-helmreleases
 
 .PHONY: e2e-load-image
-e2e-load-image: ko-build-all
+e2e-load-image:
 	kind load docker-image --name $(K3S_CLUSTER) $(FULL_IMG):$(VERSION)
 
 dev-kubeconf-user:
