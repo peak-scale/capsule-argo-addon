@@ -320,7 +320,7 @@ kind:
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION))
 
 HELM         := $(LOCALBIN)/helm
-HELM_VERSION := v3.18.2
+HELM_VERSION := v3.18.5
 HELM_LOOKUP  := helm/helm
 helm:
 	@test -s $(HELM) && $(HELM) version | grep -q $(HELM_VERSION) || \
