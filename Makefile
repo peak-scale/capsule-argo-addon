@@ -17,6 +17,9 @@ IMG_BASE        ?= $(REPOSITORY)
 IMG             ?= $(IMG_BASE):$(VERSION)
 FULL_IMG        ?= $(REGISTRY)/$(IMG_BASE)
 
+## Kubernetes Version Support
+KUBERNETES_SUPPORTED_VERSION ?= v1.33.0
+
 ## Tool Binaries
 KUBECTL ?= kubectl
 
@@ -119,8 +122,6 @@ ko-publish-all: ko-publish-controller
 ####################
 # -- Helm
 ####################
-
-# Helm
 SRC_ROOT = $(shell git rev-parse --show-toplevel)
 
 helm-docs: helm-doc
@@ -133,12 +134,14 @@ helm-schema: helm helm-plugin-schema
 	cd charts/capsule-argo-addon && $(HELM) schema
 
 helm-test: kind ct
-	@$(KIND) create cluster --wait=60s --name helm-capsule-argo-addon
+	@$(KIND) create cluster --wait=60s --name helm-capsule-argo-addon --image=kindest/node:$(KUBERNETES_SUPPORTED_VERSION)
 	@$(MAKE) e2e-install-distro
 	@$(MAKE) helm-test-exec
 	@$(KIND) delete cluster --name helm-capsule-argo-addon
 
-helm-test-exec: ct helm-controller-version ko-build-all
+helm-test-exec: VERSION := 0.0.0
+helm-test-exec: KO_TAGS := 0.0.0
+helm-test-exec: ct ko-build-all
 	@$(KIND) load docker-image --name helm-capsule-argo-addon $(FULL_IMG):$(VERSION)
 	@$(CT) install --config $(SRC_ROOT)/.github/configs/ct.yaml --all --debug
 
@@ -156,7 +159,7 @@ K3S_CLUSTER ?= "capsule-argo-addon"
 e2e: e2e-build e2e-exec e2e-destroy
 
 e2e-build: kind
-	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$${KIND_K8S_VERSION:-v1.30.0}
+	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$(KUBERNETES_SUPPORTED_VERSION)
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
@@ -168,8 +171,8 @@ e2e-destroy: kind
 e2e-install: e2e-install-distro e2e-install-addon
 
 .PHONY: e2e-install
-e2e-install-addon: VERSION :=v0.0.0
-e2e-install-addon: KO_TAGS :=v0.0.0
+e2e-install-addon: VERSION := 0.0.0
+e2e-install-addon: KO_TAGS := 0.0.0
 e2e-install-addon: helm e2e-load-image ko-build-all
 	$(HELM) upgrade \
 	    --dependency-update \
@@ -194,15 +197,6 @@ e2e-install-distro:
 e2e-load-image:
 	kind load docker-image --name $(K3S_CLUSTER) $(FULL_IMG):$(VERSION)
 
-dev-kubeconf-user:
-	@mkdir -p hack/kubeconfs || true
-	@cd hack/kubeconfs \
-	    && $(KUBECTL) get secret capsule-argocd-addon-proxy -n capsule-argocd-addon -o jsonpath='{.data.ca\.crt}' | base64 -d > root-ca.pem \
-		&& rm -f alice.kubeconfig \
-		&& curl -s https://raw.githubusercontent.com/projectcapsule/capsule/main/hack/create-user.sh | bash -s -- alice projectcapsule.dev \
-		&& mv alice-*.kubeconfig alice.kubeconfig \
-		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).server https://127.0.0.1:9001 \
-		&& KUBECONFIG=alice.kubeconfig $(KUBECTL) config set clusters.kind-$(K3S_CLUSTER).certificate-authority-data $$(cat root-ca.pem | base64 |tr -d '\n')
 
 wait-for-helmreleases:
 	@ echo "Waiting for all HelmReleases to have observedGeneration >= 0..."

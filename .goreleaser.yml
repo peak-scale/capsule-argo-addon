@@ -38,6 +38,12 @@ release:
 
     [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/capsule-argo-addon)](https://artifacthub.io/packages/search?repo=capsule-argo-addon)
 
+    > [!IMPORTANT]
+    > Supported Kubernetes versions
+    >
+    > | Kubernetes version | Minimum required |
+    > |--------------------|------------------|
+    > | `v1.33`            | `>= 1.33.0`      |
 checksum:
   name_template: 'checksums.txt'
 changelog:
