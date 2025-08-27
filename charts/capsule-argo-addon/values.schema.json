@@ -520,6 +520,12 @@
                         "failurePolicy": {
                             "type": "string"
                         },
+                        "matchConditions": {
+                            "type": "array"
+                        },
+                        "matchPolicy": {
+                            "type": "string"
+                        },
                         "namespaceSelector": {
                             "type": "object",
                             "properties": {
@@ -538,6 +544,9 @@
                                     }
                                 }
                             }
+                        },
+                        "objectSelector": {
+                            "type": "object"
                         },
                         "rules": {
                             "type": "array",
@@ -588,6 +597,12 @@
                         "failurePolicy": {
                             "type": "string"
                         },
+                        "matchConditions": {
+                            "type": "array"
+                        },
+                        "matchPolicy": {
+                            "type": "string"
+                        },
                         "namespaceSelector": {
                             "type": "object",
                             "properties": {
@@ -606,6 +621,9 @@
                                     }
                                 }
                             }
+                        },
+                        "objectSelector": {
+                            "type": "object"
                         },
                         "rules": {
                             "type": "array",

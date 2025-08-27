@@ -23,14 +23,12 @@ spec:
       meta:
         labels:
           "company.infra.team/managed-by": "platform"
-      spec:
-        permitOnlyProjectScopedClusters: true
 
     # Use Templating to add more complex configuration. The configuration here is preceding over the structured configuration (This is because you might have certain triggers)
     # where you want to overrite structured configuration.
     template: |
       spec:
-        description: "Managed Argo Project (Replicated {{ $.Tenant.Name }}"
+        description: "Project {{ $.Tenant.Name }}"
         {{- if $.Tenant.Object.Spec.cordoned }}
         syncWindows:
         - applications:
@@ -40,6 +38,20 @@ spec:
           schedule: '* * * * *'
           timeZone: UTC
         {{- end }}
+
+        sourceRepos:
+        - '*'
+        clusterResourceWhitelist:
+        - group: ''
+          kind: Namespace
+        namespaceResourceWhitelist:
+        - group: '*'
+          kind: '*'
+
+        destinations:
+        - namespace: {{ $.Tenant.Name }}-*
+          server: https://kubernetes.default.svc
+          name: in-cluster
 
         {{/* Allow Argo namespace, because the ui can just create in that namespace */}}
         sourceNamespaces:

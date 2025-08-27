@@ -15,6 +15,7 @@ webhooks:
   clientConfig:
     {{- include "helm.webhooks.service" (dict "path" "/mutate/applications" "ctx" $) | nindent 4 }}
   failurePolicy: {{ .failurePolicy }}
+  matchPolicy: {{ .matchPolicy }}
   name: applications.argo.projectcapsule.dev
   {{- with .rules }}
   rules:
@@ -22,10 +23,18 @@ webhooks:
   {{- end }}
   {{- with .namespaceSelector }}
   namespaceSelector:
-    {{- toYaml .| nindent 4}}
+    {{- toYaml . |  nindent 4 }}
+  {{- end }}
+  {{- with .objectSelector }}
+  objectSelector:
+    {{- toYaml . |  nindent 4 }}
+  {{- end }}
+  {{- with .matchConditions }}
+  matchConditions:
+    {{- toYaml . |  nindent 4 }}
   {{- end }}
   sideEffects: None
-  timeoutSeconds: {{ $.Values.webhooks.mutatingWebhooksTimeoutSeconds }}
+  timeoutSeconds: {{ .timeoutSeconds }}
     {{- end }}
   {{- end }}
   {{- with .Values.webhooks.applicationsets }}
@@ -35,6 +44,7 @@ webhooks:
   clientConfig:
     {{- include "helm.webhooks.service" (dict "path" "/mutate/applicationsets" "ctx" $) | nindent 4 }}
   failurePolicy: {{ .failurePolicy }}
+  matchPolicy: {{ .matchPolicy }}
   name: applicationsets.argo.projectcapsule.dev
   {{- with .rules }}
   rules:
@@ -42,12 +52,18 @@ webhooks:
   {{- end }}
   {{- with .namespaceSelector }}
   namespaceSelector:
-    {{- toYaml .| nindent 4}}
+    {{- toYaml . |  nindent 4 }}
+  {{- end }}
+  {{- with .objectSelector }}
+  objectSelector:
+    {{- toYaml . |  nindent 4 }}
+  {{- end }}
+  {{- with .matchConditions }}
+  matchConditions:
+    {{- toYaml . |  nindent 4 }}
   {{- end }}
   sideEffects: None
-  timeoutSeconds: {{ $.Values.webhooks.mutatingWebhooksTimeoutSeconds }}
+  timeoutSeconds: {{ .timeoutSeconds }}
     {{- end }}
   {{- end }}
-
-
 {{- end }}

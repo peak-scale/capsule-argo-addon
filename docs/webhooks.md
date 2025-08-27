@@ -7,7 +7,7 @@ webhooks:
   enabled: true
 ```
 
-They are disabled by default. These webhooks patch the `project` property for both resources to the corresponding tenant, in which they were deployed. Very useful if your users can create Applications and Appsets in any namespace.
+They are enabled by default. These webhooks patch the `project` property for both resources to the corresponding tenant, in which they were deployed. Very useful if your users can create Applications and Appsets in any namespace.
 
 This requires `cert-manager` to be installed on the cluster
 
