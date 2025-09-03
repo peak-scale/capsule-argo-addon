@@ -2,7 +2,7 @@ module github.com/peak-scale/capsule-argo-addon
 
 go 1.22.5
 
-toolchain go1.22.7
+toolchain go1.25.1
 
 require (
 	dario.cat/mergo v1.0.2
