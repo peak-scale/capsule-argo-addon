@@ -1308,6 +1308,13 @@ SyncWindow contains the kind, time, duration and attributes that are used to ass
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>andOperator</b></td>
+        <td>boolean</td>
+        <td>
+          UseAndOperator use AND operator for matching applications, namespaces and clusters instead of the default OR operator<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>applications</b></td>
         <td>[]string</td>
         <td>
@@ -1319,6 +1326,13 @@ SyncWindow contains the kind, time, duration and attributes that are used to ass
         <td>[]string</td>
         <td>
           Clusters contains a list of clusters that the window will apply to<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          Description of the sync that will be applied to the schedule, can be used to add any information such as a ticket number for example<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -2202,6 +2216,13 @@ SyncWindow contains the kind, time, duration and attributes that are used to ass
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>andOperator</b></td>
+        <td>boolean</td>
+        <td>
+          UseAndOperator use AND operator for matching applications, namespaces and clusters instead of the default OR operator<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
         <td><b>applications</b></td>
         <td>[]string</td>
         <td>
@@ -2213,6 +2234,13 @@ SyncWindow contains the kind, time, duration and attributes that are used to ass
         <td>[]string</td>
         <td>
           Clusters contains a list of clusters that the window will apply to<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>description</b></td>
+        <td>string</td>
+        <td>
+          Description of the sync that will be applied to the schedule, can be used to add any information such as a ticket number for example<br/>
         </td>
         <td>false</td>
       </tr><tr>

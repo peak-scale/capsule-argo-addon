@@ -154,19 +154,19 @@ docker:
 ####################
 # -- Install E2E Tools
 ####################
-K3S_CLUSTER ?= "capsule-argo-addon"
+CLUSTER_NAME ?= "capsule-argo-addon"
 
 e2e: e2e-build e2e-exec e2e-destroy
 
 e2e-build: kind
-	$(KIND) create cluster --wait=60s --name $(K3S_CLUSTER) --config ./e2e/kind.yaml --image=kindest/node:$(KUBERNETES_SUPPORTED_VERSION)
+	$(KIND) create cluster --wait=60s --name $(CLUSTER_NAME) --config ./e2e/kind.yaml --image=kindest/node:$(KUBERNETES_SUPPORTED_VERSION)
 	$(MAKE) e2e-install
 
 e2e-exec: ginkgo
 	$(GINKGO) -r -vv ./e2e
 
 e2e-destroy: kind
-	$(KIND) delete cluster --name $(K3S_CLUSTER)
+	$(KIND) delete cluster --name $(CLUSTER_NAME)
 
 e2e-install: e2e-install-distro e2e-install-addon
 
@@ -194,9 +194,8 @@ e2e-install-distro:
 	@$(MAKE) wait-for-helmreleases
 
 .PHONY: e2e-load-image
-e2e-load-image:
-	kind load docker-image --name $(K3S_CLUSTER) $(FULL_IMG):$(VERSION)
-
+e2e-load-image: kind
+	$(KIND) load docker-image --name $(CLUSTER_NAME) $(FULL_IMG):$(VERSION)
 
 wait-for-helmreleases:
 	@ echo "Waiting for all HelmReleases to have observedGeneration >= 0..."

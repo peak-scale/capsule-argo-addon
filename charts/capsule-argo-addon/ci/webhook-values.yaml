@@ -1,2 +1,5 @@
 webhooks:
   enabled: true
+image:
+  tag: 0.0.0
+  pullPolicy: Never
