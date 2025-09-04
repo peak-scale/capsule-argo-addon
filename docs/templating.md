@@ -49,6 +49,7 @@ Tenant:
         Spec:
             AdditionalRoleBindings: []
             Cordoned: false
+            GatewayOptions: {}
             ImagePullPolicies: []
             IngressOptions:
                 AllowWildcardHostnames: false

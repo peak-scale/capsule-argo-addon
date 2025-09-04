@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	argocdv1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"github.com/stretchr/testify/assert"

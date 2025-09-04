@@ -3,4 +3,5 @@ proxy:
   crds:
     install: true
 image:
+  tag: 0.0.0
   pullPolicy: Never

@@ -6,7 +6,7 @@ package tenant
 import (
 	"fmt"
 
-	argocdapi "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	argocdapi "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	"github.com/peak-scale/capsule-argo-addon/internal/reflection"

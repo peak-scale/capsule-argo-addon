@@ -17,7 +17,13 @@ global:
         pullPolicy: IfNotPresent
         # -- Set the image tag of the helm chart job
         tag: ""
-      # -- Annotations to add to the certgen job.
+      # -- Labels to add to the job pod
+      podLabels: {}
+      # -- Annotations to add to the job pod
+      podAnnotations: {}
+      # -- Labels to add to the job.
+      labels: {}
+      # -- Annotations to add to the job.
       annotations: {}
       # -- Set the restartPolicy
       restartPolicy: Never
@@ -138,6 +144,9 @@ serviceAccount:
   name: ""
 
 # -- Annotations to add
+podLabels: {}
+
+# -- Annotations to add
 podAnnotations: {}
 
 # -- Set the securityContext
@@ -168,13 +177,7 @@ readinessProbe:
     port: 10080
 
 # -- Set the resource requests/limits
-resources:
-  limits:
-    cpu: 200m
-    memory: 128Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
+resources: {}
 
 # -- Set the priority class name of the Capsule pod
 priorityClassName: '' # system-cluster-critical

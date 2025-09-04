@@ -6,7 +6,7 @@ package argo
 import (
 	"fmt"
 
-	"github.com/argoproj/argo-cd/v2/util/rbac"
+	"github.com/argoproj/argo-cd/v3/util/rbac"
 	addonsv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	v1 "k8s.io/api/rbac/v1"
 

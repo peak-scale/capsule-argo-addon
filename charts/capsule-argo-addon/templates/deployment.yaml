@@ -17,6 +17,9 @@ spec:
       {{- end }}
       labels:
         {{- include "helm.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.webhooks.enabled }}
       volumes:

@@ -3,7 +3,7 @@
 
 package argo
 
-import argocdv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+import argocdv1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 
 // Verify if the project already has the destination (Don't respect namespace).
 func ProjectHasServiceAccount(appProject *argocdv1alpha1.AppProject, sa argocdv1alpha1.ApplicationDestinationServiceAccount) bool {
