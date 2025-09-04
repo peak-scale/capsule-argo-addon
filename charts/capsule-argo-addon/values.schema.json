@@ -508,6 +508,12 @@
                         "failurePolicy": {
                             "type": "string"
                         },
+                        "matchConditions": {
+                            "type": "array"
+                        },
+                        "matchPolicy": {
+                            "type": "string"
+                        },
                         "namespaceSelector": {
                             "type": "object",
                             "properties": {
@@ -526,6 +532,9 @@
                                     }
                                 }
                             }
+                        },
+                        "objectSelector": {
+                            "type": "object"
                         },
                         "rules": {
                             "type": "array",
@@ -563,7 +572,7 @@
                             }
                         },
                         "timeoutSeconds": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 },
@@ -576,6 +585,12 @@
                         "failurePolicy": {
                             "type": "string"
                         },
+                        "matchConditions": {
+                            "type": "array"
+                        },
+                        "matchPolicy": {
+                            "type": "string"
+                        },
                         "namespaceSelector": {
                             "type": "object",
                             "properties": {
@@ -594,6 +609,9 @@
                                     }
                                 }
                             }
+                        },
+                        "objectSelector": {
+                            "type": "object"
                         },
                         "rules": {
                             "type": "array",
@@ -631,7 +649,7 @@
                             }
                         },
                         "timeoutSeconds": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 },

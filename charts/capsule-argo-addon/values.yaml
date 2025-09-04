@@ -286,11 +286,12 @@ webhooks:
     # -- Enable webhook for applications
     enabled: true
     # -- Timeout in seconds for mutating webhooks
-    timeoutSeconds: 3s
-    # We don't want to disturb operations if this webhook is not available
-    # -- Ignore failures from the webhook
+    timeoutSeconds: 5
+    # -- [FailurePolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#failure-policy)
     failurePolicy: 'Ignore'
-    # -- Rules for which Objects and Actions this webhook should be called
+    # -- [MatchPolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy)
+    matchPolicy: Equivalent
+    # -- [Rules](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-rules)
     rules:
     - apiGroups:
       - "argoproj.io"
@@ -302,21 +303,26 @@ webhooks:
       resources:
       - "applications"
       scope: "Namespaced"
-    # -- Selects only namespaced items which are within a tenant
+    # -- [NamespaceSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-namespaceselector)
     namespaceSelector:
       matchExpressions:
         - key: capsule.clastix.io/tenant
           operator: Exists
+    # -- [ObjectSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector)
+    objectSelector: {}
+    # -- [MatchConditions](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy)
+    matchConditions: []
 
   applicationsets:
     # -- Enable webhook for applicationsets
     enabled: true
     # -- Timeout in seconds for mutating webhooks
-    timeoutSeconds: 3s
-    # We don't want to disturb operations if this webhook is not available
-    # -- Ignore failures from the webhook
+    timeoutSeconds: 5
+    # -- [FailurePolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#failure-policy)
     failurePolicy: 'Ignore'
-    # -- Rules for which Objects and Actions this webhook should be called
+    # -- [MatchPolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy)
+    matchPolicy: Equivalent
+    # -- [Rules](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-rules)
     rules:
     - apiGroups:
       - "argoproj.io"
@@ -328,8 +334,12 @@ webhooks:
       resources:
       - "applicationsets"
       scope: "Namespaced"
-    # -- Selects only namespaced items which are within a tenant
+    # -- [NamespaceSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-namespaceselector)
     namespaceSelector:
       matchExpressions:
         - key: capsule.clastix.io/tenant
           operator: Exists
+    # -- [ObjectSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector)
+    objectSelector: {}
+    # -- [MatchConditions](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy)
+    matchConditions: []

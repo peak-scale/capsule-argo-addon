@@ -63,15 +63,21 @@ The following Values are available for this chart.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | webhooks.applications.enabled | bool | `true` | Enable webhook for applications |
-| webhooks.applications.failurePolicy | string | `"Ignore"` | Ignore failures from the webhook |
-| webhooks.applications.namespaceSelector | object | `{"matchExpressions":[{"key":"capsule.clastix.io/tenant","operator":"Exists"}]}` | Selects only namespaced items which are within a tenant |
-| webhooks.applications.rules | list | `[{"apiGroups":["argoproj.io"],"apiVersions":["*"],"operations":["CREATE","UPDATE"],"resources":["applications"],"scope":"Namespaced"}]` | Rules for which Objects and Actions this webhook should be called |
-| webhooks.applications.timeoutSeconds | string | `"3s"` | Timeout in seconds for mutating webhooks |
+| webhooks.applications.failurePolicy | string | `"Ignore"` | [FailurePolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#failure-policy) |
+| webhooks.applications.matchConditions | list | `[]` | [MatchConditions](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy) |
+| webhooks.applications.matchPolicy | string | `"Equivalent"` | [MatchPolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy) |
+| webhooks.applications.namespaceSelector | object | `{"matchExpressions":[{"key":"capsule.clastix.io/tenant","operator":"Exists"}]}` | [NamespaceSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-namespaceselector) |
+| webhooks.applications.objectSelector | object | `{}` | [ObjectSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector) |
+| webhooks.applications.rules | list | `[{"apiGroups":["argoproj.io"],"apiVersions":["*"],"operations":["CREATE","UPDATE"],"resources":["applications"],"scope":"Namespaced"}]` | [Rules](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-rules) |
+| webhooks.applications.timeoutSeconds | int | `5` | Timeout in seconds for mutating webhooks |
 | webhooks.applicationsets.enabled | bool | `true` | Enable webhook for applicationsets |
-| webhooks.applicationsets.failurePolicy | string | `"Ignore"` | Ignore failures from the webhook |
-| webhooks.applicationsets.namespaceSelector | object | `{"matchExpressions":[{"key":"capsule.clastix.io/tenant","operator":"Exists"}]}` | Selects only namespaced items which are within a tenant |
-| webhooks.applicationsets.rules | list | `[{"apiGroups":["argoproj.io"],"apiVersions":["*"],"operations":["CREATE","UPDATE"],"resources":["applicationsets"],"scope":"Namespaced"}]` | Rules for which Objects and Actions this webhook should be called |
-| webhooks.applicationsets.timeoutSeconds | string | `"3s"` | Timeout in seconds for mutating webhooks |
+| webhooks.applicationsets.failurePolicy | string | `"Ignore"` | [FailurePolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#failure-policy) |
+| webhooks.applicationsets.matchConditions | list | `[]` | [MatchConditions](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy) |
+| webhooks.applicationsets.matchPolicy | string | `"Equivalent"` | [MatchPolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy) |
+| webhooks.applicationsets.namespaceSelector | object | `{"matchExpressions":[{"key":"capsule.clastix.io/tenant","operator":"Exists"}]}` | [NamespaceSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-namespaceselector) |
+| webhooks.applicationsets.objectSelector | object | `{}` | [ObjectSelector](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-objectselector) |
+| webhooks.applicationsets.rules | list | `[{"apiGroups":["argoproj.io"],"apiVersions":["*"],"operations":["CREATE","UPDATE"],"resources":["applicationsets"],"scope":"Namespaced"}]` | [Rules](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-rules) |
+| webhooks.applicationsets.timeoutSeconds | int | `5` | Timeout in seconds for mutating webhooks |
 | webhooks.certificate.dnsNames | list | `[]` | Additional DNS Names to include in certificate |
 | webhooks.certificate.fields | object | `{"privateKey":{"rotationPolicy":"Always"}}` | Additional fields to include in certificate |
 | webhooks.certificate.ipAddresses | list | `[]` | Additional IP Addresses to include in certificate |
