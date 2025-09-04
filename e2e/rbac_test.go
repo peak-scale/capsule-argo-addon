@@ -10,8 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	capsuleapi "github.com/projectcapsule/capsule/pkg/api"
-
-	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,16 +23,16 @@ var _ = Describe("Argo RBAC Reflection", func() {
 	// Resources
 	selector := e2eLabels("e2e_argo_rbac")
 
-	argoaddon := &v1alpha1.ArgoAddon{}
-	originalArgoAddon := &v1alpha1.ArgoAddon{}
+	argoaddon := &addonsv1alpha1.ArgoAddon{}
+	originalArgoAddon := &addonsv1alpha1.ArgoAddon{}
 
 	// Create a Translator for all the tests
-	translator1 := &v1alpha1.ArgoTranslator{
+	translator1 := &addonsv1alpha1.ArgoTranslator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "test-rbac-1",
 			Labels: selector,
 		},
-		Spec: v1alpha1.ArgoTranslatorSpec{
+		Spec: addonsv1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
@@ -44,11 +42,11 @@ var _ = Describe("Argo RBAC Reflection", func() {
 					},
 				},
 			},
-			ProjectRoles: []v1alpha1.ArgocdProjectRolesTranslator{
+			ProjectRoles: []addonsv1alpha1.ArgocdProjectRolesTranslator{
 				{
 					Name:         "viewer",
 					ClusterRoles: []string{"tenant-viewer", "tenant-operators"},
-					Policies: []v1alpha1.ArgocdPolicyDefinition{
+					Policies: []addonsv1alpha1.ArgocdPolicyDefinition{
 						{
 							Resource: "applications",
 							Action:   []string{"get", "update", "delete"},
@@ -59,7 +57,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 				{
 					Name:         "owner",
 					ClusterRoles: []string{"admin"},
-					Policies: []v1alpha1.ArgocdPolicyDefinition{
+					Policies: []addonsv1alpha1.ArgocdPolicyDefinition{
 						{
 							Resource: "repositories",
 							Action:   []string{"*"},
@@ -71,22 +69,22 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			},
 		},
 	}
-	translator2 := &v1alpha1.ArgoTranslator{
+	translator2 := &addonsv1alpha1.ArgoTranslator{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "test-rbac-2",
 			Labels: selector,
 		},
-		Spec: v1alpha1.ArgoTranslatorSpec{
+		Spec: addonsv1alpha1.ArgoTranslatorSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/env": "dev",
 				},
 			},
 
-			ProjectRoles: []v1alpha1.ArgocdProjectRolesTranslator{
+			ProjectRoles: []addonsv1alpha1.ArgocdProjectRolesTranslator{
 				{
 					Name: "operators",
-					Policies: []v1alpha1.ArgocdPolicyDefinition{
+					Policies: []addonsv1alpha1.ArgocdPolicyDefinition{
 						{
 							Resource: "*",
 							Action:   []string{"get"},
@@ -96,7 +94,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 				},
 				{
 					Name: "owner",
-					Policies: []v1alpha1.ArgocdPolicyDefinition{
+					Policies: []addonsv1alpha1.ArgocdPolicyDefinition{
 						{
 							Resource: "applications",
 							Action:   []string{"*"},
@@ -167,7 +165,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 		Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: e2eConfigName()}, originalArgoAddon)).To(Succeed())
 		argoaddon = originalArgoAddon.DeepCopy()
 
-		for _, tran := range []*v1alpha1.ArgoTranslator{translator1, translator2} {
+		for _, tran := range []*addonsv1alpha1.ArgoTranslator{translator1, translator2} {
 			Eventually(func() error {
 				tran.ResourceVersion = ""
 				return k8sClient.Create(context.TODO(), tran)
