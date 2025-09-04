@@ -7,7 +7,6 @@ require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/KimMachineGun/automemlimit v0.7.4
 	github.com/Masterminds/sprig/v3 v3.3.0
-	github.com/argoproj/argo-cd/v2 v2.14.8
 	github.com/argoproj/argo-cd/v3 v3.1.1
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.25.2
@@ -87,7 +86,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.8.1 // indirect
-	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
 	github.com/bombsimon/logrusr/v4 v4.1.0 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.16.0 // indirect
 	github.com/casbin/casbin/v2 v2.107.0 // indirect
@@ -125,7 +123,6 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-github/v66 v66.0.0 // indirect
 	github.com/google/go-github/v69 v69.2.0 // indirect
 	github.com/google/go-github/v72 v72.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
