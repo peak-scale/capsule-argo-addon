@@ -584,7 +584,7 @@
                             }
                         },
                         "timeoutSeconds": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 },
@@ -661,7 +661,7 @@
                             }
                         },
                         "timeoutSeconds": {
-                            "type": "string"
+                            "type": "integer"
                         }
                     }
                 },
