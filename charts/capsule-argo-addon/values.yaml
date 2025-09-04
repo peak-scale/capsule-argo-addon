@@ -283,7 +283,7 @@ webhooks:
     # -- Enable webhook for applications
     enabled: true
     # -- Timeout in seconds for mutating webhooks
-    timeoutSeconds: 3s
+    timeoutSeconds: 5
     # -- [FailurePolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#failure-policy)
     failurePolicy: 'Ignore'
     # -- [MatchPolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy)
@@ -314,7 +314,7 @@ webhooks:
     # -- Enable webhook for applicationsets
     enabled: true
     # -- Timeout in seconds for mutating webhooks
-    timeoutSeconds: 3s
+    timeoutSeconds: 5
     # -- [FailurePolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#failure-policy)
     failurePolicy: 'Ignore'
     # -- [MatchPolicy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#matching-requests-matchpolicy)
