@@ -61,17 +61,12 @@ func (mw *ApplicationWebhook) Handle(ctx context.Context, req admission.Request)
 		return admission.Allowed("tenant not translated")
 	}
 
-	// Add the label if not present
-	if app.Spec.Project == tenant.Name {
-		mw.Log.V(7).Info("project already set to tenant")
-
-		return admission.Allowed("tenant already set correctly")
+	if app.Spec.Destination.Namespace == "" {
+		app.Spec.Destination.Namespace = req.Namespace
 	}
 
-	// Overwrite Project
 	app.Spec.Project = tenant.Name
 
-	// Marshal the object back to JSON
 	marshaledObj, err := json.Marshal(app)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)

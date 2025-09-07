@@ -13,6 +13,11 @@ const (
 	// ManagerLabel.
 	ManagedTenantLabel = "argo.addons.projectcapsule.dev/tenant"
 
+	// Label to indicate if source repositories may be create in that namespace.
+	AllowRepositoryLabel           = "argo.addons.projectcapsule.dev/allow-repos"
+	RepositorySourceNameLabel      = "argo.addons.projectcapsule.dev/source-name"
+	RepositorySourceNamespaceLabel = "argo.addons.projectcapsule.dev/source-namespace"
+
 	// ManagedByLabel.
 	ManagedByLabel      = "app.kubernetes.io/managed-by"
 	ManagedByLabelValue = "capsule-argocd-addon"

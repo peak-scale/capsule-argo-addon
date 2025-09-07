@@ -38,6 +38,10 @@ endif
 golint: golangci-lint
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
+.PHONY: golint-fix
+golint-fix: golangci-lint
+	$(GOLANGCI_LINT) run -c .golangci.yml --fix
+
 all: manager
 
 # Run tests

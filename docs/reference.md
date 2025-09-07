@@ -86,6 +86,16 @@ ArgoAddonSpec defines the desired state of ArgoAddon.
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allowRepositoryCreation</b></td>
+        <td>boolean</td>
+        <td>
+          Allows the creation of argo repository secrets which are then replicated to the argocd namespace.
+This makes sense when users create repository via gitops and don't have access to the GUI (or where you prevent them from doing that on the GUI)<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b><a href="#argoaddonspecargo">argo</a></b></td>
         <td>object</td>
         <td>
@@ -239,6 +249,16 @@ Last applied valid configuration
         </tr>
     </thead>
     <tbody><tr>
+        <td><b>allowRepositoryCreation</b></td>
+        <td>boolean</td>
+        <td>
+          Allows the creation of argo repository secrets which are then replicated to the argocd namespace.
+This makes sense when users create repository via gitops and don't have access to the GUI (or where you prevent them from doing that on the GUI)<br/>
+          <br/>
+            <i>Default</i>: false<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
         <td><b><a href="#argoaddonstatusloadedargo">argo</a></b></td>
         <td>object</td>
         <td>
