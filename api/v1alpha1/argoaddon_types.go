@@ -27,6 +27,11 @@ type ArgoAddonSpec struct {
 	// Argo configuration
 	Argo ControllerArgoCDConfig `json:"argo"`
 
+	// Allows the creation of argo repository secrets which are then replicated to the argocd namespace.
+	// This makes sense when users create repository via gitops and don't have access to the GUI (or where you prevent them from doing that on the GUI)
+	//+kubebuilder:default=false
+	AllowRepositoryCreation bool `json:"allowRepositoryCreation"`
+
 	// Translator selector. Only translators matching this selector will be used for this controller, if empty all translators will be used.
 	// +optional
 	// TranslatorSelector *metav1.LabelSelector `json:"translatorSelector,omitempty"`

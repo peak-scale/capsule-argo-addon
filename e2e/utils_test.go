@@ -8,10 +8,15 @@ import (
 	"time"
 
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+	. "github.com/onsi/gomega"
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,6 +59,39 @@ func cleanResources(res []client.Object, selector labels.Selector) (err error) {
 	}
 
 	return nil
+}
+
+func NewNamespace(name string, labels ...map[string]string) *corev1.Namespace {
+	if len(name) == 0 {
+		name = rand.String(10)
+	}
+
+	var namespaceLabels map[string]string
+	if len(labels) > 0 {
+		namespaceLabels = labels[0]
+	}
+
+	return &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: namespaceLabels,
+		},
+	}
+}
+
+func NamespaceCreation(ns *corev1.Namespace, owner capsulev1beta2.OwnerSpec, timeout time.Duration) AsyncAssertion {
+	cs := ownerClient(owner)
+	return Eventually(func() (err error) {
+		_, err = cs.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
+		return
+	}, timeout, defaultPollInterval)
+}
+
+func TenantNamespaceList(t *capsulev1beta2.Tenant, timeout time.Duration) AsyncAssertion {
+	return Eventually(func() []string {
+		Expect(k8sClient.Get(context.TODO(), types.NamespacedName{Name: t.GetName()}, t)).Should(Succeed())
+		return t.Status.Namespaces
+	}, timeout, defaultPollInterval)
 }
 
 func CleanTranslators(selector labels.Selector) error {

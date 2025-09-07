@@ -13,6 +13,7 @@ import (
 	argocdv1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/config"
+	"github.com/peak-scale/capsule-argo-addon/internal/controllers/repositories"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/tenant"
 	"github.com/peak-scale/capsule-argo-addon/internal/controllers/translator"
 	"github.com/peak-scale/capsule-argo-addon/internal/metrics"
@@ -211,6 +212,19 @@ func main() {
 		Settings: store,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Translator")
+		os.Exit(1)
+	}
+
+	setupLog.Info("translator-controller initialized")
+
+	if err = (&repositories.Reconciler{
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("Controllers").WithName("Repositories"),
+		Scheme:     mgr.GetScheme(),
+		Settings:   store,
+		ConfigName: settingName,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Repository")
 		os.Exit(1)
 	}
 

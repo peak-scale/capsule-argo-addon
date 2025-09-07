@@ -39,6 +39,12 @@ spec:
           spec:
             description: ArgoAddonSpec defines the desired state of ArgoAddon.
             properties:
+              allowRepositoryCreation:
+                default: false
+                description: |-
+                  Allows the creation of argo repository secrets which are then replicated to the argocd namespace.
+                  This makes sense when users create repository via gitops and don't have access to the GUI (or where you prevent them from doing that on the GUI)
+                type: boolean
               argo:
                 description: Argo configuration
                 properties:
@@ -93,6 +99,7 @@ spec:
                   overwritten. This can also be set on a per-tenant basis via annotations.
                 type: boolean
             required:
+            - allowRepositoryCreation
             - argo
             - decouple
             - force
@@ -104,6 +111,12 @@ spec:
               loaded:
                 description: Last applied valid configuration
                 properties:
+                  allowRepositoryCreation:
+                    default: false
+                    description: |-
+                      Allows the creation of argo repository secrets which are then replicated to the argocd namespace.
+                      This makes sense when users create repository via gitops and don't have access to the GUI (or where you prevent them from doing that on the GUI)
+                    type: boolean
                   argo:
                     description: Argo configuration
                     properties:
@@ -158,6 +171,7 @@ spec:
                       overwritten. This can also be set on a per-tenant basis via annotations.
                     type: boolean
                 required:
+                - allowRepositoryCreation
                 - argo
                 - decouple
                 - force
