@@ -68,6 +68,11 @@ func (mw *ApplicationWebhook) Handle(ctx context.Context, req admission.Request)
 		return admission.Allowed("tenant already set correctly")
 	}
 
+	// Set Namespace to created namespace if not set
+	if app.Spec.Destination.Namespace == "" {
+		app.Spec.Destination.Namespace = req.Namespace
+	}
+
 	// Overwrite Project
 	app.Spec.Project = tenant.Name
 
