@@ -151,17 +151,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, replica, func() error {
-		if replica.Annotations == nil {
-			replica.Annotations = map[string]string{}
-		}
+		replica.Annotations = map[string]string{}
 
 		for l, v := range src.Annotations {
 			replica.Annotations[l] = v
 		}
 
-		if replica.Labels == nil {
-			replica.Labels = map[string]string{}
-		}
+		replica.Labels = map[string]string{}
 
 		for l, v := range src.Labels {
 			replica.Labels[l] = v
