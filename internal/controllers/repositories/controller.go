@@ -155,6 +155,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			replica.Labels = map[string]string{}
 		}
 
+		replica.Labels[ArgoRepositoryLabel] = ArgoRepositoryLabelValue
 		replica.Labels[meta.ManagedByLabel] = meta.ManagedByLabelValue
 		replica.Labels[meta.ProvisionedByLabel] = meta.ManagedByLabelValue
 		replica.Labels[meta.RepositorySourceNameLabel] = src.Name
