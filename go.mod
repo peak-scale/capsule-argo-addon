@@ -7,7 +7,7 @@ require (
 	github.com/BurntSushi/toml v1.5.0
 	github.com/KimMachineGun/automemlimit v0.7.4
 	github.com/Masterminds/sprig/v3 v3.3.0
-	github.com/argoproj/argo-cd/v3 v3.1.2
+	github.com/argoproj/argo-cd/v3 v3.1.8
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.25.2
 	github.com/onsi/gomega v1.38.2
@@ -80,7 +80,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
-	github.com/argoproj/gitops-engine v0.7.1-0.20250617174952-093aef0dad58 // indirect
+	github.com/argoproj/gitops-engine v0.7.1-0.20250905160054-e48120133eec // indirect
 	github.com/argoproj/pkg v0.13.7-0.20230626144333-d56162821bd1 // indirect
 	github.com/argoproj/pkg/v2 v2.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
