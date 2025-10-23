@@ -52,7 +52,7 @@ replace (
 	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.33.1
 	k8s.io/endpointslice => k8s.io/endpointslice v0.33.1
 	k8s.io/externaljwt => k8s.io/externaljwt v0.34.1
-	k8s.io/kms => k8s.io/kms v0.33.1
+	k8s.io/kms => k8s.io/kms v0.34.1
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.33.1
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.33.1
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.33.1
