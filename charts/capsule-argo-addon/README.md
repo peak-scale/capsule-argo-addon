@@ -54,6 +54,7 @@ The following Values are available for this chart.
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | crds.annnotations | object | `{}` | Extra Annotations for CRDs |
+| crds.inline | bool | `false` |  |
 | crds.install | bool | `true` | Install the CustomResourceDefinitions (This also manages the lifecycle of the CRDs for update operations) |
 | crds.keep | bool | `false` | Keep the annotations if deleted |
 | crds.labels | object | `{}` | Extra Labels for CRDs |
@@ -111,7 +112,9 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | args.extraArgs | list | `[]` | A list of extra arguments to add to the capsule-argo-addon |
 | args.logLevel | int | `4` | Log Level |
 | args.pprof | bool | `false` | Enable Profiling |
+| config.annotations | object | `{}` | Config Annotations |
 | config.create | bool | `true` | Create Plugin Configuration |
+| config.labels | object | `{}` | Config Labels |
 | config.name | string | `"default"` | Plugin Configuration Name |
 | config.spec | object | `{"argo":{"destination":"https://kubernetes.default.svc","namespace":"argocd","rbacConfigMap":"argocd-rbac-cm"}}` | Config Specification |
 | fullnameOverride | string | `""` |  |
