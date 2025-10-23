@@ -8,8 +8,14 @@ kind: ArgoAddon
 metadata:
   name: {{ include "config.name" $}}
   labels:
-  {{- include "helm.labels" . | nindent 4 }}
+    {{- include "helm.labels" . | nindent 4 }}
+    {{- with $.Values.config.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
   annotations:
+    {{- with $.Values.config.annotations }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
     {{- with .Values.customAnnotations }}
       {{- toYaml . | nindent 4 }}
     {{- end }}

@@ -22,8 +22,14 @@
         "config": {
             "type": "object",
             "properties": {
+                "annotations": {
+                    "type": "object"
+                },
                 "create": {
                     "type": "boolean"
+                },
+                "labels": {
+                    "type": "object"
                 },
                 "name": {
                     "type": "string"
@@ -54,6 +60,9 @@
             "properties": {
                 "annnotations": {
                     "type": "object"
+                },
+                "inline": {
+                    "type": "boolean"
                 },
                 "install": {
                     "type": "boolean"
