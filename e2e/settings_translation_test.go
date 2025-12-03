@@ -302,6 +302,17 @@ var _ = Describe("Translation Test", func() {
 			Expect(condition.Reason).To(Equal(meta.SucceededReason), "Expected tenant condition reason to be Succeeded")
 		})
 
+		By("verify primary translator finalizer", func() {
+			tra := &v1alpha1.ArgoTranslator{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: translator1.Name}, tra)).To(Succeed())
+
+			expectedFinalizers := []string{
+				meta.ControllerFinalizer,
+			}
+
+			Expect(tra.Finalizers).To(Equal(expectedFinalizers), "Translator should have the expected finalizers")
+		})
+
 		By("create second translation", func() {
 			Expect(k8sClient.Create(context.TODO(), translator2)).ToNot(HaveOccurred())
 		})
@@ -401,6 +412,17 @@ var _ = Describe("Translation Test", func() {
 			Expect(condition.Reason).To(Equal(meta.SucceededReason), "Expected tenant condition reason to be Succeeded")
 		})
 
+		By("verify secondary translator finalizer", func() {
+			tra := &v1alpha1.ArgoTranslator{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: translator2.Name}, tra)).To(Succeed())
+
+			expectedFinalizers := []string{
+				meta.ControllerFinalizer,
+			}
+
+			Expect(tra.Finalizers).To(Equal(expectedFinalizers), "Translator should have the expected finalizers")
+		})
+
 		By("primary translator should no longer select tenant", func() {
 			translator := &v1alpha1.ArgoTranslator{}
 			Expect(k8sClient.Get(context.TODO(), client.ObjectKey{Name: translator1.Name}, translator)).ToNot(HaveOccurred())
@@ -418,6 +440,13 @@ var _ = Describe("Translation Test", func() {
 
 			condition := tra.GetTenantCondition(solar)
 			Expect(condition).To(BeNil(), "Tenant condition should not be nil")
+		})
+
+		By("verify primary translator finalizer (no longer selecting)", func() {
+			tra := &v1alpha1.ArgoTranslator{}
+			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: translator1.Name}, tra)).To(Succeed())
+
+			Expect(tra.Finalizers).To(BeEmpty(), "Translator should have no finalizers")
 		})
 
 		By("verify translated approject (subtract primary translator)", func() {
