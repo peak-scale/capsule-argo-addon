@@ -63,7 +63,16 @@ func (i *Reconciler) reconcileProject(
 
 			// Update Translator
 			errs = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-				return i.Client.Status().Update(ctx, translator)
+				currentTranslator := &configv1alpha1.ArgoTranslator{}
+
+				err = i.Client.Get(ctx, client.ObjectKeyFromObject(translator), currentTranslator)
+				if err != nil {
+					return err
+				}
+
+				translator.Status.DeepCopyInto(&currentTranslator.Status)
+
+				return i.Client.Status().Update(ctx, currentTranslator)
 			})
 
 			log.V(7).Info("updated", "translation", translator.Name, "err", err)
