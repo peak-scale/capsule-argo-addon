@@ -147,16 +147,16 @@ func (in *ArgoTranslator) CollectStatus() {
 	in.updateReadyStatus()
 }
 
-// Assign Tenants to the ArgoTranslator.
-func (in *ArgoTranslator) SyncFinalizerStatus() {
+// Assign Tenants to the ArgoTranslator. Returns true if finalizer status was changed.
+func (in *ArgoTranslator) SyncFinalizerStatus() bool {
 	size := uint(len(in.Status.Tenants))
 
 	// Keep or remove Finalizer based on status inventory
 	if size > 0 {
-		controllerutil.AddFinalizer(in, meta.ControllerFinalizer)
-	} else {
-		controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
+		return controllerutil.AddFinalizer(in, meta.ControllerFinalizer)
 	}
+
+	return controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
 }
 
 // Assign Tenants to the ArgoTranslator.

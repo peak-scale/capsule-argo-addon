@@ -45,31 +45,30 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	log := i.Log.WithValues("translator", request.Name)
 
 	origin := &configv1alpha1.ArgoTranslator{}
-	if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
-		if k8serrors.IsNotFound(err) {
-			log.Info("Request object not found, could have been deleted after reconcile request")
 
-			// Cleanup Metricss
-			i.Metrics.DeleteTranslatorCondition(request.Name)
-
-			return reconcile.Result{}, nil
-		}
-
-		return reconcile.Result{}, err
-	}
-
-	// Emit Metrics
-	i.Metrics.RecordTranslatorCondition(origin)
-
-	// Synchronize Finalizer status
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		if err := i.Client.Update(ctx, origin); err != nil {
-			origin.SyncFinalizerStatus()
+		if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
+			if k8serrors.IsNotFound(err) {
+				log.Info("Request object not found, could have been deleted after reconcile request")
+
+				// Cleanup Metricss
+				i.Metrics.DeleteTranslatorCondition(request.Name)
+
+				return nil
+			}
 
 			return err
 		}
 
-		return
+		// Emit Metrics
+		i.Metrics.RecordTranslatorCondition(origin)
+
+		// Synchronize Finalizer status
+		if origin.SyncFinalizerStatus() {
+			return i.Client.Update(ctx, origin)
+		}
+
+		return nil
 	}); err != nil {
 		return ctrl.Result{}, err
 	}
