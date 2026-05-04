@@ -69,6 +69,15 @@ spec:
                     description: Name of the ArgoCD rbac configmap (required for the
                       controller)
                     type: string
+                  serviceAccountClusterRoles:
+                    default:
+                    - admin
+                    - capsule-namespace-deletor
+                    description: ClusterRoles assigned to serviceaccounts generated
+                      by the addon and added as owners to the capsule tenant
+                    items:
+                      type: string
+                    type: array
                   serviceAccountNamespace:
                     description: |-
                       Default Namespace to create ServiceAccounts used by arog-cd
@@ -76,6 +85,7 @@ spec:
                       It's best to have a dedicated namespace for these serviceaccounts
                     type: string
                 required:
+                - serviceAccountClusterRoles
                 - serviceAccountNamespace
                 type: object
               decouple:
@@ -141,6 +151,15 @@ spec:
                         description: Name of the ArgoCD rbac configmap (required for
                           the controller)
                         type: string
+                      serviceAccountClusterRoles:
+                        default:
+                        - admin
+                        - capsule-namespace-deletor
+                        description: ClusterRoles assigned to serviceaccounts generated
+                          by the addon and added as owners to the capsule tenant
+                        items:
+                          type: string
+                        type: array
                       serviceAccountNamespace:
                         description: |-
                           Default Namespace to create ServiceAccounts used by arog-cd
@@ -148,6 +167,7 @@ spec:
                           It's best to have a dedicated namespace for these serviceaccounts
                         type: string
                     required:
+                    - serviceAccountClusterRoles
                     - serviceAccountNamespace
                     type: object
                   decouple:

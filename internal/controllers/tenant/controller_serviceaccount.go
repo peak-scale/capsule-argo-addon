@@ -207,33 +207,46 @@ func (i *Reconciler) addServiceAccountOwner(
 	name string,
 ) (err error) {
 	owner := capsulev1beta2.OwnerSpec{
-		Kind: "ServiceAccount",
-		Name: "system:serviceaccount:" + namespace + ":" + name,
+		Kind:         "ServiceAccount",
+		Name:         "system:serviceaccount:" + namespace + ":" + name,
+		ClusterRoles: i.Settings.Get().Argo.ServiceAccountClusterRoles,
 	}
 
-	// Check if the owner is already present
-	for _, o := range tenant.Spec.Owners {
-		if o.Kind == owner.Kind && o.Name == owner.Name {
-			log.V(5).Info("serviceaccount already owner")
-
-			return nil
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		if err := i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant); err != nil {
+			return err
 		}
-	}
 
-	err = retry.RetryOnConflict(retry.DefaultBackoff, func() (conflict error) {
-		_ = i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant)
+		for idx := range tenant.Spec.Owners {
+			existing := &tenant.Spec.Owners[idx]
+
+			if existing.Kind != owner.Kind || existing.Name != owner.Name {
+				continue
+			}
+
+			if sameStringSet(existing.ClusterRoles, owner.ClusterRoles) {
+				log.V(5).Info("serviceaccount already owner with expected clusterroles")
+
+				return nil
+			}
+
+			log.V(5).Info("updating serviceaccount owner clusterroles",
+				"owner", owner.Name,
+				"currentClusterRoles", existing.ClusterRoles,
+				"expectedClusterRoles", owner.ClusterRoles,
+			)
+
+			existing.ClusterRoles = append([]string(nil), owner.ClusterRoles...)
+
+			return i.Client.Update(ctx, tenant)
+		}
 
 		log.V(5).Info("adding serviceaccount as owner")
 
 		tenant.Spec.Owners = append(tenant.Spec.Owners, owner)
-		if conflict = i.Client.Update(ctx, tenant); err != nil {
-			return err
-		}
 
-		return
+		return i.Client.Update(ctx, tenant)
 	})
-
-	return nil
 }
 
 // Removes a ServiceAccount from the ownerspec of a tenant.

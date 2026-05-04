@@ -18,6 +18,25 @@ import (
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
+func sameStringSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	seen := make(map[string]struct{}, len(a))
+	for _, item := range a {
+		seen[item] = struct{}{}
+	}
+
+	for _, item := range b {
+		if _, ok := seen[item]; !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Gets the API Server given via Rest-Config.
 func (i *Reconciler) RetrieveAPIServerURL() string {
 	return i.Rest.Host

@@ -15,11 +15,13 @@ The follwing data context is available for templating:
 
 ```yaml
 Config:
+    AllowRepositoryCreation: false
     Argo:
         Destination: ""
         DestinationServiceAccounts: false
         Namespace: argocd
         RBACConfigMap: argocd-rbac-cm
+        ServiceAccountClusterRoles: []
         ServiceAccountNamespace: ""
     Decouple: false
     Force: false
