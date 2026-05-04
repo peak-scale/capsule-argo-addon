@@ -48,6 +48,12 @@
                                 },
                                 "rbacConfigMap": {
                                     "type": "string"
+                                },
+                                "serviceAccountClusterRoles": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
                                 }
                             }
                         }
@@ -413,15 +419,6 @@
                         },
                         "clientConnectionQPS": {
                             "type": "integer"
-                        },
-                        "extraArgs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        "logLevel": {
-                            "type": "string"
                         }
                     }
                 }

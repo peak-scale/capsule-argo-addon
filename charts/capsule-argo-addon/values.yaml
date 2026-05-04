@@ -85,10 +85,6 @@ proxy:
     clientConnectionQPS: 50
     # -- Burst to use for interacting with kubernetes API Server.
     clientConnectionBurst: 100
-    logLevel: "10"
-    extraArgs:
-    - "--feature-gates=ProxyClusterScoped=true"
-    - "--feature-gates=ProxyAllNamespaced=true"
   # -- Get Certificate from cert-manager from Capsule-Proxy
   certManager:
     generateCertificates: false
@@ -114,6 +110,9 @@ config:
       destination: https://kubernetes.default.svc
       namespace: argocd
       rbacConfigMap: argocd-rbac-cm
+      serviceAccountClusterRoles:
+        - admin
+        - capsule-namespace-deletor
 
 # Arguments for the controller
 args:
