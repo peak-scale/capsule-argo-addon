@@ -5,6 +5,7 @@ package translator
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
@@ -62,17 +63,31 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	i.Metrics.RecordTranslatorCondition(origin)
 
 	// Synchronize Finalizer status
-	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		if err := i.Client.Update(ctx, origin); err != nil {
-			origin.SyncFinalizerStatus()
-
-			return err
-		}
-
-		return
-	}); err != nil {
+	if err := i.syncFinalizerStatus(ctx, request.NamespacedName); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (i *Reconciler) syncFinalizerStatus(ctx context.Context, key client.ObjectKey) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		current := &configv1alpha1.ArgoTranslator{}
+		if err := i.Client.Get(ctx, key, current); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+
+			return err
+		}
+
+		previous := current.DeepCopy()
+		current.SyncFinalizerStatus()
+
+		if reflect.DeepEqual(previous.Finalizers, current.Finalizers) {
+			return nil
+		}
+
+		return i.Client.Patch(ctx, current, client.MergeFrom(previous))
+	})
 }
