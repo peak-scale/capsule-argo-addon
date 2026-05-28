@@ -14,6 +14,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -156,6 +157,43 @@ func (in *ArgoTranslator) SyncFinalizerStatus() {
 		controllerutil.AddFinalizer(in, meta.ControllerFinalizer)
 	} else {
 		controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
+	}
+}
+
+// PruneMissingTenantStatuses removes status entries for tenants that no longer exist.
+func (in *ArgoTranslator) PruneMissingTenantStatuses(tenants []capsulev1beta2.Tenant) {
+	if len(in.Status.Tenants) == 0 {
+		return
+	}
+
+	liveTenants := make(map[string]k8stypes.UID, len(tenants))
+	for _, tenant := range tenants {
+		liveTenants[tenant.Name] = tenant.UID
+	}
+
+	filteredTenants := make([]TenantStatus, 0, len(in.Status.Tenants))
+	changed := false
+
+	for _, tenant := range in.Status.Tenants {
+		uid, ok := liveTenants[tenant.Name]
+		if !ok {
+			changed = true
+
+			continue
+		}
+
+		if tenant.UID != "" && uid != "" && tenant.UID != uid {
+			changed = true
+
+			continue
+		}
+
+		filteredTenants = append(filteredTenants, tenant)
+	}
+
+	if changed {
+		in.Status.Tenants = filteredTenants
+		in.CollectStatus()
 	}
 }
 
