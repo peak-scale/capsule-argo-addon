@@ -112,7 +112,7 @@ config:
       rbacConfigMap: argocd-rbac-cm
       serviceAccountClusterRoles:
         - admin
-        - capsule-namespace-deletor
+        - capsule-namespace-deleter
 
 # Arguments for the controller
 args:
