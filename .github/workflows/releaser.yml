@@ -18,7 +18,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: creekorful/goreportcard-action@1f35ced8cdac2cba28c9a2f2288a16aacfd507f9 # v1.0
       - uses: anchore/sbom-action/download-syft@8e94d75ddd33f69f691467e42275782e4bfefe84
       - name: Install Cosign
