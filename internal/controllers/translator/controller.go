@@ -5,6 +5,7 @@ package translator
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
@@ -18,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
 var _ reconcile.Reconciler = &Reconciler{}
@@ -58,21 +61,83 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 		return reconcile.Result{}, err
 	}
 
+	pruned, err := i.pruneMissingTenantStatuses(ctx, request.NamespacedName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if pruned {
+		if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	// Emit Metrics
 	i.Metrics.RecordTranslatorCondition(origin)
 
 	// Synchronize Finalizer status
-	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		if err := i.Client.Update(ctx, origin); err != nil {
-			origin.SyncFinalizerStatus()
-
-			return err
-		}
-
-		return
-	}); err != nil {
+	if err := i.syncFinalizerStatus(ctx, request.NamespacedName); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (i *Reconciler) pruneMissingTenantStatuses(ctx context.Context, key client.ObjectKey) (bool, error) {
+	tenants := &capsulev1beta2.TenantList{}
+	if err := i.Client.List(ctx, tenants); err != nil {
+		return false, err
+	}
+
+	pruned := false
+
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		current := &configv1alpha1.ArgoTranslator{}
+		if err := i.Client.Get(ctx, key, current); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+
+			return err
+		}
+
+		previous := current.Status.DeepCopy()
+
+		current.PruneMissingTenantStatuses(tenants.Items)
+
+		if reflect.DeepEqual(previous, current.Status.DeepCopy()) {
+			return nil
+		}
+
+		pruned = true
+
+		return i.Client.Status().Update(ctx, current)
+	})
+	if err != nil {
+		return false, err
+	}
+
+	return pruned, nil
+}
+
+func (i *Reconciler) syncFinalizerStatus(ctx context.Context, key client.ObjectKey) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		current := &configv1alpha1.ArgoTranslator{}
+		if err := i.Client.Get(ctx, key, current); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+
+			return err
+		}
+
+		previous := current.DeepCopy()
+		current.SyncFinalizerStatus()
+
+		if reflect.DeepEqual(previous.Finalizers, current.Finalizers) {
+			return nil
+		}
+
+		return i.Client.Patch(ctx, current, client.MergeFrom(previous))
+	})
 }
