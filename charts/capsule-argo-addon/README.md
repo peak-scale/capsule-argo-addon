@@ -116,7 +116,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | config.create | bool | `true` | Create Plugin Configuration |
 | config.labels | object | `{}` | Config Labels |
 | config.name | string | `"default"` | Plugin Configuration Name |
-| config.spec | object | `{"argo":{"destination":"https://kubernetes.default.svc","namespace":"argocd","rbacConfigMap":"argocd-rbac-cm","serviceAccountClusterRoles":["admin","capsule-namespace-deletor"]}}` | Config Specification |
+| config.spec | object | `{"argo":{"destination":"https://kubernetes.default.svc","namespace":"argocd","rbacConfigMap":"argocd-rbac-cm","serviceAccountClusterRoles":["admin","capsule-namespace-deleter"]}}` | Config Specification |
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` | Set the image pull policy. |
 | image.registry | string | `"ghcr.io"` | Set the image registry |
