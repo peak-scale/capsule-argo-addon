@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"text/template"
 
 	"dario.cat/mergo"
@@ -150,6 +151,12 @@ func (in *ArgoTranslator) CollectStatus() {
 
 // Assign Tenants to the ArgoTranslator.
 func (in *ArgoTranslator) SyncFinalizerStatus() {
+	if !in.ObjectMeta.DeletionTimestamp.IsZero() {
+		controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
+
+		return
+	}
+
 	size := uint(len(in.Status.Tenants))
 
 	// Keep or remove Finalizer based on status inventory
@@ -218,6 +225,14 @@ func (in *ArgoTranslator) UpdateTenantCondition(tnt TenantStatus) {
 	// Check if the tenant is already present in the status
 	for i, existingTenant := range in.Status.Tenants {
 		if existingTenant.Name == tnt.Name {
+			if sameConditionState(existingTenant.Condition, tnt.Condition) {
+				tnt.Condition.LastTransitionTime = existingTenant.Condition.LastTransitionTime
+			}
+
+			if reflect.DeepEqual(existingTenant, tnt) {
+				return
+			}
+
 			in.Status.Tenants[i] = tnt
 			in.CollectStatus()
 
@@ -228,6 +243,14 @@ func (in *ArgoTranslator) UpdateTenantCondition(tnt TenantStatus) {
 	// If tenant not found, append it to the list
 	in.Status.Tenants = append(in.Status.Tenants, tnt)
 	in.CollectStatus()
+}
+
+func sameConditionState(existing, next metav1.Condition) bool {
+	return existing.Type == next.Type &&
+		existing.Status == next.Status &&
+		existing.ObservedGeneration == next.ObservedGeneration &&
+		existing.Reason == next.Reason &&
+		existing.Message == next.Message
 }
 
 // Get Status for a tenant, if no status is present (tenant absent) returns nil.
