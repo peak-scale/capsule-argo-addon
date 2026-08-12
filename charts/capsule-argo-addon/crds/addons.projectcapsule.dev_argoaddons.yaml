@@ -72,7 +72,7 @@ spec:
                   serviceAccountClusterRoles:
                     default:
                     - admin
-                    - capsule-namespace-deletor
+                    - capsule-namespace-deleter
                     description: ClusterRoles assigned to serviceaccounts generated
                       by the addon and added as owners to the capsule tenant
                     items:
@@ -154,7 +154,7 @@ spec:
                       serviceAccountClusterRoles:
                         default:
                         - admin
-                        - capsule-namespace-deletor
+                        - capsule-namespace-deleter
                         description: ClusterRoles assigned to serviceaccounts generated
                           by the addon and added as owners to the capsule tenant
                         items:
