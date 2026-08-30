@@ -1,6 +1,6 @@
 module github.com/peak-scale/capsule-argo-addon
 
-go 1.24.6
+go 1.25
 
 require (
 	dario.cat/mergo v1.0.2
@@ -20,7 +20,7 @@ require (
 	k8s.io/apimachinery v0.33.4
 	k8s.io/client-go v0.33.4
 	k8s.io/kubectl v0.33.1
-	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.21.0
 )
 
