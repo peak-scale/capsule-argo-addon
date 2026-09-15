@@ -386,7 +386,7 @@ var _ = Describe("Translation Test", func() {
 			}
 
 			// Compare finalizers
-			Expect(approject.Finalizers).To(Equal(expectedFinalizers2), "AppProject should have the expected finalizers")
+			Expect(approject.Finalizers).To(ConsistOf(expectedFinalizers2), "AppProject should have the expected finalizers")
 		})
 
 		By("verify secondary translator status", func() {

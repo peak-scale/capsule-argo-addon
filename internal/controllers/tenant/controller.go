@@ -5,6 +5,7 @@ package tenant
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	argocdapi "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
@@ -21,10 +22,12 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -92,10 +95,33 @@ func (i *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) err
 				&capsulev1beta2.Tenant{},
 			)).
 		// Whenever a translator is updated, we need to reconcile all tenants
-		Watches(&configv1alpha1.ArgoTranslator{}, i.TenantRequeueHandler()).
+		Watches(
+			&configv1alpha1.ArgoTranslator{},
+			i.TenantRequeueHandler(),
+			builder.WithPredicates(translatorRequeuePredicate()),
+		).
 		// Reconcile When Configuration Changes
 		WatchesRawSource(source.Channel(i.requeue, i.TenantRequeueHandler())).
 		Complete(i)
+}
+
+func translatorRequeuePredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(event.CreateEvent) bool {
+			return true
+		},
+		DeleteFunc: func(event.DeleteEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration() {
+				return true
+			}
+
+			return e.ObjectOld.GetDeletionTimestamp().IsZero() &&
+				!e.ObjectNew.GetDeletionTimestamp().IsZero()
+		},
+	}
 }
 
 // Handler to reconcile all Tenants.
@@ -140,10 +166,15 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 				},
 			}
 
+			// Tenants can disappear without our finalizer if reconciliation failed
+			// before the finalizer was added. Clean any stale translator status
+			// entries by name so translator finalizers can drain.
+			serr := i.cleanupTranslatorTenantStatuses(ctx, request.NamespacedName.Name)
+
 			// Cleanup ArgoCD
 			ferr := i.finalize(ctx, log, origin)
 
-			return reconcile.Result{}, ferr
+			return reconcile.Result{}, errors.Join(serr, ferr)
 		}
 
 		return reconcile.Result{}, err
@@ -192,6 +223,29 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (i *Reconciler) cleanupTranslatorTenantStatuses(ctx context.Context, tenantName string) error {
+	translators := &configv1alpha1.ArgoTranslatorList{}
+	if err := i.Client.List(ctx, translators); err != nil {
+		return err
+	}
+
+	staleTenant := &capsulev1beta2.Tenant{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: tenantName,
+		},
+	}
+
+	var errs error
+	for idx := range translators.Items {
+		errs = errors.Join(
+			errs,
+			i.updateTranslatorTenantStatus(ctx, &translators.Items[idx], staleTenant, nil),
+		)
+	}
+
+	return errs
 }
 
 // Patch the tenant from the argocd configmap.

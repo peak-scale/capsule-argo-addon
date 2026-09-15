@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
@@ -120,6 +121,61 @@ func TestReconcileTranslator_WithEmptySelector_ShouldMatchOneTenant(t *testing.T
 	}
 }
 
+func TestUpdateTenantCondition_PreservesTransitionTimeWhenConditionIsUnchanged(t *testing.T) {
+	transitionTime := metav1.NewTime(time.Date(2026, 5, 27, 10, 0, 0, 0, time.UTC))
+
+	translator := &ArgoTranslator{}
+	translator.UpdateTenantCondition(TenantStatus{
+		Name: "tenant-a",
+		Condition: metav1.Condition{
+			Type:               "Ready",
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: 1,
+			Reason:             "Applied",
+			Message:            "Successfully translated tenant",
+			LastTransitionTime: transitionTime,
+		},
+	})
+
+	translator.UpdateTenantCondition(TenantStatus{
+		Name: "tenant-a",
+		Condition: metav1.Condition{
+			Type:               "Ready",
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: 1,
+			Reason:             "Applied",
+			Message:            "Successfully translated tenant",
+			LastTransitionTime: metav1.Now(),
+		},
+	})
+
+	got := translator.Status.Tenants[0].Condition.LastTransitionTime
+	if !got.Equal(&transitionTime) {
+		t.Fatalf("expected last transition time %s, got %s", transitionTime, got)
+	}
+}
+
+func TestSyncFinalizerStatus_RemovesFinalizerWhenTranslatorIsDeleting(t *testing.T) {
+	now := metav1.Now()
+	translator := &ArgoTranslator{
+		ObjectMeta: metav1.ObjectMeta{
+			DeletionTimestamp: &now,
+			Finalizers:        []string{meta.ControllerFinalizer},
+		},
+		Status: ArgoTranslatorStatus{
+			Tenants: []TenantStatus{{Name: "tenant-a"}},
+		},
+	}
+
+	translator.SyncFinalizerStatus()
+
+	for _, finalizer := range translator.Finalizers {
+		if finalizer == meta.ControllerFinalizer {
+			t.Fatal("expected controller finalizer to be removed while translator is deleting")
+		}
+	}
+}
+
 func TestPruneMissingTenantStatuses_RemovesStaleTenants(t *testing.T) {
 	translator := &ArgoTranslator{
 		Status: ArgoTranslatorStatus{
@@ -178,4 +234,5 @@ func TestPruneMissingTenantStatuses_RemovesStaleTenants(t *testing.T) {
 	if translator.Status.Ready != meta.ReadyCondition {
 		t.Fatalf("expected ready status %q, got %q", meta.ReadyCondition, translator.Status.Ready)
 	}
+
 }

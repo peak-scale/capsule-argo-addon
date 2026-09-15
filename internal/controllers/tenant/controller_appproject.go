@@ -41,6 +41,8 @@ func (i *Reconciler) reconcileProject(
 		var errs error
 
 		for _, translator := range translators {
+			desired := translator.GetTenantStatus(tenant)
+
 			if err != nil {
 				var condition metav1.Condition
 
@@ -53,23 +55,21 @@ func (i *Reconciler) reconcileProject(
 					condition = meta.NewNotReadyCondition(tenant, err.Error())
 				}
 
-				translator.UpdateTenantCondition(configv1alpha1.TenantStatus{
+				desired = &configv1alpha1.TenantStatus{
 					Name:      tenant.Name,
 					UID:       tenant.UID,
 					Condition: condition,
 					Serving:   translator.Spec.ProjectSettings,
-				})
+				}
 			}
 
 			// Update Translator
-			errs = retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-				return i.Client.Status().Update(ctx, translator)
-			})
+			errs = errors.Join(errs, i.updateTranslatorTenantStatus(ctx, translator, tenant, desired))
 
 			log.V(7).Info("updated", "translation", translator.Name, "err", err)
 		}
 
-		err = errs
+		err = errors.Join(err, errs)
 	}()
 
 	finalize = false
@@ -227,6 +227,52 @@ func (i *Reconciler) reconcileProject(
 	)
 
 	return finalize, nil
+}
+
+func (i *Reconciler) updateTranslatorTenantStatus(
+	ctx context.Context,
+	translator *configv1alpha1.ArgoTranslator,
+	tenant *capsulev1beta2.Tenant,
+	desired *configv1alpha1.TenantStatus,
+) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		current := &configv1alpha1.ArgoTranslator{}
+		if err := i.Client.Get(ctx, client.ObjectKeyFromObject(translator), current); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+
+			return err
+		}
+
+		previous := current.Status.DeepCopy()
+
+		if desired == nil {
+			if !hasTenantStatus(current, tenant.Name) {
+				return nil
+			}
+
+			current.RemoveTenantCondition(tenant.Name)
+		} else {
+			current.UpdateTenantCondition(*desired)
+		}
+
+		if reflect.DeepEqual(previous, current.Status.DeepCopy()) {
+			return nil
+		}
+
+		return i.Client.Status().Update(ctx, current)
+	})
+}
+
+func hasTenantStatus(translator *configv1alpha1.ArgoTranslator, tenant string) bool {
+	for _, status := range translator.Status.Tenants {
+		if status.Name == tenant {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (i *Reconciler) reconcileTranslator(
