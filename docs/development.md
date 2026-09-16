@@ -53,11 +53,20 @@ For Unit-Testing
 make test
 ```
 
-For Unit-Testing (When running Unit-Tests there should not be any `argotranslators`, `tenants` and `appprojects` present):
+For end-to-end testing, use the dedicated test cluster created by `make e2e-build`:
 
 ```shell
 make e2e-exec
 ```
+
+To run only the permission-source scenarios against that test cluster:
+
+```shell
+make ginkgo
+bin/ginkgo -vv --label-filter=rbac-permissions ./e2e
+```
+
+These cases exercise Capsule-resolved User and Group owners, role changes and revocation, rule bindings, and deduplication with legacy additional role bindings. They check the resulting tenant policy in Argo CD’s RBAC ConfigMap.
 
 ## Helm Chart
 
