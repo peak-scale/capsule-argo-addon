@@ -67,7 +67,7 @@ spec:
     # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
   - name: "viewer"
 
-    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below.
+    # All users which have the clusterRole "tenant-viewer" assigned (through status owners, additionalRoleBindings, or rule bindings) will be assigned the policies below.
     clusterRoles:
       - "tenant-viewer"
 
@@ -80,7 +80,7 @@ spec:
     # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
   - name: "owner"
 
-    # All users which have the clusterRole "admin" assigned (either owner or additionalRoleBindings) will be assigned the policies below. (These are by default all tenant owners)
+    # All users which have the clusterRole "admin" assigned (through status owners, additionalRoleBindings, or rule bindings) will be assigned the policies below. (These are by default all tenant owners)
     clusterRoles:
       - "admin"
 

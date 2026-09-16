@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 )
 
 // Creates Teanant Service Account with the given name and namespace.
@@ -40,7 +41,7 @@ func (i *Reconciler) reconcileArgoServiceAccount(
 		},
 	}
 
-	err = i.Client.Get(
+	err = i.Get(
 		ctx,
 		client.ObjectKey{
 			Name:      accountResource.Name,
@@ -65,11 +66,11 @@ func (i *Reconciler) reconcileArgoServiceAccount(
 
 	// Create ServiceAccount
 	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, accountResource, func() (err error) {
-		if accountResource.ObjectMeta.Labels == nil {
-			accountResource.ObjectMeta.Labels = make(map[string]string)
+		if accountResource.Labels == nil {
+			accountResource.Labels = make(map[string]string)
 		}
 
-		accountResource.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
+		accountResource.Labels = meta.TranslatorTrackingLabels(tenant)
 
 		return meta.AddDynamicTenantOwnerReference(i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant))
 	})
@@ -92,7 +93,7 @@ func (i *Reconciler) reconcileArgoServiceAccount(
 	}
 
 	// Attempt to fetch the existing secret to ensure ResourceVersion is set if it exists
-	err = i.Client.Get(ctx, client.ObjectKey{Name: serviceAccount, Namespace: namespace}, tokenResource)
+	err = i.Get(ctx, client.ObjectKey{Name: serviceAccount, Namespace: namespace}, tokenResource)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		// Return any error other than NotFound
 		return "", err
@@ -106,13 +107,13 @@ func (i *Reconciler) reconcileArgoServiceAccount(
 
 	// Create Account Token
 	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, tokenResource, func() (err error) {
-		tokenResource.ObjectMeta.Labels = meta.TranslatorTrackingLabels(tenant)
+		tokenResource.Labels = meta.TranslatorTrackingLabels(tenant)
 
-		if tokenResource.ObjectMeta.Annotations == nil {
-			tokenResource.ObjectMeta.Annotations = make(map[string]string)
+		if tokenResource.Annotations == nil {
+			tokenResource.Annotations = make(map[string]string)
 		}
 
-		tokenResource.ObjectMeta.Annotations["kubernetes.io/service-account.name"] = serviceAccount
+		tokenResource.Annotations["kubernetes.io/service-account.name"] = serviceAccount
 
 		if err := meta.AddDynamicTenantOwnerReference(i.Client.Scheme(), accountResource, tenant, i.Settings.Get().DecoupleTenant(tenant)); err != nil {
 			return err
@@ -133,7 +134,7 @@ func (i *Reconciler) reconcileArgoServiceAccount(
 	var secret corev1.Secret
 
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() (err error) {
-		if err = i.Client.Get(ctx, client.ObjectKey{
+		if err = i.Get(ctx, client.ObjectKey{
 			Name:      tokenResource.Name,
 			Namespace: namespace,
 		}, &secret); err != nil {
@@ -172,7 +173,7 @@ func (i *Reconciler) lifecycleArgoServiceAccount(
 		},
 	}
 
-	gerr := i.Client.Get(ctx, client.ObjectKey{Name: accountResource.Name, Namespace: accountResource.Namespace}, accountResource)
+	gerr := i.Get(ctx, client.ObjectKey{Name: accountResource.Name, Namespace: accountResource.Namespace}, accountResource)
 	if gerr != nil && !k8serrors.IsNotFound(gerr) {
 		return gerr
 	}
@@ -188,7 +189,7 @@ func (i *Reconciler) lifecycleArgoServiceAccount(
 			return err
 		}
 
-		return i.Client.Delete(ctx, accountResource)
+		return i.Delete(ctx, accountResource)
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, accountResource, func() (err error) {
@@ -206,14 +207,18 @@ func (i *Reconciler) addServiceAccountOwner(
 	namespace string,
 	name string,
 ) (err error) {
-	owner := capsulev1beta2.OwnerSpec{
-		Kind:         "ServiceAccount",
-		Name:         "system:serviceaccount:" + namespace + ":" + name,
-		ClusterRoles: i.Settings.Get().Argo.ServiceAccountClusterRoles,
+	owner := capsulerbac.OwnerSpec{
+		CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+			UserSpec: capsulerbac.UserSpec{
+				Kind: capsulerbac.ServiceAccountOwner,
+				Name: "system:serviceaccount:" + namespace + ":" + name,
+			},
+			ClusterRoles: i.Settings.Get().Argo.ServiceAccountClusterRoles,
+		},
 	}
 
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant); err != nil {
+		if err := i.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant); err != nil {
 			return err
 		}
 
@@ -238,14 +243,14 @@ func (i *Reconciler) addServiceAccountOwner(
 
 			existing.ClusterRoles = append([]string(nil), owner.ClusterRoles...)
 
-			return i.Client.Update(ctx, tenant)
+			return i.Update(ctx, tenant)
 		}
 
 		log.V(5).Info("adding serviceaccount as owner")
 
 		tenant.Spec.Owners = append(tenant.Spec.Owners, owner)
 
-		return i.Client.Update(ctx, tenant)
+		return i.Update(ctx, tenant)
 	})
 }
 
@@ -256,9 +261,13 @@ func (i *Reconciler) removeServiceAccountOwner(
 	namespace string,
 	name string,
 ) error {
-	owner := capsulev1beta2.OwnerSpec{
-		Kind: "ServiceAccount",
-		Name: "system:serviceaccount:" + namespace + ":" + name,
+	owner := capsulerbac.OwnerSpec{
+		CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+			UserSpec: capsulerbac.UserSpec{
+				Kind: capsulerbac.ServiceAccountOwner,
+				Name: "system:serviceaccount:" + namespace + ":" + name,
+			},
+		},
 	}
 
 	// Check if the owner is already present
@@ -278,14 +287,14 @@ func (i *Reconciler) removeServiceAccountOwner(
 
 	// Retry logic to avoid conflicts
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := i.Client.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant); err != nil {
+		if err := i.Get(ctx, types.NamespacedName{Name: tenant.Name}, tenant); err != nil {
 			return err
 		}
 
-		owners := capsulev1beta2.OwnerListSpec{}
+		owners := capsulerbac.OwnerListSpec{}
 
 		for _, o := range tenant.Spec.Owners {
-			if !(o.Kind == owner.Kind && o.Name == owner.Name) {
+			if o.Kind != owner.Kind || o.Name != owner.Name {
 				owners = append(owners, o)
 			}
 		}
@@ -293,6 +302,6 @@ func (i *Reconciler) removeServiceAccountOwner(
 		tenant.Spec.Owners = owners
 
 		// Update the tenant resource
-		return i.Client.Update(ctx, tenant)
+		return i.Update(ctx, tenant)
 	})
 }

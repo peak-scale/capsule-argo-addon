@@ -8,6 +8,7 @@ type ArgoAction string
 
 const (
 	ActionGet      ArgoAction = "get"
+	ActionList     ArgoAction = "list"
 	ActionCreate   ArgoAction = "create"
 	ActionUpdate   ArgoAction = "update"
 	ActionDelete   ArgoAction = "delete"

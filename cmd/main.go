@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
-	capsuleindexer "github.com/projectcapsule/capsule/pkg/indexer"
-	tntindex "github.com/projectcapsule/capsule/pkg/indexer/tenant"
+	capsuleindexer "github.com/projectcapsule/capsule/pkg/runtime/indexers"
+	tntindex "github.com/projectcapsule/capsule/pkg/runtime/indexers/tenant"
 )
 
 var (
@@ -42,7 +42,6 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
-//nolint:wsl
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(capsulev1beta2.AddToScheme(scheme))
@@ -162,7 +161,7 @@ func main() {
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Config"),
-		Recorder: mgr.GetEventRecorderFor("config-controller"),
+		Recorder: mgr.GetEventRecorder("config-controller"),
 		Store:    store,
 		Config: config.ReconcilerConfig{
 			SettingName: settingName,
@@ -191,7 +190,7 @@ func main() {
 	if err = (&tenant.Reconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Tenant"),
-		Recorder: mgr.GetEventRecorderFor("tenant-controller"),
+		Recorder: mgr.GetEventRecorder("tenant-controller"),
 		Scheme:   mgr.GetScheme(),
 		Metrics:  metricsRecorder,
 		Settings: store,
@@ -206,7 +205,7 @@ func main() {
 	if err = (&translator.Reconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("Controllers").WithName("Translator"),
-		Recorder: mgr.GetEventRecorderFor("translator-controller"),
+		Recorder: mgr.GetEventRecorder("translator-controller"),
 		Scheme:   mgr.GetScheme(),
 		Metrics:  metricsRecorder,
 		Settings: store,

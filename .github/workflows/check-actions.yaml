@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Ensure SHA pinned actions
-        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@fc87bb5b5a97953d987372e74478de634726b3e5 # v3.0.25
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@60e3a74c7b74a319e8e53e46bc455205f7173e1a # v5.0.8
         with:
           # slsa-github-generator requires using a semver tag for reusable workflows.
           # See: https://github.com/slsa-framework/slsa-github-generator#referencing-slsa-builders-and-generators

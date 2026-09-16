@@ -88,7 +88,3 @@ type ArgoAddonList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ArgoAddon `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ArgoAddon{}, &ArgoAddonList{})
-}

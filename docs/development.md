@@ -1,5 +1,9 @@
 # Development
 
+Use Go 1.27.1 or later. The integration test stack uses Kubernetes 1.37.0, Capsule 0.14.6, and Argo CD 3.5.3.
+
+The Go dependencies use Kubernetes 0.36.4 and controller-runtime 0.24.1 to match Argo CD’s kubectl API. Keep the Kubernetes modules aligned when upgrading them. Argo CD’s `gitops-engine` replacement must point to the same release commit as Argo CD.
+
 Getting started locally is pretty easy. You can execute:
 
 ```shell
@@ -11,7 +15,7 @@ This installs all required operators an installs the operator within a [KinD Clu
 If you wish to test against a specific Kubernetes version, you can pass that via variable:
 
 ```shell
-KIND_K8S_VERSION="v1.31.0" make e2e-build
+KUBERNETES_SUPPORTED_VERSION="v1.37.0" make e2e-build
 ```
 
 When you want to quickly develop, you can scale down the operator within the cluster:
@@ -23,7 +27,7 @@ kubectl scale deploy capsule-argo-addon --replicas=0 -n capsule-argo-addon
 And then execute the binary:
 
 ```shell
-go run cmd/main.go -zap-log-level=10
+go run ./cmd -zap-log-level=10
 ```
 
 You might need to first export the Kubeconfig for the cluster (If you are using multiple clusters at the same time):

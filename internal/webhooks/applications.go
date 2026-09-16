@@ -16,6 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	tenantindexers "github.com/projectcapsule/capsule/pkg/runtime/indexers/tenant"
 )
 
 // MutatingWebhook handles mutating webhook requests.
@@ -42,7 +43,7 @@ func (mw *ApplicationWebhook) Handle(ctx context.Context, req admission.Request)
 	mw.Log.V(7).Info("looking up tenant for namespace", "namespace", app.GetNamespace())
 
 	tntList := capsulev1beta2.TenantList{}
-	if err := mw.Client.List(ctx, &tntList, client.MatchingFields{".status.namespaces": app.GetNamespace()}); err != nil {
+	if err := mw.Client.List(ctx, &tntList, client.MatchingFields{tenantindexers.NamespaceIndexerFieldName: app.GetNamespace()}); err != nil {
 		admission.Errored(http.StatusInternalServerError, err)
 	}
 

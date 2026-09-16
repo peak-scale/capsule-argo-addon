@@ -13,9 +13,9 @@ func Subtract(target, source interface{}) {
 //nolint:exhaustive
 func subtractRecursive(targetVal, sourceVal reflect.Value) {
 	// If either is a pointer, ensure both are pointers before recursing.
-	if targetVal.Kind() == reflect.Ptr || sourceVal.Kind() == reflect.Ptr {
+	if targetVal.Kind() == reflect.Pointer || sourceVal.Kind() == reflect.Pointer {
 		// Only proceed if both are pointers.
-		if targetVal.Kind() == reflect.Ptr && sourceVal.Kind() == reflect.Ptr {
+		if targetVal.Kind() == reflect.Pointer && sourceVal.Kind() == reflect.Pointer {
 			if !targetVal.IsNil() && !sourceVal.IsNil() {
 				subtractRecursive(targetVal.Elem(), sourceVal.Elem())
 			}
@@ -34,9 +34,9 @@ func subtractRecursive(targetVal, sourceVal reflect.Value) {
 		sourceField := sourceVal.Field(i)
 
 		// Handle pointer fields.
-		if targetField.Kind() == reflect.Ptr {
+		if targetField.Kind() == reflect.Pointer {
 			// Ensure that the source field is also a pointer.
-			if sourceField.Kind() != reflect.Ptr {
+			if sourceField.Kind() != reflect.Pointer {
 				// If types are mismatched, you might choose to skip or handle differently.
 				continue
 			}

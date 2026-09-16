@@ -18,7 +18,7 @@ IMG             ?= $(IMG_BASE):$(VERSION)
 FULL_IMG        ?= $(REGISTRY)/$(IMG_BASE)
 
 ## Kubernetes Version Support
-KUBERNETES_SUPPORTED_VERSION ?= v1.34.0
+KUBERNETES_SUPPORTED_VERSION ?= v1.37.0
 
 ## Tool Binaries
 KUBECTL ?= kubectl
@@ -55,15 +55,16 @@ test-clean: ## Clean tests cache
 
 # Build manager binary
 manager: generate golint
-	go build -o bin/manager
+	go build -o bin/manager ./cmd
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate manifests
-	go run .
+	go run ./cmd
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen apidocs
+manifests: controller-gen
 	@$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/capsule-argo-addon/crds
+	@$(MAKE) apidocs
 
 # Generate code
 generate: controller-gen
@@ -271,77 +272,82 @@ $(LOCALBIN):
 # -- Helm Plugins
 ####################
 
-HELM_SCHEMA_VERSION   := ""
+HELM_SCHEMA_VERSION   := v2.6.0
 helm-plugin-schema: helm
-	@$(HELM) plugin install https://github.com/losisin/helm-values-schema-json.git --version $(HELM_SCHEMA_VERSION) || true
+	@$(HELM) plugin list | awk '$$1 == "schema" && $$2 == "$(HELM_SCHEMA_VERSION:v%=%)" { found = 1 } END { exit !found }' || { \
+		$(HELM) plugin uninstall schema 2>/dev/null || true; \
+		$(HELM) plugin install https://github.com/losisin/helm-values-schema-json.git --version $(HELM_SCHEMA_VERSION) --verify=false; \
+	}
 
 HELM_DOCS         := $(LOCALBIN)/helm-docs
-HELM_DOCS_VERSION := v1.14.1
+HELM_DOCS_VERSION := v1.14.2
 HELM_DOCS_LOOKUP  := norwoodj/helm-docs
 helm-doc:
-	@test -s $(HELM_DOCS) || \
+	@test -s $(HELM_DOCS) && go version -m $(HELM_DOCS) | grep -q $(HELM_DOCS_VERSION) || \
 	$(call go-install-tool,$(HELM_DOCS),github.com/$(HELM_DOCS_LOOKUP)/cmd/helm-docs@$(HELM_DOCS_VERSION))
 
 ####################
 # -- Tools
 ####################
 CONTROLLER_GEN         := $(LOCALBIN)/controller-gen
-CONTROLLER_GEN_VERSION ?= v0.19.0
+CONTROLLER_GEN_VERSION ?= v0.22.0
 CONTROLLER_GEN_LOOKUP  := kubernetes-sigs/controller-tools
 controller-gen:
 	@test -s $(CONTROLLER_GEN) && $(CONTROLLER_GEN) --version | grep -q $(CONTROLLER_GEN_VERSION) || \
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION))
 
 GINKGO := $(LOCALBIN)/ginkgo
+GINKGO_VERSION := v2.32.0
 ginkgo:
-	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo)
+	@test -s $(GINKGO) && $(GINKGO) version | grep -q $(GINKGO_VERSION:v%=%) || \
+	$(call go-install-tool,$(GINKGO),github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION))
 
 CT         := $(LOCALBIN)/ct
 CT_VERSION := v3.14.0
 CT_LOOKUP  := helm/chart-testing
 ct:
-	@test -s $(CT) && $(CT) version | grep -q $(CT_VERSION) || \
+	@test -s $(CT) && go version -m $(CT) | grep -q $(CT_VERSION) || \
 	$(call go-install-tool,$(CT),github.com/$(CT_LOOKUP)/v3/ct@$(CT_VERSION))
 
 KIND         := $(LOCALBIN)/kind
-KIND_VERSION := v0.30.0
+KIND_VERSION := v0.33.0
 KIND_LOOKUP  := kubernetes-sigs/kind
 kind:
 	@test -s $(KIND) && $(KIND) --version | grep -q $(KIND_VERSION) || \
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind/cmd/kind@$(KIND_VERSION))
 
 HELM         := $(LOCALBIN)/helm
-HELM_VERSION := v3.19.0
+HELM_VERSION := v4.3.0
 HELM_LOOKUP  := helm/helm
 helm:
-	@test -s $(HELM) && $(HELM) version | grep -q $(HELM_VERSION) || \
-	$(call go-install-tool,$(HELM),helm.sh/helm/v3/cmd/helm@$(HELM_VERSION))
+	@test -s $(HELM) && go version -m $(HELM) | grep -q $(HELM_VERSION) || \
+	$(call go-install-tool,$(HELM),helm.sh/helm/v4/cmd/helm@$(HELM_VERSION))
 
 KO           := $(LOCALBIN)/ko
-KO_VERSION   := v0.18.1
+KO_VERSION   := v0.19.1
 KO_LOOKUP    := google/ko
 ko:
-	@test -s $(KO) && $(KO) -h | grep -q $(KO_VERSION) || \
+	@test -s $(KO) && go version -m $(KO) | grep -q $(KO_VERSION) || \
 	$(call go-install-tool,$(KO),github.com/$(KO_LOOKUP)@$(KO_VERSION))
 
 GOLANGCI_LINT          := $(LOCALBIN)/golangci-lint
-GOLANGCI_LINT_VERSION  := v1.64.8
+GOLANGCI_LINT_VERSION  := v2.13.2
 GOLANGCI_LINT_LOOKUP   := golangci/golangci-lint
 golangci-lint: ## Download golangci-lint locally if necessary.
-	@test -s $(GOLANGCI_LINT) && $(GOLANGCI_LINT) -h | grep -q $(GOLANGCI_LINT_VERSION) || \
-	$(call go-install-tool,$(GOLANGCI_LINT),github.com/$(GOLANGCI_LINT_LOOKUP)/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
+	@test -s $(GOLANGCI_LINT) && go version -m $(GOLANGCI_LINT) | grep -q $(GOLANGCI_LINT_VERSION) || \
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/$(GOLANGCI_LINT_LOOKUP)/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION))
 
 APIDOCS_GEN         := $(LOCALBIN)/crdoc
 APIDOCS_GEN_VERSION := v0.6.4
 APIDOCS_GEN_LOOKUP  := fybrik/crdoc
 apidocs-gen: ## Download crdoc locally if necessary.
-	@test -s $(APIDOCS_GEN) && $(APIDOCS_GEN) --version | grep -q $(APIDOCS_GEN_VERSION) || \
+	@test -s $(APIDOCS_GEN) && go version -m $(APIDOCS_GEN) | grep -q $(APIDOCS_GEN_VERSION) || \
 	$(call go-install-tool,$(APIDOCS_GEN),fybrik.io/crdoc@$(APIDOCS_GEN_VERSION))
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-install-tool
-[ -f $(1) ] || { \
+{ \
     set -e ;\
     GOBIN=$(LOCALBIN) go install $(2) ;\
 }

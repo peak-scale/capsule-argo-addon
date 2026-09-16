@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
-	capsuleapi "github.com/projectcapsule/capsule/pkg/api"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,7 +34,7 @@ var _ = Describe("Translation Test", func() {
 			Annotations: map[string]string{},
 		},
 		Spec: capsulev1beta2.TenantSpec{
-			AdditionalRoleBindings: []capsuleapi.AdditionalRoleBindingsSpec{
+			AdditionalRoleBindings: []capsulerbac.AdditionalRoleBindingsSpec{
 				{
 					ClusterRoleName: "tenant-viewer",
 					Subjects: []rbacv1.Subject{
@@ -63,14 +63,22 @@ var _ = Describe("Translation Test", func() {
 					},
 				},
 			},
-			Owners: []capsulev1beta2.OwnerSpec{
+			Owners: []capsulerbac.OwnerSpec{
 				{
-					Name: "solar-users",
-					Kind: capsulev1beta2.GroupOwner,
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "solar-users",
+							Kind: capsulerbac.GroupOwner,
+						},
+					},
 				},
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+					},
 				},
 			},
 		},
@@ -128,7 +136,7 @@ var _ = Describe("Translation Test", func() {
 						SourceNamespaces: []string{
 							"somewhere",
 						},
-						ClusterResourceWhitelist: []metav1.GroupKind{
+						ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 							{
 								Group: "*",
 								Kind:  "ConfigMap",
@@ -174,7 +182,7 @@ var _ = Describe("Translation Test", func() {
 						SourceNamespaces: []string{
 							"a-second-place",
 						},
-						ClusterResourceWhitelist: []metav1.GroupKind{
+						ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 							{
 								Group: "vcluster.alhpa.com",
 								Kind:  "Cluster",
@@ -245,7 +253,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"somewhere",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "*",
 						Kind:  "ConfigMap",
@@ -331,7 +339,7 @@ var _ = Describe("Translation Test", func() {
 					"a-second-place",
 					"somewhere",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "vcluster.alhpa.com",
 						Kind:  "Cluster",
@@ -436,7 +444,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"a-second-place",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "vcluster.alhpa.com",
 						Kind:  "Cluster",
@@ -514,7 +522,7 @@ var _ = Describe("Translation Test", func() {
 			}
 
 			// Add Stuff to translated Spec
-			approject.Spec.ClusterResourceWhitelist = append(approject.Spec.ClusterResourceWhitelist, []metav1.GroupKind{
+			approject.Spec.ClusterResourceWhitelist = append(approject.Spec.ClusterResourceWhitelist, []argocdv1alpha1.ClusterResourceRestrictionItem{
 				{
 					Group: "tenant.specific.crd",
 					Kind:  "ApplicationCR",
@@ -570,7 +578,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"a-second-place",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "tenant.specific.crd",
 						Kind:  "ApplicationCR",
@@ -637,7 +645,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"a-third-place",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "tenant.global.crd",
 						Kind:  "ApplicationCR",
@@ -669,7 +677,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"a-third-place",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "tenant.global.crd",
 						Kind:  "ApplicationCR",
@@ -793,26 +801,34 @@ var _ = Describe("Translation Test", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
 
 			// Expected Owners
-			owners := []capsulev1beta2.OwnerSpec{
+			owners := []capsulerbac.OwnerSpec{
 				{
-					Name: "solar-users",
-					Kind: capsulev1beta2.GroupOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "solar-users",
+							Kind: capsulerbac.GroupOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 			}
 
-			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
+			Expect(tnt.Spec.Owners).To(Equal(capsulerbac.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
 		})
 
 	})
@@ -844,7 +860,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"somewhere",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "*",
 						Kind:  "ConfigMap",
@@ -928,7 +944,7 @@ var _ = Describe("Translation Test", func() {
 			}
 
 			// Add Stuff to translated Spec
-			approject.Spec.ClusterResourceWhitelist = append(approject.Spec.ClusterResourceWhitelist, []metav1.GroupKind{
+			approject.Spec.ClusterResourceWhitelist = append(approject.Spec.ClusterResourceWhitelist, []argocdv1alpha1.ClusterResourceRestrictionItem{
 				{
 					Group: "tenant.specific.crd",
 					Kind:  "ApplicationCR",
@@ -961,7 +977,7 @@ var _ = Describe("Translation Test", func() {
 				SourceNamespaces: []string{
 					"somewhere",
 				},
-				ClusterResourceWhitelist: []metav1.GroupKind{
+				ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 					{
 						Group: "*",
 						Kind:  "ConfigMap",

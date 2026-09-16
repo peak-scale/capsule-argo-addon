@@ -113,7 +113,7 @@ func (in *ArgoTranslator) MatchesObject(obj client.Object) (match bool) {
 	match = false
 
 	// Skip translators that are being deleted
-	if !in.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !in.DeletionTimestamp.IsZero() {
 		return
 	}
 
@@ -151,7 +151,7 @@ func (in *ArgoTranslator) CollectStatus() {
 
 // Assign Tenants to the ArgoTranslator.
 func (in *ArgoTranslator) SyncFinalizerStatus() {
-	if !in.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !in.DeletionTimestamp.IsZero() {
 		controllerutil.RemoveFinalizer(in, meta.ControllerFinalizer)
 
 		return

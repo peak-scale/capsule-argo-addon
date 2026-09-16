@@ -18,7 +18,7 @@ func Merge(target, source interface{}) error {
 	sourceVal := reflect.ValueOf(source)
 
 	// Check if target and source are pointers
-	if targetVal.Kind() != reflect.Ptr || sourceVal.Kind() != reflect.Ptr {
+	if targetVal.Kind() != reflect.Pointer || sourceVal.Kind() != reflect.Pointer {
 		return fmt.Errorf("both target and source must be pointers to structs")
 	}
 
