@@ -408,6 +408,14 @@
                         }
                     }
                 },
+                "crds": {
+                    "type": "object",
+                    "properties": {
+                        "install": {
+                            "type": "boolean"
+                        }
+                    }
+                },
                 "enabled": {
                     "type": "boolean"
                 },

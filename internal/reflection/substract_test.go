@@ -33,7 +33,7 @@ func TestSubtractComplexStruct(t *testing.T) {
 			SourceRepos:                     []string{"https://github.com/target/repo1", "https://github.com/target/repo2"},
 			Destinations:                    []argocdv1alpha1.ApplicationDestination{{Name: "cluster1"}, {Name: "cluster2"}},
 			Description:                     "This is a target project",
-			ClusterResourceWhitelist:        []metav1.GroupKind{{Group: "*", Kind: "*"}},
+			ClusterResourceWhitelist:        []argocdv1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
 			NamespaceResourceBlacklist:      []metav1.GroupKind{{Group: "core", Kind: "Pod"}},
 			PermitOnlyProjectScopedClusters: true,
 		},
@@ -51,7 +51,7 @@ func TestSubtractComplexStruct(t *testing.T) {
 		ProjectSpec: argocdv1alpha1.AppProjectSpec{
 			SourceRepos:                     []string{"https://github.com/target/repo1"},
 			Destinations:                    []argocdv1alpha1.ApplicationDestination{{Name: "cluster1"}},
-			ClusterResourceWhitelist:        []metav1.GroupKind{{Group: "*", Kind: "*"}},
+			ClusterResourceWhitelist:        []argocdv1alpha1.ClusterResourceRestrictionItem{{Group: "*", Kind: "*"}},
 			PermitOnlyProjectScopedClusters: true,
 		},
 	}
@@ -63,7 +63,7 @@ func TestSubtractComplexStruct(t *testing.T) {
 	//assert.Equal(t, map[string]string{"env": "prod"}, target.ProjectMeta.Labels)
 	assert.Equal(t, []string{"https://github.com/target/repo2"}, target.ProjectSpec.SourceRepos)
 	assert.Equal(t, []argocdv1alpha1.ApplicationDestination{{Name: "cluster2"}}, target.ProjectSpec.Destinations)
-	assert.Equal(t, []metav1.GroupKind{}, target.ProjectSpec.ClusterResourceWhitelist)
+	assert.Equal(t, []argocdv1alpha1.ClusterResourceRestrictionItem{}, target.ProjectSpec.ClusterResourceWhitelist)
 	assert.Equal(t, []metav1.GroupKind{{Group: "core", Kind: "Pod"}}, target.ProjectSpec.NamespaceResourceBlacklist)
 }
 

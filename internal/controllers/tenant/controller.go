@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,7 +40,7 @@ type Reconciler struct {
 	client.Client
 	Metrics  *metrics.Recorder
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	Log      logr.Logger
 	Settings *stores.ConfigStore
 	requeue  chan event.GenericEvent
@@ -130,7 +130,7 @@ func (i *Reconciler) TenantRequeueHandler() handler.EventHandler {
 		// List all tenants
 		tenants := &capsulev1beta2.TenantList{}
 
-		err := i.Client.List(ctx, tenants)
+		err := i.List(ctx, tenants)
 		if err != nil {
 			i.Log.Error(err, "Failed to list tenants for reconciliation")
 
@@ -155,21 +155,21 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	log := i.Log.WithValues("tenant", request.Name)
 
 	origin := &capsulev1beta2.Tenant{}
-	if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
+	if err := i.Get(ctx, request.NamespacedName, origin); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.V(5).Info("Request object not found, could have been deleted after reconcile request")
 
 			origin = &capsulev1beta2.Tenant{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      request.NamespacedName.Name,
-					Namespace: request.NamespacedName.Namespace,
+					Name:      request.Name,
+					Namespace: request.Namespace,
 				},
 			}
 
 			// Tenants can disappear without our finalizer if reconciliation failed
 			// before the finalizer was added. Clean any stale translator status
 			// entries by name so translator finalizers can drain.
-			serr := i.cleanupTranslatorTenantStatuses(ctx, request.NamespacedName.Name)
+			serr := i.cleanupTranslatorTenantStatuses(ctx, request.Name)
 
 			// Cleanup ArgoCD
 			ferr := i.finalize(ctx, log, origin)
@@ -181,7 +181,7 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	allTranslators := &configv1alpha1.ArgoTranslatorList{}
-	if err := i.Client.List(ctx, allTranslators); err != nil {
+	if err := i.List(ctx, allTranslators); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -227,7 +227,7 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 func (i *Reconciler) cleanupTranslatorTenantStatuses(ctx context.Context, tenantName string) error {
 	translators := &configv1alpha1.ArgoTranslatorList{}
-	if err := i.Client.List(ctx, translators); err != nil {
+	if err := i.List(ctx, translators); err != nil {
 		return err
 	}
 

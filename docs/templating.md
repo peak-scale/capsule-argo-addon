@@ -51,6 +51,8 @@ Tenant:
         Spec:
             AdditionalRoleBindings: []
             Cordoned: false
+            Data:
+                Raw: []
             GatewayOptions: {}
             ImagePullPolicies: []
             IngressOptions:
@@ -62,24 +64,48 @@ Tenant:
                 Items: []
             NodeSelector: {}
             Owners:
-                - ClusterRoles: []
-                  Kind: User
-                  Name: example-user
+                - Annotations: {}
+                  CoreOwnerSpec:
+                    ClusterRoles: []
+                    UserSpec:
+                        Kind: User
+                        Name: example-user
+                  Labels: {}
                   ProxyOperations: []
-                - ClusterRoles: []
-                  Kind: Group
-                  Name: example-group
+                - Annotations: {}
+                  CoreOwnerSpec:
+                    ClusterRoles: []
+                    UserSpec:
+                        Kind: Group
+                        Name: example-group
+                  Labels: {}
                   ProxyOperations: []
+            Permissions:
+                AllowOwnerPromotion: false
+                MatchOwners: []
             PreventDeletion: false
             ResourceQuota:
                 Items: []
                 Scope: ""
+            Rules: []
         Status:
+            Conditions: []
             Namespaces:
                 - namespace1
                 - namespace2
+            ObservedGeneration: 0
+            Owners: []
+            Promotions: []
             Size: 0
+            Spaces: []
             State: ""
+            TenantAvailableStatus:
+                Classes:
+                    DeviceClasses: []
+                    GatewayClasses: []
+                    PriorityClasses: []
+                    RuntimeClasses: []
+                    StorageClasses: []
         TypeMeta:
             APIVersion: ""
             Kind: ""

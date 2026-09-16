@@ -876,7 +876,17 @@ Application Project Spec (Upstream ArgoCD)
         <td><b><a href="#argotranslatorspecsettingsstructuredspecsignaturekeysindex">signatureKeys</a></b></td>
         <td>[]object</td>
         <td>
-          SignatureKeys contains a list of PGP key IDs that commits in Git must be signed with in order to be allowed for sync<br/>
+          SignatureKeys contains a list of PGP key IDs that commits in Git must be signed with in order to be allowed for sync
+
+Deprecated: Use SourceIntegrity instead. SignatureKeys will be removed with the next major version.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorspecsettingsstructuredspecsourceintegrity">sourceIntegrity</a></b></td>
+        <td>object</td>
+        <td>
+          SourceIntegrity represents a constraint on manifest sources integrity to be met before they can be used.
+Do not access directly, use EffectiveSourceIntegrity() for correct backwards compatibility handling.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -909,8 +919,7 @@ Application Project Spec (Upstream ArgoCD)
 
 
 
-GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
-concepts during lookup stages without having partially valid types
+ClusterResourceRestrictionItem is a cluster resource that is restricted by the project's whitelist or blacklist
 
 <table>
     <thead>
@@ -935,6 +944,14 @@ concepts during lookup stages without having partially valid types
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the restricted resource. Glob patterns using Go's filepath.Match syntax are supported.
+Unlike the group and kind fields, if no name is specified, all resources of the specified group/kind are matched.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -944,8 +961,7 @@ concepts during lookup stages without having partially valid types
 
 
 
-GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
-concepts during lookup stages without having partially valid types
+ClusterResourceRestrictionItem is a cluster resource that is restricted by the project's whitelist or blacklist
 
 <table>
     <thead>
@@ -970,6 +986,14 @@ concepts during lookup stages without having partially valid types
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the restricted resource. Glob patterns using Go's filepath.Match syntax are supported.
+Unlike the group and kind fields, if no name is specified, all resources of the specified group/kind are matched.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -1309,6 +1333,8 @@ JWTToken holds the issuedAt and expiresAt values of a token
 
 SignatureKey is the specification of a key required to verify commit signatures with
 
+Deprecated: Use SourceIntegrity instead. SignatureKeys will be removed with the next major version.
+
 <table>
     <thead>
         <tr>
@@ -1323,6 +1349,156 @@ SignatureKey is the specification of a key required to verify commit signatures 
         <td>string</td>
         <td>
           The ID of the key in hexadecimal notation<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.spec.settings.structured.spec.sourceIntegrity
+<sup><sup>[↩ Parent](#argotranslatorspecsettingsstructuredspec)</sup></sup>
+
+
+
+SourceIntegrity represents a constraint on manifest sources integrity to be met before they can be used.
+Do not access directly, use EffectiveSourceIntegrity() for correct backwards compatibility handling.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorspecsettingsstructuredspecsourceintegritygit">git</a></b></td>
+        <td>object</td>
+        <td>
+          Git - policies for git source verification<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.spec.settings.structured.spec.sourceIntegrity.git
+<sup><sup>[↩ Parent](#argotranslatorspecsettingsstructuredspecsourceintegrity)</sup></sup>
+
+
+
+Git - policies for git source verification
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorspecsettingsstructuredspecsourceintegritygitpoliciesindex">policies</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.spec.settings.structured.spec.sourceIntegrity.git.policies[index]
+<sup><sup>[↩ Parent](#argotranslatorspecsettingsstructuredspecsourceintegritygit)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorspecsettingsstructuredspecsourceintegritygitpoliciesindexgpg">gpg</a></b></td>
+        <td>object</td>
+        <td>
+          Verify GPG commit/tag signatures<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorspecsettingsstructuredspecsourceintegritygitpoliciesindexreposindex">repos</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of repository criteria restricting repositories the policy will apply to<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.spec.settings.structured.spec.sourceIntegrity.git.policies[index].gpg
+<sup><sup>[↩ Parent](#argotranslatorspecsettingsstructuredspecsourceintegritygitpoliciesindex)</sup></sup>
+
+
+
+Verify GPG commit/tag signatures
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keys</b></td>
+        <td>[]string</td>
+        <td>
+          List of key IDs to trust. The keys need to be in the repository server keyring.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.spec.settings.structured.spec.sourceIntegrity.git.policies[index].repos[index]
+<sup><sup>[↩ Parent](#argotranslatorspecsettingsstructuredspecsourceintegritygitpoliciesindex)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          URL specifier, glob.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -1406,6 +1582,15 @@ SyncWindow contains the kind, time, duration and attributes that are used to ass
         <td>string</td>
         <td>
           Schedule is the time the window will begin, specified in cron format<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>syncOverrun</b></td>
+        <td>boolean</td>
+        <td>
+          SyncOverrun allows ongoing syncs to continue in two scenarios:
+For deny windows: allows syncs that started before the deny window became active to continue running
+For allow windows: allows syncs that started during the allow window to continue after the window ends<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1784,7 +1969,17 @@ Application Project Spec (Upstream ArgoCD)
         <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsignaturekeysindex">signatureKeys</a></b></td>
         <td>[]object</td>
         <td>
-          SignatureKeys contains a list of PGP key IDs that commits in Git must be signed with in order to be allowed for sync<br/>
+          SignatureKeys contains a list of PGP key IDs that commits in Git must be signed with in order to be allowed for sync
+
+Deprecated: Use SourceIntegrity instead. SignatureKeys will be removed with the next major version.<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsourceintegrity">sourceIntegrity</a></b></td>
+        <td>object</td>
+        <td>
+          SourceIntegrity represents a constraint on manifest sources integrity to be met before they can be used.
+Do not access directly, use EffectiveSourceIntegrity() for correct backwards compatibility handling.<br/>
         </td>
         <td>false</td>
       </tr><tr>
@@ -1817,8 +2012,7 @@ Application Project Spec (Upstream ArgoCD)
 
 
 
-GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
-concepts during lookup stages without having partially valid types
+ClusterResourceRestrictionItem is a cluster resource that is restricted by the project's whitelist or blacklist
 
 <table>
     <thead>
@@ -1843,6 +2037,14 @@ concepts during lookup stages without having partially valid types
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the restricted resource. Glob patterns using Go's filepath.Match syntax are supported.
+Unlike the group and kind fields, if no name is specified, all resources of the specified group/kind are matched.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -1852,8 +2054,7 @@ concepts during lookup stages without having partially valid types
 
 
 
-GroupKind specifies a Group and a Kind, but does not force a version.  This is useful for identifying
-concepts during lookup stages without having partially valid types
+ClusterResourceRestrictionItem is a cluster resource that is restricted by the project's whitelist or blacklist
 
 <table>
     <thead>
@@ -1878,6 +2079,14 @@ concepts during lookup stages without having partially valid types
           <br/>
         </td>
         <td>true</td>
+      </tr><tr>
+        <td><b>name</b></td>
+        <td>string</td>
+        <td>
+          Name is the name of the restricted resource. Glob patterns using Go's filepath.Match syntax are supported.
+Unlike the group and kind fields, if no name is specified, all resources of the specified group/kind are matched.<br/>
+        </td>
+        <td>false</td>
       </tr></tbody>
 </table>
 
@@ -2217,6 +2426,8 @@ JWTToken holds the issuedAt and expiresAt values of a token
 
 SignatureKey is the specification of a key required to verify commit signatures with
 
+Deprecated: Use SourceIntegrity instead. SignatureKeys will be removed with the next major version.
+
 <table>
     <thead>
         <tr>
@@ -2231,6 +2442,156 @@ SignatureKey is the specification of a key required to verify commit signatures 
         <td>string</td>
         <td>
           The ID of the key in hexadecimal notation<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.sourceIntegrity
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspec)</sup></sup>
+
+
+
+SourceIntegrity represents a constraint on manifest sources integrity to be met before they can be used.
+Do not access directly, use EffectiveSourceIntegrity() for correct backwards compatibility handling.
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygit">git</a></b></td>
+        <td>object</td>
+        <td>
+          Git - policies for git source verification<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.sourceIntegrity.git
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspecsourceintegrity)</sup></sup>
+
+
+
+Git - policies for git source verification
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygitpoliciesindex">policies</a></b></td>
+        <td>[]object</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.sourceIntegrity.git.policies[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygit)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygitpoliciesindexgpg">gpg</a></b></td>
+        <td>object</td>
+        <td>
+          Verify GPG commit/tag signatures<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b><a href="#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygitpoliciesindexreposindex">repos</a></b></td>
+        <td>[]object</td>
+        <td>
+          List of repository criteria restricting repositories the policy will apply to<br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.sourceIntegrity.git.policies[index].gpg
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygitpoliciesindex)</sup></sup>
+
+
+
+Verify GPG commit/tag signatures
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>keys</b></td>
+        <td>[]string</td>
+        <td>
+          List of key IDs to trust. The keys need to be in the repository server keyring.<br/>
+        </td>
+        <td>true</td>
+      </tr><tr>
+        <td><b>mode</b></td>
+        <td>string</td>
+        <td>
+          <br/>
+        </td>
+        <td>true</td>
+      </tr></tbody>
+</table>
+
+
+### ArgoTranslator.status.tenants[index].serving.structured.spec.sourceIntegrity.git.policies[index].repos[index]
+<sup><sup>[↩ Parent](#argotranslatorstatustenantsindexservingstructuredspecsourceintegritygitpoliciesindex)</sup></sup>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Required</th>
+        </tr>
+    </thead>
+    <tbody><tr>
+        <td><b>url</b></td>
+        <td>string</td>
+        <td>
+          URL specifier, glob.<br/>
         </td>
         <td>true</td>
       </tr></tbody>
@@ -2314,6 +2675,15 @@ SyncWindow contains the kind, time, duration and attributes that are used to ass
         <td>string</td>
         <td>
           Schedule is the time the window will begin, specified in cron format<br/>
+        </td>
+        <td>false</td>
+      </tr><tr>
+        <td><b>syncOverrun</b></td>
+        <td>boolean</td>
+        <td>
+          SyncOverrun allows ongoing syncs to continue in two scenarios:
+For deny windows: allows syncs that started before the deny window became active to continue running
+For allow windows: allows syncs that started during the allow window to continue after the window ends<br/>
         </td>
         <td>false</td>
       </tr><tr>

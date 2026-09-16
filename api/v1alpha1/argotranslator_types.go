@@ -95,7 +95,3 @@ type ArgoTranslatorList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ArgoTranslator `json:"items"`
 }
-
-func init() {
-	SchemeBuilder.Register(&ArgoTranslator{}, &ArgoTranslatorList{})
-}
