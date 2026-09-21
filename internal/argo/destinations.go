@@ -28,7 +28,7 @@ func RemoveProjectDestination(appProject *argocdv1alpha1.AppProject, dest argocd
 	newDestinations := []argocdv1alpha1.ApplicationDestination{}
 
 	for _, e := range appProject.Spec.Destinations {
-		if !(e.Name == dest.Name) {
+		if e.Name != dest.Name {
 			newDestinations = append(newDestinations, e)
 		}
 	}

@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -19,7 +19,7 @@ func TestE2e(t *testing.T) {
 	RunSpecs(t, "E2e Suite")
 }
 
-func ownerClient(owner capsulev1beta2.OwnerSpec) (cs kubernetes.Interface) {
+func ownerClient(owner capsulerbac.OwnerSpec) (cs kubernetes.Interface) {
 	c, err := config.GetConfig()
 	Expect(err).ToNot(HaveOccurred())
 	c.Impersonate.Groups = []string{"projectcapsule.dev", owner.Name}

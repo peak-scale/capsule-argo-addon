@@ -4,9 +4,12 @@
 package utils
 
 import (
+	"slices"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 )
 
 const (
@@ -35,40 +38,14 @@ func GetTenantGroups(tenant *capsulev1beta2.Tenant) (groups map[string]TenantPer
 func GetClusterRolePermissions(tenant *capsulev1beta2.Tenant) (rolePerms map[string][]rbacv1.Subject) {
 	rolePerms = make(map[string][]rbacv1.Subject)
 
-	// Helper to add permissions for a given clusterRole
-	addPermission := func(clusterRole string, permission rbacv1.Subject) {
-		if _, exists := rolePerms[clusterRole]; !exists {
-			rolePerms[clusterRole] = []rbacv1.Subject{}
-		}
-
-		rolePerms[clusterRole] = append(rolePerms[clusterRole], permission)
-	}
-
-	// Process owners
-	for _, owner := range tenant.Spec.Owners {
-		if owner.Kind != capsulev1beta2.ServiceAccountOwner {
-			for _, clusterRole := range owner.ClusterRoles {
-				perm := rbacv1.Subject{
-					Name: owner.Name,
-					Kind: owner.Kind.String(),
-				}
-				addPermission(clusterRole, perm)
+	forEachTenantPermission(tenant, func(kind, name string, clusterRoles []string) {
+		subject := rbacv1.Subject{Kind: kind, Name: name}
+		for _, clusterRole := range clusterRoles {
+			if !slices.Contains(rolePerms[clusterRole], subject) {
+				rolePerms[clusterRole] = append(rolePerms[clusterRole], subject)
 			}
 		}
-	}
-
-	// Process additional role bindings
-	for _, role := range tenant.Spec.AdditionalRoleBindings {
-		for _, subject := range role.Subjects {
-			if subject.Kind != "ServiceAccount" {
-				perm := rbacv1.Subject{
-					Name: subject.Name,
-					Kind: subject.Kind,
-				}
-				addPermission(role.ClusterRoleName, perm)
-			}
-		}
-	}
+	})
 
 	return rolePerms
 }
@@ -77,50 +54,15 @@ func GetClusterRolePermissions(tenant *capsulev1beta2.Tenant) (rolePerms map[str
 func GetTenantPermissions(tenant *capsulev1beta2.Tenant) map[string]map[string]TenantPermission {
 	permissions := make(map[string]map[string]TenantPermission)
 
-	// Initialize a nested map for kind ("User", "Group") and name
-	initNestedMap := func(kind string) {
+	forEachTenantPermission(tenant, func(kind, name string, clusterRoles []string) {
 		if _, exists := permissions[kind]; !exists {
 			permissions[kind] = make(map[string]TenantPermission)
 		}
-	}
 
-	// Process owners
-	for _, owner := range tenant.Spec.Owners {
-		if owner.Kind == ownerUser || owner.Kind == ownerGroup {
-			initNestedMap(owner.Kind.String())
-
-			if perm, exists := permissions[owner.Kind.String()][owner.Name]; exists {
-				// If the permission entry already exists, append cluster roles
-				perm.ClusterRoles = append(perm.ClusterRoles, owner.ClusterRoles...)
-				permissions[owner.Kind.String()][owner.Name] = perm
-			} else {
-				// Create a new permission entry
-				permissions[owner.Kind.String()][owner.Name] = TenantPermission{
-					ClusterRoles: owner.ClusterRoles,
-				}
-			}
-		}
-	}
-
-	// Process additional role bindings
-	for _, role := range tenant.Spec.AdditionalRoleBindings {
-		for _, subject := range role.Subjects {
-			if subject.Kind == ownerUser || subject.Kind == ownerGroup {
-				initNestedMap(subject.Kind)
-
-				if perm, exists := permissions[subject.Kind][subject.Name]; exists {
-					// If the permission entry already exists, append cluster roles
-					perm.ClusterRoles = append(perm.ClusterRoles, role.ClusterRoleName)
-					permissions[subject.Kind][subject.Name] = perm
-				} else {
-					// Create a new permission entry
-					permissions[subject.Kind][subject.Name] = TenantPermission{
-						ClusterRoles: []string{role.ClusterRoleName},
-					}
-				}
-			}
-		}
-	}
+		perm := permissions[kind][name]
+		perm.ClusterRoles = append(perm.ClusterRoles, clusterRoles...)
+		permissions[kind][name] = perm
+	})
 
 	// Remove duplicates from cluster roles in both maps
 	for kind, nameMap := range permissions {
@@ -131,6 +73,35 @@ func GetTenantPermissions(tenant *capsulev1beta2.Tenant) map[string]map[string]T
 	}
 
 	return permissions
+}
+
+// forEachTenantPermission visits users and groups from Capsule's resolved owners
+// and both forms of additional role bindings. Spec owners are resolved by Capsule
+// into status before they are used for Argo permissions.
+func forEachTenantPermission(tenant *capsulev1beta2.Tenant, visit func(kind, name string, clusterRoles []string)) {
+	for _, owner := range tenant.Status.Owners {
+		if owner.Kind == capsulerbac.UserOwner || owner.Kind == capsulerbac.GroupOwner {
+			visit(owner.Kind.String(), owner.Name, owner.ClusterRoles)
+		}
+	}
+
+	visitBindings := func(bindings []capsulerbac.AdditionalRoleBindingsSpec) {
+		for _, binding := range bindings {
+			for _, subject := range binding.Subjects {
+				if subject.Kind == ownerUser || subject.Kind == ownerGroup {
+					visit(subject.Kind, subject.Name, []string{binding.ClusterRoleName})
+				}
+			}
+		}
+	}
+
+	visitBindings(tenant.Spec.AdditionalRoleBindings)
+
+	for _, rule := range tenant.Spec.Rules {
+		if rule != nil {
+			visitBindings(rule.Permissions.Bindings)
+		}
+	}
 }
 
 // Helper function to remove duplicates from a slice of strings.

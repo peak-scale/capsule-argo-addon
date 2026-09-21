@@ -4,187 +4,154 @@
 package utils
 
 import (
-	"reflect"
+	"encoding/json"
 	"testing"
 
-	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
-	capsuleapi "github.com/projectcapsule/capsule/pkg/api"
+	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
+
+	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
 )
 
-// TestGetClusterRolePermissions tests the GetClusterRolePermissions function
-func TestGetClusterRolePermissions(t *testing.T) {
-	// Sample tenant object
-	tenant := &capsulev1beta2.Tenant{
-		Spec: capsulev1beta2.TenantSpec{
-			Owners: []capsulev1beta2.OwnerSpec{
-				{
-					Kind:         "User",
-					Name:         "user1",
-					ClusterRoles: []string{"cluster-admin", "read-only"},
-				},
-				{
-					Kind:         "Group",
-					Name:         "group1",
-					ClusterRoles: []string{"edit"},
-				},
-				{
-					Kind:         capsulev1beta2.ServiceAccountOwner,
-					Name:         "service",
-					ClusterRoles: []string{"read-only"},
-				},
+func TestTenantPermissions(t *testing.T) {
+	tests := []struct {
+		name      string
+		tenant    string
+		byRole    map[string][]rbacv1.Subject
+		bySubject map[string]map[string]TenantPermission
+	}{
+		{
+			name:      "empty tenant",
+			tenant:    `{}`,
+			byRole:    map[string][]rbacv1.Subject{},
+			bySubject: map[string]map[string]TenantPermission{},
+		},
+		{
+			name: "spec owners are not used before Capsule resolves status",
+			tenant: `{"spec":{"owners":[
+				{"kind":"User","name":"alice","clusterRoles":["admin"]},
+				{"kind":"Group","name":"team","clusterRoles":["admin"]}
+			]}}`,
+			byRole:    map[string][]rbacv1.Subject{},
+			bySubject: map[string]map[string]TenantPermission{},
+		},
+		{
+			name: "status owners are authoritative and include external owners",
+			tenant: `{
+				"spec":{"owners":[
+					{"kind":"User","name":"alice","clusterRoles":["admin"]},
+					{"kind":"Group","name":"unresolved","clusterRoles":["admin"]}
+				]},
+				"status":{"owners":[
+					{"kind":"User","name":"alice","clusterRoles":["view","edit"]},
+					{"kind":"Group","name":"external","clusterRoles":["view"]},
+					{"kind":"ServiceAccount","name":"system:serviceaccount:default:robot","clusterRoles":["admin"]}
+				]}
+			}`,
+			byRole: map[string][]rbacv1.Subject{
+				"view": {{Kind: "User", Name: "alice"}, {Kind: "Group", Name: "external"}},
+				"edit": {{Kind: "User", Name: "alice"}},
 			},
-			AdditionalRoleBindings: []capsuleapi.AdditionalRoleBindingsSpec{
-				{
-					ClusterRoleName: "developer",
-					Subjects: []rbacv1.Subject{
-						{Kind: "User", Name: "user2"},
-						{Kind: "Group", Name: "group1"},
-					},
-				},
-				{
-					ClusterRoleName: "mega-admin",
-					Subjects: []rbacv1.Subject{
-						{
-							Kind: "User",
-							Name: "user1",
-						},
-						{
-							Kind: "Group",
-							Name: "group1",
-						},
-					},
-				},
+			bySubject: map[string]map[string]TenantPermission{
+				"User":  {"alice": {ClusterRoles: []string{"view", "edit"}}},
+				"Group": {"external": {ClusterRoles: []string{"view"}}},
 			},
 		},
-	}
-
-	expected := map[string][]rbacv1.Subject{
-		"mega-admin": {
-			{Kind: "User", Name: "user1"},
-			{Kind: "Group", Name: "group1"},
-		},
-
-		"cluster-admin": {
-			{Kind: "User", Name: "user1"},
-		},
-		"read-only": {
-			{Kind: "User", Name: "user1"},
-		},
-		"edit": {
-			{Kind: "Group", Name: "group1"},
-		},
-		"developer": {
-			{Kind: "User", Name: "user2"},
-			{Kind: "Group", Name: "group1"},
-		},
-	}
-
-	// Call the function to test
-	permissions := GetClusterRolePermissions(tenant)
-
-	if !reflect.DeepEqual(permissions, expected) {
-		t.Errorf("Expected %v, but got %v", expected, permissions)
-	}
-}
-
-func TestGetTenantPermissions(t *testing.T) {
-	tenant := &capsulev1beta2.Tenant{
-		Spec: capsulev1beta2.TenantSpec{
-			Owners: []capsulev1beta2.OwnerSpec{
-				{
-					Kind:         capsulev1beta2.UserOwner,
-					Name:         "user1",
-					ClusterRoles: []string{"cluster-admin"},
-				},
-				{
-					Kind:         capsulev1beta2.UserOwner,
-					Name:         "user2",
-					ClusterRoles: []string{"cluster-admin"},
-				},
-				{
-					Kind:         capsulev1beta2.GroupOwner,
-					Name:         "group1",
-					ClusterRoles: []string{"read-only"},
-				},
-				{
-					Kind:         capsulev1beta2.GroupOwner,
-					Name:         "group2",
-					ClusterRoles: []string{"read-only"},
-				},
-				{
-					Kind:         capsulev1beta2.ServiceAccountOwner,
-					Name:         "service",
-					ClusterRoles: []string{"read-only"},
-				},
+		{
+			name: "legacy additional role bindings without owners",
+			tenant: `{"spec":{"additionalRoleBindings":[
+				{"clusterRoleName":"edit","subjects":[
+					{"kind":"User","name":"alice"},
+					{"kind":"Group","name":"team"},
+					{"kind":"ServiceAccount","name":"robot","namespace":"default"}
+				]}
+			]}}`,
+			byRole: map[string][]rbacv1.Subject{
+				"edit": {{Kind: "User", Name: "alice"}, {Kind: "Group", Name: "team"}},
 			},
-			AdditionalRoleBindings: []capsuleapi.AdditionalRoleBindingsSpec{
-				{
-					ClusterRoleName: "edit",
-					Subjects: []rbacv1.Subject{
-						{
-							Kind: "User",
-							Name: "user1",
-						},
-						{
-							Kind: "Group",
-							Name: "group1",
-						},
-					},
-				},
-				{
-					ClusterRoleName: "mega-admin",
-					Subjects: []rbacv1.Subject{
-						{
-							Kind: "User",
-							Name: "user1",
-						},
-						{
-							Kind: "Group",
-							Name: "group1",
-						},
-					},
-				},
-				{
-					ClusterRoleName: "mega-admin",
-					Subjects: []rbacv1.Subject{
-						{
-							Kind: "ServiceAccount",
-							Name: "system:serviceaccount:default:service",
-						},
-					},
-				},
+			bySubject: map[string]map[string]TenantPermission{
+				"User":  {"alice": {ClusterRoles: []string{"edit"}}},
+				"Group": {"team": {ClusterRoles: []string{"edit"}}},
+			},
+		},
+		{
+			name: "bindings from every rule including rules with namespace selectors",
+			tenant: `{"spec":{"rules":[
+				null, {}, {"permissions":{}},
+				{"permissions":{"bindings":[
+					{"clusterRoleName":"view","subjects":[
+						{"kind":"User","name":"alice","apiGroup":"rbac.authorization.k8s.io"},
+						{"kind":"ServiceAccount","name":"robot","namespace":"default"}
+					]}
+				]}},
+				{"namespaceSelector":{"matchLabels":{"environment":"dev"}},"permissions":{"bindings":[
+					{"clusterRoleName":"edit","subjects":[{"kind":"Group","name":"team"}]},
+					{"clusterRoleName":"unused","subjects":[]}
+				]}}
+			]}}`,
+			byRole: map[string][]rbacv1.Subject{
+				"view": {{Kind: "User", Name: "alice"}},
+				"edit": {{Kind: "Group", Name: "team"}},
+			},
+			bySubject: map[string]map[string]TenantPermission{
+				"User":  {"alice": {ClusterRoles: []string{"view"}}},
+				"Group": {"team": {ClusterRoles: []string{"edit"}}},
+			},
+		},
+		{
+			name: "merge and deduplicate all sources while keeping subject kinds distinct",
+			tenant: `{
+				"status":{"owners":[
+					{"kind":"User","name":"team","clusterRoles":["view","view"]},
+					{"kind":"Group","name":"team","clusterRoles":["view"]}
+				]},
+				"spec":{
+					"additionalRoleBindings":[
+						{"clusterRoleName":"view","subjects":[{"kind":"User","name":"team"}]},
+						{"clusterRoleName":"edit","subjects":[{"kind":"Group","name":"team"}]}
+					],
+					"rules":[
+						{"permissions":{"bindings":[
+							{"clusterRoleName":"view","subjects":[{"kind":"User","name":"team"},{"kind":"Group","name":"team"}]},
+							{"clusterRoleName":"edit","subjects":[{"kind":"Group","name":"team"}]},
+							{"clusterRoleName":"deploy","subjects":[{"kind":"User","name":"team"},{"kind":"Group","name":"team"}]}
+						]}},
+						{"permissions":{"bindings":[
+							{"clusterRoleName":"deploy","subjects":[{"kind":"User","name":"team"}]}
+						]}}
+					]
+				}
+			}`,
+			byRole: map[string][]rbacv1.Subject{
+				"view":   {{Kind: "User", Name: "team"}, {Kind: "Group", Name: "team"}},
+				"edit":   {{Kind: "Group", Name: "team"}},
+				"deploy": {{Kind: "User", Name: "team"}, {Kind: "Group", Name: "team"}},
+			},
+			bySubject: map[string]map[string]TenantPermission{
+				"User":  {"team": {ClusterRoles: []string{"view", "deploy"}}},
+				"Group": {"team": {ClusterRoles: []string{"view", "edit", "deploy"}}},
+			},
+		},
+		{
+			name:   "owners without roles retain their group membership",
+			tenant: `{"status":{"owners":[{"kind":"Group","name":"team"}]}}`,
+			byRole: map[string][]rbacv1.Subject{},
+			bySubject: map[string]map[string]TenantPermission{
+				"Group": {"team": {ClusterRoles: []string{}}},
 			},
 		},
 	}
 
-	expected := map[string]map[string]TenantPermission{
-		"User": {
-			"user1": {
-				ClusterRoles: []string{"cluster-admin", "edit", "mega-admin"},
-			},
-			"user2": {
-				ClusterRoles: []string{"cluster-admin"},
-			},
-		},
-		"Group": {
-			"group1": {
-				ClusterRoles: []string{"read-only", "edit", "mega-admin"},
-			},
-			"group2": {
-				ClusterRoles: []string{"read-only"},
-			},
-		},
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tenant := &capsulev1beta2.Tenant{}
+			require.NoError(t, json.Unmarshal([]byte(tt.tenant), tenant))
+			original := tenant.DeepCopy()
+
+			require.Equal(t, tt.byRole, GetClusterRolePermissions(tenant))
+			require.Equal(t, tt.bySubject, GetTenantPermissions(tenant))
+			require.Equal(t, tt.bySubject["Group"], GetTenantGroups(tenant))
+			require.Equal(t, original, tenant, "permission lookup must not mutate the tenant")
+		})
 	}
-
-	permissions := GetTenantPermissions(tenant)
-
-	if !reflect.DeepEqual(permissions, expected) {
-		t.Errorf("Expected %v, but got %v", expected, permissions)
-	}
-}
-
-// Helper function to run tests
-func TestMain(t *testing.M) {
-	t.Run()
 }

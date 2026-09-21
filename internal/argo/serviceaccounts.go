@@ -26,7 +26,7 @@ func RemoveProjectServiceaccount(appProject *argocdv1alpha1.AppProject, sa argoc
 	newDestinationServiceAccounts := []argocdv1alpha1.ApplicationDestinationServiceAccount{}
 
 	for _, e := range appProject.Spec.DestinationServiceAccounts {
-		if !(e.DefaultServiceAccount == sa.DefaultServiceAccount) {
+		if e.DefaultServiceAccount != sa.DefaultServiceAccount {
 			newDestinationServiceAccounts = append(newDestinationServiceAccounts, e)
 		}
 	}

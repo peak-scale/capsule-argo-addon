@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
-	capsuleapi "github.com/projectcapsule/capsule/pkg/api"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -118,7 +118,7 @@ var _ = Describe("Argo RBAC Reflection", func() {
 			Annotations: map[string]string{},
 		},
 		Spec: capsulev1beta2.TenantSpec{
-			AdditionalRoleBindings: []capsuleapi.AdditionalRoleBindingsSpec{
+			AdditionalRoleBindings: []capsulerbac.AdditionalRoleBindingsSpec{
 				{
 					ClusterRoleName: "tenant-viewer",
 					Subjects: []rbacv1.Subject{
@@ -147,14 +147,22 @@ var _ = Describe("Argo RBAC Reflection", func() {
 					},
 				},
 			},
-			Owners: []capsulev1beta2.OwnerSpec{
+			Owners: []capsulerbac.OwnerSpec{
 				{
-					Name: "solar-users",
-					Kind: capsulev1beta2.GroupOwner,
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "solar-users",
+							Kind: capsulerbac.GroupOwner,
+						},
+					},
 				},
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+					},
 				},
 			},
 		},

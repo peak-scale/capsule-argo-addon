@@ -14,6 +14,7 @@ import (
 
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,14 +46,22 @@ config:
 			Name: "example-tenant",
 		},
 		Spec: capsulev1beta2.TenantSpec{
-			Owners: []capsulev1beta2.OwnerSpec{
+			Owners: []capsulerbac.OwnerSpec{
 				{
-					Kind: "User",
-					Name: "example-user",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Kind: "User",
+							Name: "example-user",
+						},
+					},
 				},
 				{
-					Kind: "Group",
-					Name: "example-group",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Kind: "Group",
+							Name: "example-group",
+						},
+					},
 				},
 			},
 		},
@@ -121,14 +130,22 @@ func TestRenderContextToMarkdown(t *testing.T) {
 			Name: "example-tenant",
 		},
 		Spec: capsulev1beta2.TenantSpec{
-			Owners: []capsulev1beta2.OwnerSpec{
+			Owners: []capsulerbac.OwnerSpec{
 				{
-					Kind: "User",
-					Name: "example-user",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Kind: "User",
+							Name: "example-user",
+						},
+					},
 				},
 				{
-					Kind: "Group",
-					Name: "example-group",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Kind: "Group",
+							Name: "example-group",
+						},
+					},
 				},
 			},
 		},

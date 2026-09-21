@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	tenantindexers "github.com/projectcapsule/capsule/pkg/runtime/indexers/tenant"
 )
 
 const (
@@ -97,6 +98,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 					}
 
 					oldObj, ok1 := e.ObjectOld.(*configv1alpha1.ArgoAddon)
+
 					newObj, ok2 := e.ObjectNew.(*configv1alpha1.ArgoAddon)
 					if !ok1 || !ok2 {
 						return false
@@ -127,8 +129,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	tntList := &capsulev1beta2.TenantList{}
-	if err := r.Client.List(ctx, tntList, client.MatchingFieldsSelector{
-		Selector: fields.OneTermEqualSelector(".status.namespaces", src.Namespace),
+	if err := r.List(ctx, tntList, client.MatchingFieldsSelector{
+		Selector: fields.OneTermEqualSelector(tenantindexers.NamespaceIndexerFieldName, src.Namespace),
 	}); err != nil {
 		return ctrl.Result{}, err
 	}

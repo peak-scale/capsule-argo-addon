@@ -3,7 +3,7 @@
 
 Translators are client objects to translate your [Capsule Tenants](https://projectcapsule.dev/docs/tenants/) to argocd [Application Projects (Appprojects)](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/). You can have multiple Translators. But all toegether have the combined purpose to translate one Capsule Tenant into one Argo Project.
 
-To translate permissions the Operator looks at Capsule Tenant with ther [Tenant Owners](https://projectcapsule.dev/docs/tenants/permissions/#ownership) and [AdditionalRoleBindings](https://projectcapsule.dev/docs/tenants/permissions/#additional-rolebindings). Based on these specs it's evaluated which [Subject (User/Group/ServiceAccount)](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#referring-to-subjects) is bound to which [ClusterRoles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole). Based on these ClusterRoles you can then translate [Argo RBAC Policies](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure) which are then bound to the selected Subjects.
+The operator resolves ClusterRoles for users and groups from `status.owners`, `spec.additionalRoleBindings`, and `spec.rules[].permissions.bindings` on each Capsule Tenant. It maps those ClusterRoles to [Argo RBAC policies](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure). ServiceAccounts are excluded from these Argo permission mappings, and duplicate subject/role assignments are merged.
 
 ## Configuration
 
@@ -38,7 +38,7 @@ spec:
 
 ### Roles Translation
 
-To translate permissions the Operator looks at Capsule Tenant with ther [Tenant Owners](https://projectcapsule.dev/docs/tenants/permissions/#ownership) and [AdditionalRoleBindings](https://projectcapsule.dev/docs/tenants/permissions/#additional-rolebindings). Based on these specs it's evaluated which [Subject (User/Group/ServiceAccount)](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#referring-to-subjects) is bound to which [ClusterRoles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole). Based on these ClusterRoles you can then translate [Argo RBAC Policies](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/#rbac-model-structure) which are then bound to the selected Subjects.
+Owners are read exclusively from `status.owners`, where Capsule resolves both directly configured owners and owners selected through its permissions API. The addon waits for Capsule to publish those owners; it does not fall back to `spec.owners`. Both legacy additional role bindings and bindings from every namespace rule are included. Rule bindings map to the tenant’s Argo project, so namespace selectors do not restrict Argo policy scope.
 
 Let's first take a like at a simple Role Translation:
 
@@ -46,7 +46,7 @@ Let's first take a like at a simple Role Translation:
 # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
 name: "viewer"
 
-# All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below.
+# All users which have the clusterRole "tenant-viewer" assigned (through status owners, additionalRoleBindings, or rule bindings) will be assigned the policies below.
 clusterRoles:
   - "tenant-viewer"
 
@@ -89,11 +89,16 @@ spec:
     subjects:
     - kind: User
       name: bob
-  - clusterRoleName: operators
-    subjects:
-    - kind: Group
-      name: org:operators
+  rules:
+  - permissions:
+      bindings:
+      - clusterRoleName: operators
+        subjects:
+        - kind: Group
+          name: org:operators
 ```
+
+Capsule publishes the configured owners in `status.owners` before the addon translates their roles.
 
 This is the Translator we are going to use:
 
@@ -118,7 +123,7 @@ spec:
     # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
   - name: "viewer"
 
-    # All users which have the clusterRole "tenant-viewer" assigned (either owner or additionalRoleBindings) will be assigned the policies below.
+    # All users which have the clusterRole "tenant-viewer" assigned (through status owners, additionalRoleBindings, or rule bindings) will be assigned the policies below.
     clusterRoles:
       - "tenant-viewer"
 
@@ -131,7 +136,7 @@ spec:
     # the name is relevant in the csv, you will see all the policies with role:{tenant}:viewer
   - name: "owner"
 
-    # All users which have the clusterRole "admin" assigned (either owner or additionalRoleBindings) will be assigned the policies below. (These are by default all tenant owners)
+    # All users which have the clusterRole "admin" assigned (through status owners, additionalRoleBindings, or rule bindings) will be assigned the policies below. (These are by default all tenant owners)
     clusterRoles:
       - "admin"
 

@@ -11,6 +11,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/api/v1alpha1"
 	"github.com/peak-scale/capsule-argo-addon/internal/meta"
 	capsulev1beta2 "github.com/projectcapsule/capsule/api/v1beta2"
+	capsulerbac "github.com/projectcapsule/capsule/pkg/api/rbac"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,10 +31,14 @@ var _ = Describe("lifecycle Appproject", func() {
 			Annotations: map[string]string{},
 		},
 		Spec: capsulev1beta2.TenantSpec{
-			Owners: []capsulev1beta2.OwnerSpec{
+			Owners: []capsulerbac.OwnerSpec{
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+					},
 				},
 			},
 		},
@@ -77,7 +82,7 @@ var _ = Describe("lifecycle Appproject", func() {
 						SourceNamespaces: []string{
 							"somewhere",
 						},
-						ClusterResourceWhitelist: []metav1.GroupKind{
+						ClusterResourceWhitelist: []argocdv1alpha1.ClusterResourceRestrictionItem{
 							{
 								Group: "*",
 								Kind:  "ConfigMap",
@@ -285,26 +290,34 @@ var _ = Describe("lifecycle Appproject", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
 
 			// Expected Owners
-			owners := []capsulev1beta2.OwnerSpec{
+			owners := []capsulerbac.OwnerSpec{
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 				{
-					Name: "system:serviceaccount:" + argoaddon.Spec.Argo.ServiceAccountNamespace + ":" + solar.Name,
-					Kind: capsulev1beta2.ServiceAccountOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "system:serviceaccount:" + argoaddon.Spec.Argo.ServiceAccountNamespace + ":" + solar.Name,
+							Kind: capsulerbac.ServiceAccountOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 			}
 
-			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
+			Expect(tnt.Spec.Owners).To(Equal(capsulerbac.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
 		})
 
 		By("Verify approject was adopted (finalizers)", func() {
@@ -437,18 +450,22 @@ var _ = Describe("lifecycle Appproject", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
 
 			// Expected Owners
-			owners := []capsulev1beta2.OwnerSpec{
+			owners := []capsulerbac.OwnerSpec{
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 			}
 
-			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should not have serviceaccount as owner")
+			Expect(tnt.Spec.Owners).To(Equal(capsulerbac.OwnerListSpec(owners)), "Tenant should not have serviceaccount as owner")
 		})
 
 	})
@@ -573,26 +590,34 @@ var _ = Describe("lifecycle Appproject", func() {
 			Expect(k8sClient.Get(context.Background(), client.ObjectKey{Name: solar.Name}, tnt)).To(Succeed())
 
 			// Expected Owners
-			owners := []capsulev1beta2.OwnerSpec{
+			owners := []capsulerbac.OwnerSpec{
 				{
-					Name: "alice",
-					Kind: capsulev1beta2.GroupOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "alice",
+							Kind: capsulerbac.GroupOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 				{
-					Name: "system:serviceaccount:" + argoaddon.Spec.Argo.ServiceAccountNamespace + ":" + solar.Name,
-					Kind: capsulev1beta2.ServiceAccountOwner,
-					ClusterRoles: []string{
-						"admin",
-						"capsule-namespace-deleter",
+					CoreOwnerSpec: capsulerbac.CoreOwnerSpec{
+						UserSpec: capsulerbac.UserSpec{
+							Name: "system:serviceaccount:" + argoaddon.Spec.Argo.ServiceAccountNamespace + ":" + solar.Name,
+							Kind: capsulerbac.ServiceAccountOwner,
+						},
+						ClusterRoles: []string{
+							"admin",
+							"capsule-namespace-deleter",
+						},
 					},
 				},
 			}
 
-			Expect(tnt.Spec.Owners).To(Equal(capsulev1beta2.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
+			Expect(tnt.Spec.Owners).To(Equal(capsulerbac.OwnerListSpec(owners)), "Tenant should have serviceaccount as owner")
 		})
 	})
 

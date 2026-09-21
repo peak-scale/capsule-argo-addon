@@ -13,7 +13,7 @@ import (
 	"github.com/peak-scale/capsule-argo-addon/internal/stores"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,7 +29,7 @@ type Reconciler struct {
 	client.Client
 	Metrics  *metrics.Recorder
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 	Log      logr.Logger
 	Settings *stores.ConfigStore
 	requeue  chan event.GenericEvent
@@ -48,7 +48,7 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	log := i.Log.WithValues("translator", request.Name)
 
 	origin := &configv1alpha1.ArgoTranslator{}
-	if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
+	if err := i.Get(ctx, request.NamespacedName, origin); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("Request object not found, could have been deleted after reconcile request")
 
@@ -67,7 +67,7 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 	}
 
 	if pruned {
-		if err := i.Client.Get(ctx, request.NamespacedName, origin); err != nil {
+		if err := i.Get(ctx, request.NamespacedName, origin); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -85,7 +85,7 @@ func (i *Reconciler) Reconcile(ctx context.Context, request ctrl.Request) (ctrl.
 
 func (i *Reconciler) pruneMissingTenantStatuses(ctx context.Context, key client.ObjectKey) (bool, error) {
 	tenants := &capsulev1beta2.TenantList{}
-	if err := i.Client.List(ctx, tenants); err != nil {
+	if err := i.List(ctx, tenants); err != nil {
 		return false, err
 	}
 
@@ -93,7 +93,7 @@ func (i *Reconciler) pruneMissingTenantStatuses(ctx context.Context, key client.
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		current := &configv1alpha1.ArgoTranslator{}
-		if err := i.Client.Get(ctx, key, current); err != nil {
+		if err := i.Get(ctx, key, current); err != nil {
 			if k8serrors.IsNotFound(err) {
 				return nil
 			}
@@ -123,7 +123,7 @@ func (i *Reconciler) pruneMissingTenantStatuses(ctx context.Context, key client.
 func (i *Reconciler) syncFinalizerStatus(ctx context.Context, key client.ObjectKey) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		current := &configv1alpha1.ArgoTranslator{}
-		if err := i.Client.Get(ctx, key, current); err != nil {
+		if err := i.Get(ctx, key, current); err != nil {
 			if k8serrors.IsNotFound(err) {
 				return nil
 			}
@@ -138,6 +138,6 @@ func (i *Reconciler) syncFinalizerStatus(ctx context.Context, key client.ObjectK
 			return nil
 		}
 
-		return i.Client.Patch(ctx, current, client.MergeFrom(previous))
+		return i.Patch(ctx, current, client.MergeFrom(previous))
 	})
 }

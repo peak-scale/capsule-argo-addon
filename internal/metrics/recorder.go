@@ -25,13 +25,15 @@ func MustMakeRecorder() *Recorder {
 }
 
 func NewRecorder() *Recorder {
+	labels := []string{"name", "status"}
+
 	return &Recorder{
 		translatorConditionGauge: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "cca_translator_condition",
 				Help: "The current condition status of a Translator.",
 			},
-			[]string{"name", "status"},
+			labels,
 		),
 
 		tenantConditionGauge: prometheus.NewGaugeVec( // Initialize tenantConditionGauge here
@@ -39,7 +41,7 @@ func NewRecorder() *Recorder {
 				Name: "cca_tenant_condition",
 				Help: "The current condition status of a Tenant.",
 			},
-			[]string{"name", "status"},
+			labels,
 		),
 	}
 }

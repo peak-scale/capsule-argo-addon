@@ -32,6 +32,7 @@ func (s *ConfigStore) Get() *addonsv1alpha1.ArgoAddonSpec {
 func (s *ConfigStore) Update(config *addonsv1alpha1.ArgoAddonSpec) {
 	s.Lock()
 	defer s.Unlock()
+
 	s.config = config
 
 	s.notify <- struct{}{}

@@ -9,7 +9,7 @@ The following is expected to be installed (including their CRDs). Without these 
 
 ### Capsule
 
-[Capsule](https://artifacthub.io/packages/helm/projectcapsule/capsule) is required to run this addon. You must use a version greater or equal to `0.7.1`, otherwise the users can hijack system namespaces.
+[Capsule](https://artifacthub.io/packages/helm/projectcapsule/capsule) is required to run this addon. The integration test stack uses Capsule `0.14.6`. The addon requires resolved tenant owners in `status.owners` and supports bindings in `spec.rules[].permissions.bindings`; older Capsule versions without resolved status owners are not compatible.
 
 #### Tenants
 
@@ -35,6 +35,8 @@ spec:
 **Flux**:
 
 ### ArgoCD
+
+The integration test stack uses Argo CD `3.5.3`.
 
 [Argo(CD)](https://artifacthub.io/packages/helm/argo/argo-cd) is required to be installed in the [v2.13.0](https://github.com/argoproj/argo-cd/releases/tag/v2.13.0) version or above. This version adds support for `destinationServiceAccounts`, which makes the appprojects much more secure. [See our Manifest](../e2e/objects/distro/argo.flux.yaml)
 

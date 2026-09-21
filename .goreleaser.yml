@@ -1,6 +1,6 @@
+version: 2
 project_name: capsule-argo-addon
 env:
-  - COSIGN_EXPERIMENTAL=true
   - GO111MODULE=on
 before:
   hooks:
@@ -43,7 +43,7 @@ release:
     >
     > | Kubernetes version | Minimum required |
     > |--------------------|------------------|
-    > | `v1.34`            | `>= 1.34.0`      |
+    > | `v1.37`            | `>= 1.37.0`      |
 checksum:
   name_template: 'checksums.txt'
 changelog:
@@ -84,9 +84,10 @@ sboms:
   - artifacts: archive
 signs:
 - cmd: cosign
+  signature: "${artifact}.sigstore.json"
   args:
   - "sign-blob"
-  - "--output-signature=${signature}"
+  - "--bundle=${signature}"
   - "${artifact}"
   - "--yes"
   artifacts: all

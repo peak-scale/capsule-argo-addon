@@ -85,7 +85,7 @@ func (i *Reconciler) reconcileProject(
 	log.V(7).Info("reconciling appproject", "appproject", origin.Name)
 
 	// Fetch the current state of the AppProject
-	gerr := i.Client.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().Argo.Namespace}, origin)
+	gerr := i.Get(ctx, client.ObjectKey{Name: tenant.Name, Namespace: i.Settings.Get().Argo.Namespace}, origin)
 	if gerr != nil && !k8serrors.IsNotFound(gerr) {
 		return finalize, gerr
 	}
@@ -120,7 +120,7 @@ func (i *Reconciler) reconcileProject(
 		controllerutil.RemoveFinalizer(appProject, meta.TranslatorFinalizer(translator.Name))
 
 		// Remove Finalizer when it's being deleted
-		if !appProject.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !appProject.DeletionTimestamp.IsZero() {
 			continue
 		}
 
@@ -237,7 +237,7 @@ func (i *Reconciler) updateTranslatorTenantStatus(
 ) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		current := &configv1alpha1.ArgoTranslator{}
-		if err := i.Client.Get(ctx, client.ObjectKeyFromObject(translator), current); err != nil {
+		if err := i.Get(ctx, client.ObjectKeyFromObject(translator), current); err != nil {
 			if k8serrors.IsNotFound(err) {
 				return nil
 			}
@@ -319,14 +319,14 @@ func (i *Reconciler) reconcileTranslator(
 	log.V(5).Info("matches", "state", match)
 
 	// When a tenant is deleted it's considered not a match
-	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !tenant.DeletionTimestamp.IsZero() {
 		log.V(5).Info("tenant is being deleted", "state", match)
 
 		return false, nil
 	}
 
 	// When a tenant is deleted it's considered not a match
-	if !translator.ObjectMeta.DeletionTimestamp.IsZero() {
+	if !translator.DeletionTimestamp.IsZero() {
 		log.V(5).Info("translator is being deleted", "state", match)
 
 		return false, nil
@@ -396,8 +396,8 @@ func (i *Reconciler) reconcileTranslator(
 	}
 
 	if translatorCfg.ProjectMeta != nil {
-		if appProject.ObjectMeta.Labels == nil {
-			appProject.ObjectMeta.Labels = make(map[string]string)
+		if appProject.Labels == nil {
+			appProject.Labels = make(map[string]string)
 		}
 
 		// Use Metadata
@@ -405,8 +405,8 @@ func (i *Reconciler) reconcileTranslator(
 			appProject.Labels[key] = value
 		}
 
-		if appProject.ObjectMeta.Annotations == nil {
-			appProject.ObjectMeta.Annotations = make(map[string]string)
+		if appProject.Annotations == nil {
+			appProject.Annotations = make(map[string]string)
 		}
 
 		for key, value := range translatorCfg.ProjectMeta.Annotations {
@@ -437,7 +437,7 @@ func (i *Reconciler) reflectArgoRBAC(
 ) (err error) {
 	// Initialize target configmap
 	configmap := &corev1.ConfigMap{}
-	if err := i.Client.Get(ctx, client.ObjectKey{
+	if err := i.Get(ctx, client.ObjectKey{
 		Name:      i.Settings.Get().Argo.RBACConfigMap,
 		Namespace: i.Settings.Get().Argo.Namespace,
 	}, configmap); err != nil {
@@ -587,7 +587,7 @@ func (i *Reconciler) lifecycleArgoProject(ctx context.Context, tenant *capsulev1
 	// Remove the approject from the tenant
 	appProject := &argocdv1alpha1.AppProject{}
 
-	err = i.Client.Get(ctx, client.ObjectKey{
+	err = i.Get(ctx, client.ObjectKey{
 		Name:      meta.TenantProjectName(tenant),
 		Namespace: i.Settings.Get().Argo.Namespace,
 	}, appProject)
@@ -611,7 +611,7 @@ func (i *Reconciler) lifecycleArgoProject(ctx context.Context, tenant *capsulev1
 		}
 
 		if !i.Settings.Get().DecoupleTenant(tenant) {
-			return i.Client.Delete(ctx, appProject)
+			return i.Delete(ctx, appProject)
 		}
 
 		return i.DecoupleTenant(appProject, tenant)
@@ -624,7 +624,7 @@ func (i *Reconciler) lifecycleArgoRbac(ctx context.Context, tenant *capsulev1bet
 	// Update existing configmap with new csv
 	if !i.Settings.Get().DecoupleTenant(tenant) {
 		configmap := &corev1.ConfigMap{}
-		if err = i.Client.Get(ctx, client.ObjectKey{
+		if err = i.Get(ctx, client.ObjectKey{
 			Name:      i.Settings.Get().Argo.RBACConfigMap,
 			Namespace: i.Settings.Get().Argo.Namespace,
 		},

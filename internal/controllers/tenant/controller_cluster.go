@@ -39,7 +39,7 @@ func (i *Reconciler) reconcileArgoCluster(
 	}
 
 	// Get Cluster-Secret
-	err = i.Client.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
+	err = i.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -115,7 +115,7 @@ func (i *Reconciler) lifecycleArgoCluster(
 		Type: corev1.SecretTypeOpaque,
 	}
 
-	err = i.Client.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
+	err = i.Get(ctx, client.ObjectKey{Name: serverSecret.Name, Namespace: serverSecret.Namespace}, serverSecret)
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -126,7 +126,7 @@ func (i *Reconciler) lifecycleArgoCluster(
 
 	// Delete the AppProject when it's not decoupled
 	if !i.Settings.Get().DecoupleTenant(tenant) {
-		return i.Client.Delete(ctx, serverSecret)
+		return i.Delete(ctx, serverSecret)
 	}
 
 	_, err = controllerutil.CreateOrUpdate(ctx, i.Client, serverSecret, func() (err error) {

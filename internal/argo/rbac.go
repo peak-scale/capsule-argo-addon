@@ -59,40 +59,40 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result 
 	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "projects",
-			Action:   []string{"get"},
-			Verb:     "allow",
+			Resource: addonsv1alpha1.ResourceProjects,
+			Action:   []string{string(addonsv1alpha1.ActionGet)},
+			Verb:     addonsv1alpha1.VerbAllow,
 		}))
 	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "projects",
-			Action:   []string{"list"},
-			Verb:     "allow",
+			Resource: addonsv1alpha1.ResourceProjects,
+			Action:   []string{string(addonsv1alpha1.ActionList)},
+			Verb:     addonsv1alpha1.VerbAllow,
 		}))
 
 	result = append(result, PolicyString(DefaultPolicyOwner(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "projects",
+			Resource: addonsv1alpha1.ResourceProjects,
 			Action:   []string{"update"},
-			Verb:     "allow",
+			Verb:     addonsv1alpha1.VerbAllow,
 		}))
 
 	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "clusters",
-			Action:   []string{"get"},
-			Verb:     "allow",
+			Resource: addonsv1alpha1.ResourceClusters,
+			Action:   []string{string(addonsv1alpha1.ActionGet)},
+			Verb:     addonsv1alpha1.VerbAllow,
 			Path:     "*",
 		}))
 	result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 		tenant.Name,
 		addonsv1alpha1.ArgocdPolicyDefinition{
-			Resource: "clusters",
-			Action:   []string{"list"},
-			Verb:     "allow",
+			Resource: addonsv1alpha1.ResourceClusters,
+			Action:   []string{string(addonsv1alpha1.ActionList)},
+			Verb:     addonsv1alpha1.VerbAllow,
 			Path:     "*",
 		}))
 
@@ -101,9 +101,9 @@ func DefaultPolicies(tenant *capsulev1beta2.Tenant, destination string) (result 
 		result = append(result, PolicyString(DefaultPolicyReadOnly(tenant),
 			destination,
 			addonsv1alpha1.ArgocdPolicyDefinition{
-				Resource: "clusters",
-				Action:   []string{"get"},
-				Verb:     "allow",
+				Resource: addonsv1alpha1.ResourceClusters,
+				Action:   []string{string(addonsv1alpha1.ActionGet)},
+				Verb:     addonsv1alpha1.VerbAllow,
 			}))
 	}
 
