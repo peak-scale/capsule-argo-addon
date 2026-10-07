@@ -53,6 +53,8 @@ github.com/argoproj/argo-cd/gitops-engine v0.0.0-20260914071520-c9c369efcc5b h1:
 github.com/argoproj/argo-cd/gitops-engine v0.0.0-20260914071520-c9c369efcc5b/go.mod h1:RsOM4gdM/lsvAfIuzAhYrnHDTLA1AGooZRzVyxbVT3A=
 github.com/argoproj/argo-cd/v3 v3.5.3 h1:klbUb5LOK+oJSBkR0OYGlLkG9IpsPVtSR2idOdaQb2I=
 github.com/argoproj/argo-cd/v3 v3.5.3/go.mod h1:/248vUTcQHNW3fYkaSUc0PkCFA/+mnILl5b6rv+xG6Y=
+github.com/argoproj/argo-cd/v3 v3.5.4 h1:kngQVnz+M+ytW/urkUWTSh8+zI+Hi/XhLespL5roYK0=
+github.com/argoproj/argo-cd/v3 v3.5.4/go.mod h1:/248vUTcQHNW3fYkaSUc0PkCFA/+mnILl5b6rv+xG6Y=
 github.com/argoproj/pkg/v2 v2.0.1 h1:O/gCETzB/3+/hyFL/7d/VM/6pSOIRWIiBOTb2xqAHvc=
 github.com/argoproj/pkg/v2 v2.0.1/go.mod h1:sdifF6sUTx9ifs38ZaiNMRJuMpSCBB9GulHfbPgQeRE=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
