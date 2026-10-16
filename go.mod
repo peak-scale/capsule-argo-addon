@@ -7,7 +7,7 @@ require (
 	github.com/BurntSushi/toml v1.6.0
 	github.com/KimMachineGun/automemlimit v1.0.0
 	github.com/Masterminds/sprig/v3 v3.3.0
-	github.com/argoproj/argo-cd/v3 v3.5.3
+	github.com/argoproj/argo-cd/v3 v3.5.4
 	github.com/go-logr/logr v1.4.4
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
