@@ -11,7 +11,7 @@ require (
 	github.com/go-logr/logr v1.4.4
 	github.com/onsi/ginkgo/v2 v2.32.0
 	github.com/onsi/gomega v1.42.1
-	github.com/projectcapsule/capsule v0.14.6
+	github.com/projectcapsule/capsule v0.15.1
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
 	go.uber.org/automaxprocs v1.6.0
@@ -86,7 +86,7 @@ require (
 	github.com/go-openapi/swag/typeutils v0.29.2 // indirect
 	github.com/go-openapi/swag/yamlutils v0.29.2 // indirect
 	github.com/go-redis/cache/v9 v9.0.0 // indirect
-	github.com/go-sprout/sprout v1.1.1 // indirect
+	github.com/go-sprout/sprout v1.1.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	// Argo CD requires the Glob interface removed in glob v1.0.0.
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -137,6 +137,7 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0 // indirect
 	github.com/robfig/cron/v3 v3.0.2-0.20210106135023-bc59245fe10e // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sirupsen/logrus v1.10.2 // indirect
@@ -164,7 +165,7 @@ require (
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
