@@ -34,7 +34,7 @@ jobs:
           go-version-file: 'go.mod'
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version: v4.3.0
+          version: v4.3.1
       - name: Run chart-testing (lint)
         run: make helm-lint
       - name: Run docs-testing (helm-docs)
