@@ -18,7 +18,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.36.4
 	k8s.io/apimachinery v0.36.4
-	k8s.io/client-go v0.36.4
+	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kubectl v0.36.4
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3
 	sigs.k8s.io/controller-runtime v0.24.1
@@ -218,7 +218,7 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.36.4
 	k8s.io/apiserver => k8s.io/apiserver v0.36.4
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.36.4
-	k8s.io/client-go => k8s.io/client-go v0.36.4
+	k8s.io/client-go => k8s.io/client-go v11.0.0+incompatible
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.36.4
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.36.4
 	k8s.io/code-generator => k8s.io/code-generator v0.36.4
