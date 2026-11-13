@@ -131,6 +131,7 @@ Deploy a dedicated [capsule-proxy](https://artifacthub.io/packages/helm/projectc
 | podSecurityContext | object | `{"seccompProfile":{"type":"RuntimeDefault"}}` | Set the securityContext |
 | priorityClassName | string | `""` | Set the priority class name of the Capsule pod |
 | rbac.enabled | bool | `true` | Enable bootstraping of RBAC resources |
+| rbac.list.enabled | bool | `true` | Grant all ServiceAccounts in the release namespace read access (`get`, `list`, `watch`) to every resource in the cluster. Only has an effect when `rbac.enabled` is `true` |
 | readinessProbe | object | `{"httpGet":{"path":"/readyz","port":10080}}` | Configure the readiness probe using Deployment probe spec |
 | replicaCount | int | `1` | Amount of replicas |
 | resources | object | `{}` | Set the resource requests/limits |

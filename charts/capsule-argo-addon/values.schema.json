@@ -437,6 +437,14 @@
             "properties": {
                 "enabled": {
                     "type": "boolean"
+                },
+                "list": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        }
+                    }
                 }
             }
         },

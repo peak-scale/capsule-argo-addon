@@ -72,6 +72,9 @@ crds:
 rbac:
   # -- Enable bootstraping of RBAC resources
   enabled: true
+  list:
+    # -- Grant all ServiceAccounts in the release namespace read access (`get`, `list`, `watch`) to every resource in the cluster. Only has an effect when `rbac.enabled` is `true`
+    enabled: true
 
 nameOverride: ""
 fullnameOverride: ""
