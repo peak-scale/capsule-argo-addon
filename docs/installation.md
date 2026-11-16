@@ -103,6 +103,8 @@ subjects:
 
 This should no raise any security concerns, since the users won't be able to access the serviceaccounts.
 
+Keep in mind that this role gives every ServiceAccount in that namespace read access to all resources in the cluster, including Secrets. If your tenant ServiceAccounts only sync into their own tenant namespaces and get their permissions there (see `serviceAccountClusterRoles`), Argo CD does not need it. In that case you can skip the `ClusterRole` and `ClusterRoleBinding` of the chart with `rbac.list.enabled: false`. The RBAC of the addon itself stays in place.
+
 These Namespaces must also be part of the capsuleConfiguration, to be considered as Tenant users. You must add the namespace where the serviceaccounts are deployed to, to the capsuleUsers. For example:
 
 ```yaml
